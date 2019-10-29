@@ -121,3 +121,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# In case any data gets in here
+*.set
+*.fdt
+*.mff
