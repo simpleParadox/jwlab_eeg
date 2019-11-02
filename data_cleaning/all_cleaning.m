@@ -1,13 +1,13 @@
 % set up the script parameters
-FILEPATH = '../../../data/';
-FILEPATH_OUT = '../../../data/ml_ready/';
-SUBJECTS = {'999'};
+FILEPATH = 'Y:\Members_Current\Jenn\EEG study\Imported data\';
+FILEPATH_OUT = 'Y:\Members_Current\Jenn\EEG study\Imported data\cleaned\';
+SUBJECTS = {'105', '106', '107', '904', '905', '906'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
 BOUNDARY_EVENTS = { 'boundary' };
 
-SAVE_INTERMEDIATE = true;
+SAVE_INTERMEDIATE = false;
 
 % we'll gather all cleaned data into this array
 subj_ml = [];
@@ -54,8 +54,8 @@ for curr_subject = SUBJECTS
     ml_eeg = pop_reref(ml_eeg, []);
     pic_eeg = pop_reref(pic_eeg, []);
      
-    pop_saveset(ml_eeg, 'filename', char(append(curr_subject, '_cleaned_ml.set')), 'filepath', FILEPATH);
-    pop_saveset(pic_eeg, 'filename', char(append(curr_subject, '_cleaned_pic.set')), 'filepath', FILEPATH);
+    pop_saveset(ml_eeg, 'filename', char(append(curr_subject, '_cleaned_ml.set')), 'filepath', FILEPATH_OUT);
+    pop_saveset(pic_eeg, 'filename', char(append(curr_subject, '_cleaned_pic.set')), 'filepath', FILEPATH_OUT);
     
     pop_export(ml_eeg, char(append(FILEPATH_OUT, curr_subject, '_cleaned_ml.csv')), 'transpose', 'on', 'separator', ',');
     pop_export(pic_eeg, char(append(FILEPATH_OUT, curr_subject, '_cleaned_pic.csv')), 'transpose', 'on', 'separator', ',');
