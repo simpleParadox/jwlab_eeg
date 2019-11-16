@@ -45,7 +45,7 @@ def prep_ml_internal(df, ys, participants):
     # make label zero indexed 
     df.label -= 1
 
-    X,y = no_average(df)
+    X,y = average_trials(df)
 
     y[y < 8] = 0
     y[y >= 8] = 1
