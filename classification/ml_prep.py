@@ -45,7 +45,7 @@ def prep_ml_internal(df, ys, participants):
     # make label zero indexed 
     df.label -= 1
 
-    X,y = average_trials(df)
+    X,y = no_average(df)
 
     y[y < 8] = 0
     y[y >= 8] = 1
@@ -66,5 +66,17 @@ def average_trials(df):
         for w in range(num_words):
             new_data[p * num_words + w, :] = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean()
             new_y[p * num_words + w] = w
+    
+    return new_data, new_y
+
+def average_trials_and_participants(df):
+    num_words = len(word_list)
+
+    new_data = np.zeros((num_words, 64 * 1000))
+    df_data = df.drop(columns=['label', 'participant'], axis=1)
+    new_y = np.zeros(num_words)
+    for w in range(num_words):
+        new_data[w, :] = df_data[df.label == w].values.mean()
+        new_y[w] = w
     
     return new_data, new_y
