@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from first_participants_map import map_first_participants
 from constants import word_list
+from bad_trials import get_bad_trials, transform_ybad_indices
 
 def prep_ml(filepath, participants):
     df, ys = load_ml_data(filepath, participants)
@@ -27,13 +28,16 @@ def prep_ml_internal(df, ys, participants):
     X = df.values
     (i,j) = X.shape
     X = np.reshape(X, (i // 1000, j * 1000))
-    
+        
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
+    ybad = get_bad_trials(participants, ys)
     ys = map_first_participants(ys, participants)
     y = np.concatenate(ys)
+    ybad = transform_ybad_indices(ybad, ys)
+    y[ybad] = -1
 
     assert y.shape[0] == X.shape[0]
-
+    
     # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
     df = pd.DataFrame(data=X)
     df['label'] = y
@@ -45,15 +49,15 @@ def prep_ml_internal(df, ys, participants):
     # make label zero indexed 
     df.label -= 1
 
-    X,y = no_average(df)
+    X,y,p,w = average_trials(df)
 
     y[y < 8] = 0
     y[y >= 8] = 1
     
-    return X, y
+    return X, y, p, w
 
 def no_average(df):
-    return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten()
+    return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten(), df.participant.values, df.label.values
 
 def average_trials(df):
     num_participants = df.participant.max() + 1
@@ -62,12 +66,19 @@ def average_trials(df):
     new_data = np.zeros((num_participants * num_words, 64 * 1000))
     df_data = df.drop(columns=['label', 'participant'], axis=1)
     new_y = np.zeros(num_participants * num_words)
+    participants = np.zeros(num_participants * num_words)
+
     for p in range(num_participants):
         for w in range(num_words):
-            new_data[p * num_words + w, :] = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean()
-            new_y[p * num_words + w] = w
-    
-    return new_data, new_y
+            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean()
+            new_data[p * num_words + w, :] = means
+            new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
+            participants[p * num_words + w] = p
+
+    new_data = new_data[new_y != -1, :]
+    participants = participants[new_y != -1]
+    new_y = new_y[new_y != -1]
+    return new_data, new_y, participants, np.copy(new_y)
 
 def average_trials_and_participants(df):
     num_words = len(word_list)
@@ -79,4 +90,4 @@ def average_trials_and_participants(df):
         new_data[w, :] = df_data[df.label == w].values.mean()
         new_y[w] = w
     
-    return new_data, new_y
+    return new_data, new_y, np.ones(num_words) * -1, np.copy(new_y)
