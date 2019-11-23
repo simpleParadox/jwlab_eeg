@@ -3,8 +3,9 @@ import numpy as np
 from first_participants_map import map_first_participants
 from constants import word_list
 from bad_trials import get_bad_trials, transform_ybad_indices
+from scipy.signal import resample
 
-def prep_ml(filepath, participants):
+def prep_ml(filepath, participants, downsample_num=1000):
     df, ys = load_ml_data(filepath, participants)
     return prep_ml_internal(df, ys, participants)
 
@@ -16,7 +17,7 @@ def load_ml_data(filepath, participants):
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)) for s in participants]
     return df, ys
 
-def prep_ml_internal(df, ys, participants):
+def prep_ml_internal(df, ys, participants, downsample_num=1000):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -26,8 +27,10 @@ def prep_ml_internal(df, ys, participants):
     # "block" of data (ie. 1000 rows of 64 columns of eeg data) into one training example, one row
     # of 64*1000 columns of eeg data
     X = df.values
-    (i,j) = X.shape
-    X = np.reshape(X, (i // 1000, j * 1000))
+    X = np.reshape(X, (1000, 64, -1))
+    X = resample(X, downsample_num, axis=0)
+    (i,j,k) = X.shape
+    X = np.reshape(X, (k, j * downsample_num))
         
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants, ys)
