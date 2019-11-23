@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 from math import isnan
+from constants import bad_trials_filepath
 
-FILEPATH = "Y:/Members_Current/Jenn/EEG study/Datatracker/ML_badtrials-Table 1.csv"
-df = pd.read_csv(FILEPATH)
+df = pd.read_csv(bad_trials_filepath)
 df = df.drop(columns=["Reason"], axis=1)
 df.Ps = df.Ps.interpolate(method="pad")
 
