@@ -5,9 +5,9 @@ from constants import word_list
 from bad_trials import get_bad_trials, transform_ybad_indices
 from scipy.signal import resample
 
-def prep_ml(filepath, participants, downsample_num=1000):
+def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
     df, ys = load_ml_data(filepath, participants)
-    return prep_ml_internal(df, ys, participants)
+    return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
 
 def load_ml_data(filepath, participants):
     # read all participant csvs, concat them into one dataframe
@@ -17,7 +17,7 @@ def load_ml_data(filepath, participants):
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)) for s in participants]
     return df, ys
 
-def prep_ml_internal(df, ys, participants, downsample_num=1000):
+def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="average_trials"):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -52,7 +52,12 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000):
     # make label zero indexed 
     df.label -= 1
 
-    X,y,p,w = average_trials(df)
+    if averaging == "no_averaging":
+        X,y,p,w = no_average(df)
+    elif averaging == "average_trials":
+        X,y,p,w = average_trials(df)
+    else:
+        X,y,p,w = average_trials_and_participants(df)
 
     y[y < 8] = 0
     y[y >= 8] = 1
@@ -66,7 +71,7 @@ def average_trials(df):
     num_participants = df.participant.max() + 1
     num_words = len(word_list)
 
-    new_data = np.zeros((num_participants * num_words, 64 * 1000))
+    new_data = np.zeros((num_participants * num_words, len(df.columns) - 2))
     df_data = df.drop(columns=['label', 'participant'], axis=1)
     new_y = np.zeros(num_participants * num_words)
     participants = np.zeros(num_participants * num_words)
@@ -86,7 +91,7 @@ def average_trials(df):
 def average_trials_and_participants(df):
     num_words = len(word_list)
 
-    new_data = np.zeros((num_words, 64 * 1000))
+    new_data = np.zeros((num_words, len(df.columns) - 2))
     df_data = df.drop(columns=['label', 'participant'], axis=1)
     new_y = np.zeros(num_words)
     for w in range(num_words):
