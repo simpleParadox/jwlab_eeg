@@ -70,13 +70,17 @@ def average_trials(df):
     return new_data, new_y
 
 def average_trials_and_participants(df):
+    
     num_words = len(word_list)
 
     new_data = np.zeros((num_words, 64 * 1000))
     df_data = df.drop(columns=['label', 'participant'], axis=1)
     new_y = np.zeros(num_words)
     for w in range(num_words):
-        new_data[w, :] = df_data[df.label == w].values.mean()
+        if df_data[df.label == w].values.size == 0:
+            new_data[w, :] = 0
+        else:    
+            new_data[w, :] = df_data[df.label == w].values.mean()
         new_y[w] = w
     
     return new_data, new_y
