@@ -1,5 +1,5 @@
-word_list = ["baby", "bear", "bird", "bunny", "cat", "dog", "duck", "mommy", "banana", "bottle", "cookie", "cracker", "cup", "juice", "milk", "spoon"]
-# word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy", "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
+# word_list = ["baby", "bear", "bird", "bunny", "cat", "dog", "duck", "mommy", "banana", "bottle", "cookie", "cracker", "cup", "juice", "milk", "spoon"]
+word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy", "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
 
 
 cleaned_data_filepath = "/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/"

@@ -95,7 +95,11 @@ def average_trials_and_participants(df):
     df_data = df.drop(columns=['label', 'participant'], axis=1)
     new_y = np.zeros(num_words)
     for w in range(num_words):
-        new_data[w, :] = df_data[df.label == w].values.mean()
-        new_y[w] = w
+        means = df_data[df.label == w].values.mean()
+        new_data[w, :] = means
+        new_y[w] = -1 if np.isnan(means).any() else w
+
+    new_data = new_data[new_y != -1, :]
+    new_y = new_y[new_y != -1]
     
-    return new_data, new_y, np.ones(num_words) * -1, np.copy(new_y)
+    return new_data, new_y, np.ones(new_y.shape[0]) * -1, np.copy(new_y)
