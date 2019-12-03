@@ -16,6 +16,17 @@ random forest :
 - average trials : 0.55
 - average trials+participants : 0.53
 
+## current model scores on individual participants
+svms
+- no averaging : 107: 0.5625; 904: 0.5; 905: 0.4812; 906: 0.4562
+- average trials : 107: 0.49375; 904: 0.50625; 905: 0.5482; 906: 0.5879
+- average trials+participants : 107: 0.5258; 904: 0.49375; 905: 0.5; 906: 0.524
+
+random forest : 
+- no averaging : 
+- average trials :
+- average trials+participants : 
+
 # directory structure
 
 Code using the Matlab eeglab library runs in the data_cleaning folder, specifically the [all_cleaning.m](data_cleaning/all_cleaning.m) file.
