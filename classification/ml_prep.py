@@ -62,7 +62,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     y[y < 8] = 0
     y[y >= 8] = 1
     
-    return X, y, p, w
+    return X, y, p, w, df
 
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten(), df.participant.values, df.label.values
