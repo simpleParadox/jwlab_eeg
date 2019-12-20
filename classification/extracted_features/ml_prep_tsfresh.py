@@ -9,7 +9,7 @@ def prep_tsfresh_data(df, ys, participants):
     df = df[df.Time >= 0]
     df = df.drop(columns=["E65", "E64", "E63", "E62", "E61"], axis=1)
 
-    df['id'] = np.concatenate([[i] * 200 for i in range(len(df.index) // 200)])
+    df['id'] = np.concatenate([[i] * 1000 for i in range(len(df.index) // 1000)])
 
     ybad = get_bad_trials(participants, ys)
     ys = map_first_participants(ys, participants)
