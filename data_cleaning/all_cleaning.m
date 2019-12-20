@@ -1,7 +1,7 @@
 % set up the script parameters
 FILEPATH = '\Volumes\OFFCAMPUS\Jenn\Imported data\';
 FILEPATH_OUT = '\Volumes\OFFCAMPUS\Jenn\Imported data\cleaned\';
-SUBJECTS = {'905', '906'};
+SUBJECTS = {'107', '904', '905', '906'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
