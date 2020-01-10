@@ -1,17 +1,13 @@
 % set up the script parameters
-FILEPATH = 'Y:\Members_Current\Jenn\EEG study\Imported data\';
-FILEPATH_OUT = 'Y:\Members_Current\Jenn\EEG study\Imported data\cleaned\';
-SUBJECTS = {'105', '106', '107', '904', '905', '906'};
+FILEPATH = '\Volumes\OFFCAMPUS\Jenn\Imported data\';
+FILEPATH_OUT = '\Volumes\OFFCAMPUS\Jenn\Imported data\cleaned\';
+SUBJECTS = {'107', '904', '905', '906'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
 BOUNDARY_EVENTS = { 'boundary' };
 
 SAVE_INTERMEDIATE = false;
-
-% we'll gather all cleaned data into this array
-subj_ml = [];
-subj_pics = [];
 
 for curr_subject = SUBJECTS
     % load each subjects data for cleaning
