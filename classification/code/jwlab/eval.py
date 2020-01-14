@@ -19,7 +19,7 @@ def eval_across_categories(model, X, y, cat, num_trials, test_size=0.2, random_s
     num_categories = int(np.max(cat)) + 1
     errs = np.zeros((num_categories, num_trials))
     for i in range(num_trials):
-        X_train, X_test, y_train, y_test, cat_train, cat_test = train_test_split(X, y, cat, test_size=test_size, random_state=i+random_state)
+        X_train, X_test, y_train, y_test, _, cat_test = train_test_split(X, y, cat, test_size=test_size, random_state=i+random_state)
         model.fit(X_train, y_train)
         
         for j in range(num_categories):

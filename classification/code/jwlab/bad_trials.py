@@ -3,23 +3,25 @@ import pandas as pd
 from math import isnan
 from jwlab.constants import bad_trials_filepath
 
-df = pd.read_csv(bad_trials_filepath)
-df = df.drop(columns=["Reason"], axis=1)
-df.Ps = df.Ps.interpolate(method="pad")
 
-def get_bad_trials(participants, ys):
+
+def get_bad_trials(participants, ys, bad_trials_filepath):
+    df = pd.read_csv(bad_trials_filepath)
+    df = df.drop(columns=["Reason"], axis=1)
+    df.Ps = df.Ps.interpolate(method="pad")
+
     ybad = []
     for i in range(len(participants)):
         p_df = df[df.Ps == int(participants[i])]
         if len(p_df) == 0:
             ybad.append([])
         elif isnan(p_df.tIndex.values[0]):
-            ybad.append(get_ybad_from_cel_obs(participants, i, ys, p_df))
+            ybad.append(get_ybad_from_cel_obs(participants, i, ys, df, p_df))
         else:
             ybad.append(p_df.tIndex.values.tolist())
     return ybad
 
-def get_ybad_from_cel_obs(participants, i, ys, p_df):
+def get_ybad_from_cel_obs(participants, i, ys, df, p_df):
     cumsums = []
     for j in range(1, int(p_df.Cell.max() + 1)):
         # from https://stackoverflow.com/questions/38949308/find-the-nth-time-a-specific-value-is-exceeded-in-numpy-array
