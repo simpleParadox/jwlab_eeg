@@ -3,7 +3,7 @@ eeglab
 
 % set up the script parameters
 FILEPATH = '~/projects/def-jwerker/kjslakov/data/';
-FILEPATH_OUT = '~/projects/def-jwerker/kjslakov/data/cleaned';
+FILEPATH_OUT = '~/projects/def-jwerker/kjslakov/data/cleaned/';
 SUBJECTS = {'107', '111', '112', '115', '116', '904', '905', '906', '908', '909', '910', '912', '913', '914', '916'};
 
 ML_EVENTS = { 'Wait' };
