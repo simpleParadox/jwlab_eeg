@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
-from first_participants_map import map_first_participants
-from constants import word_list
-from bad_trials import get_bad_trials, transform_ybad_indices
+from jwlab.first_participants_map import map_first_participants
+from jwlab.constants import word_list
+from jwlab.bad_trials import get_bad_trials, transform_ybad_indices
 from scipy.signal import resample
 
 def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):

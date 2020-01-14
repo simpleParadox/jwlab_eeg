@@ -1,0 +1,1 @@
+data_path = "/home/kjslakov/projects/def-jwerker/kjslakov/data/cleaned/"
