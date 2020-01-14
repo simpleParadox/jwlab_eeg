@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from jwlab.first_participants_map import map_first_participants
-from jwlab.constants import word_list
+from jwlab.constants import word_list, bad_trials_filepath
 from jwlab.bad_trials import get_bad_trials, transform_ybad_indices
 from scipy.signal import resample
 
@@ -17,7 +17,7 @@ def load_ml_data(filepath, participants):
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)) for s in participants]
     return df, ys
 
-def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="average_trials"):
+def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="average_trials", bad_trials_filepath=bad_trials_filepath):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -33,7 +33,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     X = np.reshape(X, (k, j * downsample_num))
         
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
-    ybad = get_bad_trials(participants, ys)
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
     ys = map_first_participants(ys, participants)
     y = np.concatenate(ys)
     ybad = transform_ybad_indices(ybad, ys)
@@ -59,8 +59,8 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     else:
         X,y,p,w = average_trials_and_participants(df)
 
-    y[y < 8] = 0
-    y[y >= 8] = 1
+    y[y <= 16] = 0
+    y[y > 16] = 1
     
     return X, y, p, w, df
 

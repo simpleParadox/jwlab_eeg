@@ -383,5 +383,7 @@ spoon
 def map_first_participants(ys, participants):
     for i in range(len(participants)):
         if participants[i] in words:
-            ys[i] = [word_list.index(s) + 1 if s in word_list else -1 for s in words[participants[i]]]
+            # add one because it is 1-indexed instead of 0-indexed, and multiply by two since
+            # animates should go 1-16 instead of 1-8
+            ys[i] = [(word_list.index(s) + 1) * 2 if s in word_list else -1 for s in words[participants[i]]]
     return ys
