@@ -1,4 +1,4 @@
-from constants import word_list
+from jwlab.constants import word_list
 
 words = {}
     

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from math import isnan
-from constants import bad_trials_filepath
+from jwlab.constants import bad_trials_filepath
 
 df = pd.read_csv(bad_trials_filepath)
 df = df.drop(columns=["Reason"], axis=1)
