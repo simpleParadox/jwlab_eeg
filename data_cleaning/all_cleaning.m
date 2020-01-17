@@ -1,7 +1,7 @@
 % set up the script parameters
-FILEPATH = '\Volumes\OFFCAMPUS\Jenn\Imported data\';
-FILEPATH_OUT = '\Volumes\OFFCAMPUS\Jenn\Imported data\cleaned\';
-SUBJECTS = {'107', '904', '905', '906'};
+FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/';
+FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
+SUBJECTS = {'909', '116'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
