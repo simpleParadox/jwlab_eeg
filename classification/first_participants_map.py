@@ -384,4 +384,6 @@ def map_first_participants(ys, participants):
     for i in range(len(participants)):
         if participants[i] in words:
             ys[i] = [word_list.index(s) + 1 if s in word_list else -1 for s in words[participants[i]]]
+        else:
+            ys[i] = ys[i].tolist()
     return ys

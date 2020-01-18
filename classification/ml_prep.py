@@ -21,19 +21,20 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
-    df = df.drop(columns=["Time", "E65"], axis=1)
+    df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
 
     # now we need to flatten each
     # "block" of data (ie. 1000 rows of 64 columns of eeg data) into one training example, one row
     # of 64*1000 columns of eeg data
     X = df.values
-    X = np.reshape(X, (1000, 64, -1))
+    X = np.reshape(X, (1000, 60, -1))
     X = resample(X, downsample_num, axis=0)
     (i,j,k) = X.shape
     X = np.reshape(X, (k, j * downsample_num))
         
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants, ys)
+    
     ys = map_first_participants(ys, participants)
     y = np.concatenate(ys)
     ybad = transform_ybad_indices(ybad, ys)
@@ -62,7 +63,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     y[y < 8] = 0
     y[y >= 8] = 1
     
-    return X, y, p, w
+    return X, y, p, w, df
 
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten(), df.participant.values, df.label.values
@@ -78,10 +79,7 @@ def average_trials(df):
 
     for p in range(num_participants):
         for w in range(num_words):
-            if df_data[np.logical_and(df.participant == p, df.label == w)].values.size == 0:
-                means = 0
-            else:
-                means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean()
+            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean()
             new_data[p * num_words + w, :] = means
             new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
             participants[p * num_words + w] = p
@@ -98,10 +96,11 @@ def average_trials_and_participants(df):
     df_data = df.drop(columns=['label', 'participant'], axis=1)
     new_y = np.zeros(num_words)
     for w in range(num_words):
-        if df_data[df.label == w].values.size == 0:
-            new_data[w, :] = 0
-        else:
-            new_data[w, :] = df_data[df.label == w].values.mean()
-        new_y[w] = w
+        means = df_data[df.label == w].values.mean()
+        new_data[w, :] = means
+        new_y[w] = -1 if np.isnan(means).any() else w
+
+    new_data = new_data[new_y != -1, :]
+    new_y = new_y[new_y != -1]
     
-    return new_data, new_y, np.ones(num_words) * -1, np.copy(new_y)
+    return new_data, new_y, np.ones(new_y.shape[0]) * -1, np.copy(new_y)

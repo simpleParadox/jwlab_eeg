@@ -4,23 +4,16 @@ This is the repo for the eeg study in the Janet Werker lab
 # current model scores
 
 Notes: no bad trial/channel removal
-update on Nov 28: removed four words that are unlikely known by participants, set those values to zero
 
 svms (kernal=linear C=1e-6, after some amount of tuning)
-- no averaging : 0.425
-- average trials : 0.442
-- average trials+participants : 0.423
+- no averaging : 0.4408
+- average trials : 0.4923
+- average trials+participants : 0.685
 
 random forest :
-- no averaging : 0.56
-- average trials : 0.55
-- average trials+participants : 0.53
-
-## current model scores on individual participants
-svms
-- no averaging : 107: 0.5625; 904: 0.5; 905: 0.4812; 906: 0.4562
-- average trials : 107: 0.49375; 904: 0.50625; 905: 0.5482; 906: 0.5879
-- average trials+participants : 107: 0.5258; 904: 0.49375; 905: 0.5; 906: 0.524
+- no averaging : 0.49
+- average trials : 0.489
+- average trials+participants : 0.585
 
 # directory structure
 
