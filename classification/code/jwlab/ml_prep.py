@@ -5,9 +5,9 @@ from jwlab.constants import word_list, bad_trials_filepath
 from jwlab.bad_trials import get_bad_trials, transform_ybad_indices
 from scipy.signal import resample
 
-def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
+def create_ml_df(filepath, participants, downsample_num=1000):
     df, ys = load_ml_data(filepath, participants)
-    return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
+    return prep_ml_internal(df, ys, participants, downsample_num=downsample_num)
 
 def load_ml_data(filepath, participants):
     # read all participant csvs, concat them into one dataframe
@@ -17,7 +17,7 @@ def load_ml_data(filepath, participants):
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)) for s in participants]
     return df, ys
 
-def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="average_trials", bad_trials_filepath=bad_trials_filepath):
+def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -44,7 +44,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
     df = pd.DataFrame(data=X)
     df['label'] = y
-    df['participant'] = np.concatenate([[ys.index(y)]*len(y) for y in ys])
+    df['participant'] = np.concatenate([[i]*len(y) for i,y in enumerate(ys)])
     
     # remove bad samples
     df = df[df.label != -1]
@@ -52,17 +52,18 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     # make label zero indexed 
     df.label -= 1
 
-    if averaging == "no_averaging":
-        X,y,p,w = no_average(df)
-    elif averaging == "average_trials":
-        X,y,p,w = average_trials(df)
-    else:
-        X,y,p,w = average_trials_and_participants(df)
+    return df
 
-    y[y <= 16] = 0
-    y[y > 16] = 1
-    
-    return X, y, p, w, df
+def save_ml_df(df, filepath):
+    df.to_csv(filepath)
+
+def load_ml_df(filepath):
+    return pd.read_csv(filepath)
+
+def y_to_binary(y):
+    y[y < 16] = 0
+    y[y >= 16] = 1
+    return y
 
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten(), df.participant.values, df.label.values
