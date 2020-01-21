@@ -12,4 +12,4 @@ pip install --no-index --upgrade pip
 pip install sklearn
 pip install sktime
 pip install --no-index -r general_requirements.txt
-python /$HOME/projects/def-jwerker/kjslakov/jwlab_eeg/classification/code/jwlab/run/train_eval_svm_noavg.py
+python /$HOME/projects/def-jwerker/kjslakov/jwlab_eeg/classification/code/jwlab/run/train_eval_svm_noavg_avg.py

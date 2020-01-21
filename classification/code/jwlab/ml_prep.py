@@ -55,14 +55,14 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_
     return df
 
 def save_ml_df(df, filepath):
-    df.to_csv(filepath)
+    df.to_pickle(filepath)
 
 def load_ml_df(filepath):
-    return pd.read_csv(filepath)
+    return pd.read_pickle(filepath)
 
 def y_to_binary(y):
-    y[y < 16] = 0
-    y[y >= 16] = 1
+    y[y < 8] = 0
+    y[y >= 8] = 1
     return y
 
 def no_average(df):

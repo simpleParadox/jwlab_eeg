@@ -3,16 +3,17 @@ import sys
 import numpy as np
 
 
-def eval_normal(model, X, y, num_trials, test_size=0.2, random_state=0):
+def eval_normal(model, X, y, num_trials, test_size=0.2, random_state=0, progress_bar=False):
     errs = np.zeros(num_trials)
     for i in range(num_trials):
         X_train, X_test, y_train, y_test, = train_test_split(X, y, test_size=test_size, random_state=random_state+i)
         model.fit(X_train, y_train)
         
         errs[i] = np.mean(model.predict(X_test) != y_test)
-        sys.stdout.write('\r')
-        percent = (i + 1) / num_trials
-        sys.stdout.write("[%-20s] %d%%" % ('='*int(20*percent), percent*100))
+        if progress_bar:
+            sys.stdout.write('\r')
+            percent = (i + 1) / num_trials
+            sys.stdout.write("[%-20s] %d%%" % ('='*int(20*percent), percent*100))
     return errs
 
 def eval_across_categories(model, X, y, cat, num_trials, test_size=0.2, random_state=0):
