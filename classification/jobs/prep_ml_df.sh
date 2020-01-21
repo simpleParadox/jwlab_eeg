@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=def-jwerker
 #SBATCH --mem=6G
-#SBATCH --time=0:20:00
+#SBATCH --time=0:10:00
 
 module load python/3.6
 module load scipy-stack
