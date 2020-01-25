@@ -1,6 +1,7 @@
+
 % set up the script parameters
-FILEPATH = 'Y:\Members_Current\Jenn\EEG study\Imported data\';
-FILEPATH_OUT = 'Y:\Members_Current\Jenn\EEG study\Imported data\cleaned\';
+FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/';
+FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
 SUBJECTS = {'106'};
 
 ML_EVENTS = { 'Wait' };
