@@ -2,7 +2,7 @@
 % set up the script parameters
 FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/';
 FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
-SUBJECTS = {'106'};
+SUBJECTS = {'105','106', '107','109'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
@@ -30,8 +30,8 @@ for curr_subject = SUBJECTS
     end
     
     % Now break into two sets, ML and picture, and apply appropriate filter    
-    ml_eeg = pop_eegfiltnew(curr_EEG, 1, 50);
-    pic_eeg = pop_eegfiltnew(curr_EEG, 3, 30);
+    ml_eeg = pop_eegfiltnew(curr_EEG, .1, 50);
+    pic_eeg = pop_eegfiltnew(curr_EEG, .3, 30);
     
     if SAVE_INTERMEDIATE
         pop_saveset(ml_eeg, 'filename', 'ml_filtered.set', 'filepath', FILEPATH);
