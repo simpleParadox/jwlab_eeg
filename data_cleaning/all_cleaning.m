@@ -1,8 +1,8 @@
-
+eeglab
 % set up the script parameters
 FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/';
 FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
-SUBJECTS = {'105','106', '107','109'};
+SUBJECTS = {'916'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
