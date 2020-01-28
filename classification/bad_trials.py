@@ -21,6 +21,7 @@ def get_bad_trials(participants, ys):
 
 def get_ybad_from_cel_obs(participants, i, ys, p_df):
     cumsums = []
+    #print(ys)
     for j in range(1, int(p_df.Cell.max() + 1)):
         # from https://stackoverflow.com/questions/38949308/find-the-nth-time-a-specific-value-is-exceeded-in-numpy-array
         cond = np.array(ys[i]) == j
@@ -31,6 +32,5 @@ def transform_ybad_indices(ybad, ys):
     offset = 0
     for i in range(len(ybad)):
         ybad[i] = np.array(ybad[i]) + offset
-        offset += len(ys[i])
-        
+        offset += len(ys[i])     
     return np.concatenate(ybad).astype(np.int32)
