@@ -5,15 +5,23 @@ This is the repo for the eeg study in the Janet Werker lab
 
 Notes: no bad trial/channel removal
 
-svms (kernal=linear C=1e-6, after some amount of tuning)
-- no averaging : 0.4408
-- average trials : 0.4923
-- average trials+participants : 0.685
+9m: n=6
+svms (kernal=linear C=1e-9, after some amount of tuning)
+- train raw, test raw: 0.28
+- train raw, test avg: 0.458
+- train avg, test avg: 0.458
+- train avg, test raw: 0.4805
 
-random forest :
-- no averaging : 0.49
-- average trials : 0.489
-- average trials+participants : 0.585
+
+12m: 
+svms (kernal=linear C=1e-9, after some amount of tuning)
+- train raw, test raw:
+- train raw, test avg: 
+- train avg, test avg: 
+- train avg, test raw: 
+
+all kids together: 
+
 
 # directory structure
 
