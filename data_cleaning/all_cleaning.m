@@ -14,7 +14,7 @@ SAVE_INTERMEDIATE = false;
 
 for curr_subject = SUBJECTS
     % load each subjects data for cleaning
-    curr_EEG = pop_loadset('filename', char(append(curr_subject, '.set')), 'filepath', FILEPATH);
+    curr_EEG = pop_loadset('filename', [char(curr_subject) '.set'], 'filepath', FILEPATH);
     
     % TODO
     curr_EEG = clean_bad_channels(curr_EEG);
@@ -53,11 +53,11 @@ for curr_subject = SUBJECTS
     ml_eeg = pop_reref(ml_eeg, []);
     pic_eeg = pop_reref(pic_eeg, []);
      
-    pop_saveset(ml_eeg, 'filename', char(append(curr_subject, '_cleaned_ml.set')), 'filepath', FILEPATH_OUT);
-    pop_saveset(pic_eeg, 'filename', char(append(curr_subject, '_cleaned_pic.set')), 'filepath', FILEPATH_OUT);
+    pop_saveset(ml_eeg, 'filename', [char(curr_subject) '_cleaned_ml.set'], 'filepath', FILEPATH_OUT);
+    pop_saveset(pic_eeg, 'filename', [char(curr_subject) '_cleaned_pic.set'], 'filepath', FILEPATH_OUT);
     
-    pop_export(ml_eeg, char(append(FILEPATH_OUT, curr_subject, '_cleaned_ml.csv')), 'transpose', 'on', 'separator', ',');
-    pop_export(pic_eeg, char(append(FILEPATH_OUT, curr_subject, '_cleaned_pic.csv')), 'transpose', 'on', 'separator', ',');
+    pop_export(ml_eeg, [char(FILEPATH_OUT) char(curr_subject) '_cleaned_ml.csv'], 'transpose', 'on', 'separator', ',');
+    pop_export(pic_eeg, [char(FILEPATH_OUT) char(curr_subject) '_cleaned_pic.csv'], 'transpose', 'on', 'separator', ',');
 end
 
 
