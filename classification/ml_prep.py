@@ -8,6 +8,7 @@ from scipy.signal import resample
 def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
     df, ys = load_ml_data(filepath, participants)
     return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
+# 1000 downsample is average (1000 is our sampling rate so this is no downsample) 
 
 def load_ml_data(filepath, participants):
     # read all participant csvs, concat them into one dataframe

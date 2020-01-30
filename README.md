@@ -7,23 +7,23 @@ Notes: no bad trial/channel removal
 
 9m: n=6
 svms (kernal=linear C=1e-9, after some amount of tuning)
-- train avg, test avg: 0.458
+- train avg, test avg: 0.458 training error
 - train avg, test raw: 0.4805
-- train raw, test raw: 0.28
+- train raw, test raw: 0.28 training error
 - train raw, test avg: 0.458
 
 12m: n=8
 svms (kernal=linear C=1e-9, after some amount of tuning)
-- train avg, test avg:0.565
+- train avg, test avg:0.565 training error
 - train avg, test raw:0.539
-- train raw, test raw:0.2742
+- train raw, test raw:0.2742 training error
 - train raw, test avg:0.565
 
 all kids together: 
 svms (kernal=linear C=1e-9, after some amount of tuning)
-- train avg, test avg:0.5555
+- train avg, test avg:0.5555 training error
 - train avg, test raw:0.5345
-- train raw, test raw:0.2968
+- train raw, test raw:0.2968 training error
 - train raw, test avg:0.55555
 
 
