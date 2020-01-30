@@ -12,7 +12,7 @@ svms (kernal=linear C=1e-9, after some amount of tuning)
 - train raw, test raw: 0.28
 - train raw, test avg: 0.458
 
-12m: 
+12m: n=8
 svms (kernal=linear C=1e-9, after some amount of tuning)
 - train avg, test avg:0.565
 - train avg, test raw:0.539
