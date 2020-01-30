@@ -12,4 +12,8 @@ pip install --no-index --upgrade pip
 pip install sklearn
 pip install sktime
 pip install --no-index -r general_requirements.txt
-python /$HOME/projects/def-jwerker/kjslakov/jwlab_eeg/classification/code/jwlab/run/train_eval_svm_noavg.py
+mkdir $SLURM_TMPDIR/data
+echo "copying dataset"
+cp /$HOME/projects/def-jwerker/kjslakov/data/ml_df_readys.pkl $SLURM_TMPDIR/data/dataset.pkl
+echo "dataset copied"
+python /$HOME/projects/def-jwerker/kjslakov/jwlab_eeg/classification/code/jwlab/run/train_eval_svm_noavg.py $SLURM_TMPDIR/data/dataset.pkl
