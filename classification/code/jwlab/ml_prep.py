@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
-from first_participants_map import map_first_participants
-from constants import word_list
-from bad_trials import get_bad_trials, transform_ybad_indices
+from jwlab.first_participants_map import map_first_participants
+from jwlab.constants import word_list, bad_trials_filepath
+from jwlab.bad_trials import get_bad_trials, transform_ybad_indices
 from scipy.signal import resample
 
-def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
+def create_ml_df(filepath, participants, downsample_num=1000):
     df, ys = load_ml_data(filepath, participants)
-    return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
+    return prep_ml_internal(df, ys, participants, downsample_num=downsample_num)
 
 def load_ml_data(filepath, participants):
     # read all participant csvs, concat them into one dataframe
@@ -17,7 +17,7 @@ def load_ml_data(filepath, participants):
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)) for s in participants]
     return df, ys
 
-def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="average_trials"):
+def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -33,7 +33,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     X = np.reshape(X, (k, j * downsample_num))
         
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
-    ybad = get_bad_trials(participants, ys)
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
     ys = map_first_participants(ys, participants)
     y = np.concatenate(ys)
     ybad = transform_ybad_indices(ybad, ys)
@@ -44,7 +44,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
     df = pd.DataFrame(data=X)
     df['label'] = y
-    df['participant'] = np.concatenate([[ys.index(y)]*len(y) for y in ys])
+    df['participant'] = np.concatenate([[i]*len(y) for i,y in enumerate(ys)])
     
     # remove bad samples
     df = df[df.label != -1]
@@ -52,17 +52,47 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     # make label zero indexed 
     df.label -= 1
 
-    if averaging == "no_averaging":
-        X,y,p,w = no_average(df)
-    elif averaging == "average_trials":
-        X,y,p,w = average_trials(df)
-    else:
-        X,y,p,w = average_trials_and_participants(df)
+    return df
 
+def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):    
+    df = df[df.Time >= 0]
+    df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
+
+    df['id'] = np.concatenate([[i] * 1000 for i in range(len(df.index) // 1000)])
+    df = df.groupby(["id"], as_index=False).agg(pd.Series)
+        
+    # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+    ys = map_first_participants(ys, participants)
+    y = np.concatenate(ys)
+    ybad = transform_ybad_indices(ybad, ys)
+    y[ybad] = -1
+
+    assert y.shape[0] == X.shape[0]
+    
+    # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
+    df = pd.DataFrame(data=X)
+    df['label'] = y
+    df['participant'] = np.concatenate([[i]*len(y) for i,y in enumerate(ys)])
+    
+    # remove bad samples
+    df = df[df.label != -1]
+
+    # make label zero indexed 
+    df.label -= 1
+
+    return df
+
+def save_ml_df(df, filepath):
+    df.to_pickle(filepath)
+
+def load_ml_df(filepath):
+    return pd.read_pickle(filepath)
+
+def y_to_binary(y):
     y[y < 8] = 0
     y[y >= 8] = 1
-    
-    return X, y, p, w, df
+    return y
 
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten(), df.participant.values, df.label.values

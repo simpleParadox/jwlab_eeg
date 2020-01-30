@@ -1,4 +1,4 @@
-from constants import word_list
+from jwlab.constants import word_list
 
 words = {}
     
@@ -385,5 +385,13 @@ def map_first_participants(ys, participants):
         if participants[i] in words:
             ys[i] = [word_list.index(s) + 1 if s in word_list else -1 for s in words[participants[i]]]
         else:
-            ys[i] = ys[i].tolist()
+            ys[i] = squish_other_participants(ys[i].tolist())
     return ys
+
+def squish_other_participants(y):
+    for idx, c_y in enumerate(y):
+        if c_y > 8 and c_y <= 24:
+            y[idx] = c_y - 8
+        elif c_y > 24:
+            y[idx] = c_y - 16
+    return y
