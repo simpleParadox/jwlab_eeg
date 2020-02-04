@@ -7,7 +7,11 @@ from scipy.signal import resample
 
 def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
     df, ys = load_ml_data(filepath, participants)
+<<<<<<< Updated upstream:classification/ml_prep.py
     return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
+=======
+    return create_ml_df_internal(df, ys, participants, downsample_num=downsample_num)
+>>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
 
 def load_ml_data(filepath, participants):
     # read all participant csvs, concat them into one dataframe
@@ -33,7 +37,18 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     X = np.reshape(X, (k, j * downsample_num))
         
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
+<<<<<<< Updated upstream:classification/ml_prep.py
     ybad = get_bad_trials(participants, ys)
+=======
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+    ys = map_first_participants(ys, participants)
+    for each_ps in range(len(ys)):
+        for bad_trial in range(len(ybad[each_ps])):
+            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+    y = np.concatenate(ys)
+
+    assert y.shape[0] == X.shape[0]
+>>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
     
     ys = map_first_participants(ys, participants)
     y = np.concatenate(ys)

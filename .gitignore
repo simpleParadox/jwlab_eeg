@@ -126,3 +126,8 @@ dmypy.json
 *.set
 *.fdt
 *.mff
+<<<<<<< Updated upstream
+=======
+*.csv
+classification/.DS_Store
+>>>>>>> Stashed changes
