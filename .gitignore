@@ -129,3 +129,4 @@ dmypy.json
 *.csv
 data_cleaning/.DS_Store
 
+.DS_Store
