@@ -2,14 +2,17 @@ import numpy as np
 import pandas as pd
 from math import isnan
 from jwlab.constants import bad_trials_filepath
+from jwlab.constants import db_filepath
+from jwlab.constants import messy_trials_filepath
 
 
 
 def get_bad_trials(participants, ys, bad_trials_filepath):
     df = pd.read_csv(bad_trials_filepath)
-    df = df.drop(columns=["Reason"], axis=1)
     df.Ps = df.Ps.interpolate(method="pad")
-
+    df = df[df['Reason'] != "left"]
+    df = df.drop(columns=["Reason"], axis=1)
+    
     ybad = []
     for i in range(len(participants)):
         p_df = df[df.Ps == int(participants[i])]
@@ -19,16 +22,26 @@ def get_bad_trials(participants, ys, bad_trials_filepath):
             ybad.append(get_ybad_from_cel_obs(participants, i, ys, df, p_df))
         else:
             ybad.append(p_df.tIndex.values.tolist())
+        # append bad trials from the summary table
+        messy_trials_df = pd.read_csv(messy_trials_filepath)
+        messy_trials_df = messy_trials_df[messy_trials_df['PS'] == int(participants[i])]
+        messy_trials_df = messy_trials_df[messy_trials_df['MessyData_Jenn'].notnull()]
+        messy_string = messy_trials_df.MessyData_Jenn.values
+        messy_list = []
+        if len(messy_string) == 1:
+            messy_list = messy_string[0].split(",")
+        messy_list = [s for s in messy_list if s.isdigit()]
+        ybad[len(ybad)-1] = ybad[len(ybad)-1] + messy_list
+    ybad = [[int(y) for y in x] for x in ybad]
     return ybad
 
 def get_ybad_from_cel_obs(participants, i, ys, df, p_df):
-    cumsums = []
-    #print(ys)
-    for j in range(1, int(p_df.Cell.max() + 1)):
-        # from https://stackoverflow.com/questions/38949308/find-the-nth-time-a-specific-value-is-exceeded-in-numpy-array
-        cond = np.array(ys[i]) == j
-        cumsums.append(np.cumsum(cond))
-    return [np.searchsorted(cumsums[int(df.iloc[k].Cell) - 1], int(df.iloc[k].Observation)) for k in p_df.index]
+    ret = []
+    db = pd.read_csv("%s%s_trial_cell_obs.csv" % (db_filepath, participants[i]))
+    for row in df.iterrows():
+        ret=np.append(ret,db[(db['cell'] == row['Cell']) & (db['obs'] == row['Observation']) 
+                             & (int(participants[i]) == row['Ps'])].trial_index.values)
+    return ret.tolist()
 
 def transform_ybad_indices(ybad, ys):
     offset = 0
