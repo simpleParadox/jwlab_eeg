@@ -111,7 +111,6 @@ In the classification folder, the code is structured into .py helper function fi
      - [get\_trial\_cell\_obs.m](data_cleaning/get_trial_cell_obs.m)
      - __jobs__
        - [cleaning.sl](data_cleaning/jobs/cleaning.sl)
-   - [list.md](list.md)
    - __old\_scripts__
      - [BadChannelProcessing.m](old_scripts/BadChannelProcessing.m)
      - [Fil\_Epoch.m](old_scripts/Fil_Epoch.m)
