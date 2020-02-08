@@ -3,29 +3,45 @@ This is the repo for the eeg study in the Janet Werker lab
 
 # current model scores
 
+# SVMs on complete data sets
 Notes: no bad trial/channel removal
 
 9m: n=6
 svms (kernal=linear C=1e-9, after some amount of tuning)
-- train avg, test avg: 0.458 training error
-- train avg, test raw: 0.4805
-- train raw, test raw: 0.28 training error
-- train raw, test avg: 0.458
+- train avg, test avg: .4375 (training)
+- train avg, test raw: .5002
+- train raw, test raw: .2891 (training)
+- train raw, test avg: .4375
 
 12m: n=8
 svms (kernal=linear C=1e-9, after some amount of tuning)
-- train avg, test avg:0.565 training error
-- train avg, test raw:0.539
-- train raw, test raw:0.2742 training error
-- train raw, test avg:0.565
+- train avg, test avg: .31 (training)
+- train avg, test raw: .45
+- train raw, test raw: .29 (training)
+- train raw, test avg: .31
 
 all kids together: 
 svms (kernal=linear C=1e-9, after some amount of tuning)
-- train avg, test avg:0.5555 training error
-- train avg, test raw:0.5345
-- train raw, test raw:0.2968 training error
-- train raw, test avg:0.55555
+- train avg, test avg: .4375 (training)
+- train avg, test raw: .4702
+- train raw, test raw: .2943 (training)
+- train raw, test avg: .5625 
 
+# SVMs using subsamples
+90-10 split, i=10, 
+
+9m:
+- avg: 
+- avg_across labels:
+
+
+12m:
+- avg: 
+- avg_across labels:
+
+all: 
+- avg: 
+- avg_across labels:
 
 # directory structure
 
