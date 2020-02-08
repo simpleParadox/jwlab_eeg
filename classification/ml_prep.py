@@ -8,9 +8,13 @@ from scipy.signal import resample
 def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
     df, ys = load_ml_data(filepath, participants)
 <<<<<<< Updated upstream:classification/ml_prep.py
+<<<<<<< Updated upstream:classification/ml_prep.py
     return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
 =======
     return create_ml_df_internal(df, ys, participants, downsample_num=downsample_num)
+>>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
+=======
+    return create_ml_df_internal_sktime(df, ys, participants, downsample_num=downsample_num)
 >>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
 
 def load_ml_data(filepath, participants):
@@ -21,6 +25,13 @@ def load_ml_data(filepath, participants):
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)) for s in participants]
     return df, ys
 
+<<<<<<< Updated upstream:classification/ml_prep.py
+=======
+def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
+    df, ys = load_ml_data(filepath, participants)
+    return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
+
+>>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
 def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="average_trials"):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
@@ -50,13 +61,8 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     assert y.shape[0] == X.shape[0]
 >>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
     
-    ys = map_first_participants(ys, participants)
-    y = np.concatenate(ys)
-    ybad = transform_ybad_indices(ybad, ys)
-    y[ybad] = -1
-
-    assert y.shape[0] == X.shape[0]
-    
+<<<<<<< Updated upstream:classification/ml_prep.py
+=======
     # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
     df = pd.DataFrame(data=X)
     df['label'] = y
@@ -80,6 +86,95 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     
     return X, y, p, w, df
 
+def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):
+    # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
+    df = df[df.Time >= 0]
+    # we don't want the time column, or the reference electrode, so drop those columns
+    df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
+
+    # now we need to flatten each
+    # "block" of data (ie. 1000 rows of 64 columns of eeg data) into one training example, one row
+    # of 64*1000 columns of eeg data
+    X = df.values
+    X = np.reshape(X, (1000, 60, -1))
+    X = resample(X, downsample_num, axis=0)
+    (i,j,k) = X.shape
+    X = np.reshape(X, (k, j * downsample_num))
+        
+    # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+>>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
+    ys = map_first_participants(ys, participants)
+    for each_ps in range(len(ys)):
+        for bad_trial in range(len(ybad[each_ps])):
+            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+    y = np.concatenate(ys)
+
+    assert y.shape[0] == X.shape[0]
+    # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
+    df = pd.DataFrame(data=X)
+    df['label'] = y
+    df['participant'] = np.concatenate([[ys.index(y)]*len(y) for y in ys])
+    
+    # remove bad samples
+    df = df[df.label != -1]
+
+    # make label zero indexed 
+    df.label -= 1
+
+<<<<<<< Updated upstream:classification/ml_prep.py
+    if averaging == "no_averaging":
+        X,y,p,w = no_average(df)
+    elif averaging == "average_trials":
+        X,y,p,w = average_trials(df)
+    else:
+        X,y,p,w = average_trials_and_participants(df)
+=======
+    return df
+
+    def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):    
+        df = df[df.Time >= 0]
+        df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
+
+        df['id'] = np.concatenate([[i] * 1000 for i in range(len(df.index) // 1000)])
+        df = df.groupby(["id"], as_index=False).agg(pd.Series)
+
+        # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
+        ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+        ys = map_first_participants(ys, participants)
+        for each_ps in range(len(ys)):
+            for bad_trial in range(len(ybad[each_ps])):
+                ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+        y = np.concatenate(ys)
+
+        # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
+        df = pd.DataFrame(data=X)
+        df['label'] = y
+        df['participant'] = np.concatenate([[ys.index(y)]*len(y) for y in ys])
+
+        # remove bad samples
+        df = df[df.label != -1]
+
+        # make label zero indexed 
+        df.label -= 1
+
+        # save ml_df here
+        # to get binary y, we can load it ['label'] and then call y_to_binary
+        # averaging can just pass in the df
+        # how to get X? df's data is X?
+
+
+        return df
+
+def save_ml_df(df, filepath):
+    df.to_pickle(filepath)
+>>>>>>> Stashed changes:classification/code/jwlab/ml_prep.py
+
+    y[y < 8] = 0
+    y[y >= 8] = 1
+    
+    return X, y, p, w, df
+
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten(), df.participant.values, df.label.values
 
@@ -88,7 +183,7 @@ def average_trials(df):
     num_words = len(word_list)
 
     new_data = np.zeros((num_participants * num_words, len(df.columns) - 2))
-    df_data = df.drop(columns=['label', 'participant'], axis=1)
+    df_data = df.drop(columns=['label'], axis=1)
     new_y = np.zeros(num_participants * num_words)
     participants = np.zeros(num_participants * num_words)
 
