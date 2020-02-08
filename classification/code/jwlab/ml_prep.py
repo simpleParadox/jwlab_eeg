@@ -39,9 +39,10 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants, ys, bad_trials_filepath)
     ys = map_first_participants(ys, participants)
+    for each_ps in range(len(ys)):
+        for bad_trial in range(len(ybad[each_ps])):
+            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
     y = np.concatenate(ys)
-    ybad = transform_ybad_indices(ybad, ys)
-    y[ybad] = -1
 
     assert y.shape[0] == X.shape[0]
     
