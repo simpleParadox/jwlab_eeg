@@ -30,7 +30,7 @@ In the classification folder, the code is structured into .py helper function fi
 - baseline removal
 - avg referencing
 
-# Project Structure: 
+# Project Structure: (library files used by MatLab under data cleanning are not listed here for simplicity)
 
 - __jwlab\_eeg__
    - [README.md](README.md)
@@ -109,6 +109,9 @@ In the classification folder, the code is structured into .py helper function fi
      - [clean\_bad\_channels.m](data_cleaning/clean_bad_channels.m)
      - [get\_labels.m](data_cleaning/get_labels.m)
      - [get\_trial\_cell\_obs.m](data_cleaning/get_trial_cell_obs.m)
+        - __EEGLab__
+        - __functions__
+        - __plugins__
      - __jobs__
        - [cleaning.sl](data_cleaning/jobs/cleaning.sl)
    - __old\_scripts__

@@ -127,3 +127,4 @@ dmypy.json
 *.fdt
 *.mff
 *.csv
+data_cleaning/.DS_Store
