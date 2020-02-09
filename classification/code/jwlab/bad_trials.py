@@ -38,7 +38,7 @@ def get_bad_trials(participants, ys, bad_trials_filepath):
 def get_ybad_from_cel_obs(participants, i, ys, df, p_df):
     ret = []
     db = pd.read_csv("%s%s_trial_cell_obs.csv" % (db_filepath, participants[i]))
-    for row in df.iterrows():
+    for index, row in df.iterrows():
         ret=np.append(ret,db[(db['cell'] == row['Cell']) & (db['obs'] == row['Observation']) 
                              & (int(participants[i]) == row['Ps'])].trial_index.values)
     return ret.tolist()
