@@ -25,7 +25,7 @@ y = y_to_binary(y)
 model = LinearSVC()
 print("model created", flush=True)
 
-errs = eval_across_categories(model, X, y, p, 10, random_state=50)
+errs = eval_across_categories(model, X, y, p, 200, random_state=50)
 print("\n---\n")
 for j in range(errs.shape[0]):
-  print(np.mean(errs[j, :]))
+  print("(Participant %d) Accuracy: %0.2f (+/- %0.2f)" % (p[j], errs[j, :].mean(), errs[j, :].std() * 2))

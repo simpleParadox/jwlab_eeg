@@ -11,6 +11,8 @@ from jwlab.eval import eval_normal
 from sktime.pipeline import Pipeline
 from sktime.transformers.compose import ColumnConcatenator
 from sktime.classifiers.compose import TimeSeriesForestClassifier
+from sktime.classifiers.dictionary_based.boss import BOSSEnsemble
+from sktime.classifiers.compose import ColumnEnsembleClassifier
 from sklearn.model_selection import train_test_split
 import sys
 
@@ -24,9 +26,10 @@ df = df.drop(columns=["label"], axis=1)
 
 X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2)
 
-steps = [('concatenate', ColumnConcatenator()),
-    ('classify', TimeSeriesForestClassifier(n_estimators=100))]
-model = Pipeline(steps)
+model = ColumnEnsembleClassifier(estimators=[
+    ("TSF0", TimeSeriesForestClassifier(n_estimators=100), [0]),
+    ("BOSSEnsemble3", BOSSEnsemble(ensemble_size=3), [3]),
+])
 
 model.fit(X_train, y_train)
 print(np.mean(model.predict(X_test) != y_test))

@@ -1,5 +1,5 @@
 Using base prefix '/cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/python/3.6.3'
-New python executable in /localscratch/kjslakov.27060076.0/env/bin/python
+New python executable in /localscratch/kjslakov.27250065.0/env/bin/python
 Installing setuptools, pip, wheel...done.
 Ignoring pip: markers 'python_version < "3"' don't match your environment
 Collecting pip
@@ -11,26 +11,8 @@ Successfully installed pip-18.1
 Ignoring pip: markers 'python_version < "3"' don't match your environment
 Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
 Collecting sklearn
-Collecting scikit-learn (from sklearn)
-Collecting joblib>=0.11 (from scikit-learn->sklearn)
-Requirement already satisfied: numpy>=1.11.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from scikit-learn->sklearn) (1.16.0)
-Requirement already satisfied: scipy>=0.17.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from scikit-learn->sklearn) (1.2.0)
-Installing collected packages: joblib, scikit-learn, sklearn
-Successfully installed joblib-0.14.1 scikit-learn-0.21.2 sklearn-0.0
-Ignoring pip: markers 'python_version < "3"' don't match your environment
-Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
-Collecting sktime
-  Using cached https://files.pythonhosted.org/packages/1d/0d/479992cb0477403238c6248be39493cee9fc9b1c0c41e16e2db0afe279ca/sktime-0.1.0-py3-none-any.whl
-Requirement already satisfied: scipy in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from sktime) (1.2.0)
-Requirement already satisfied: pandas in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from sktime) (0.23.4)
-Requirement already satisfied: numpy in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from sktime) (1.16.0)
-Requirement already satisfied: scikit-learn in /local/kjslakov.27060076.0/env/lib/python3.6/site-packages (from sktime) (0.21.2)
-Requirement already satisfied: python-dateutil>=2.5.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from pandas->sktime) (2.7.5)
-Requirement already satisfied: pytz>=2011k in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from pandas->sktime) (2018.9)
-Requirement already satisfied: joblib>=0.11 in /local/kjslakov.27060076.0/env/lib/python3.6/site-packages (from scikit-learn->sktime) (0.14.1)
-Requirement already satisfied: six>=1.5 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from python-dateutil>=2.5.0->pandas->sktime) (1.12.0)
-Installing collected packages: sktime
-Successfully installed sktime-0.1.0
+  Could not find a version that satisfies the requirement sklearn (from versions: )
+No matching distribution found for sklearn
 Ignoring pip: markers 'python_version < "3"' don't match your environment
 Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
 Requirement already satisfied: arff==0.9 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 3)) (0.9)
@@ -62,7 +44,7 @@ Requirement already satisfied: ipython-genutils==0.2.0 in /cvmfs/soft.computecan
 Requirement already satisfied: ipywidgets==7.4.2 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 29)) (7.4.2)
 Requirement already satisfied: jedi==0.12.1 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 30)) (0.12.1)
 Requirement already satisfied: Jinja2==2.10 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 31)) (2.10)
-Requirement already satisfied: joblib==0.14.1 in /local/kjslakov.27060076.0/env/lib/python3.6/site-packages (from -r general_requirements.txt (line 32)) (0.14.1)
+Collecting joblib==0.14.1 (from -r general_requirements.txt (line 32))
 Requirement already satisfied: jsonschema==2.6.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 33)) (2.6.0)
 Requirement already satisfied: jupyter-client==5.2.4 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 34)) (5.2.4)
 Requirement already satisfied: jupyter-core==4.4.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 35)) (4.4.0)
@@ -102,7 +84,7 @@ Requirement already satisfied: python-dateutil==2.7.5 in /cvmfs/soft.computecana
 Requirement already satisfied: pytz==2018.9 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 69)) (2018.9)
 Requirement already satisfied: pyzmq==17.1.2 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 70)) (17.1.2)
 Requirement already satisfied: requests==2.21.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 71)) (2.21.0)
-Requirement already satisfied: scikit-learn==0.21.2 in /local/kjslakov.27060076.0/env/lib/python3.6/site-packages (from -r general_requirements.txt (line 72)) (0.21.2)
+Collecting scikit-learn==0.21.2 (from -r general_requirements.txt (line 72))
 Requirement already satisfied: scipy==1.2.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 73)) (1.2.0)
 Requirement already satisfied: Send2Trash==1.5.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 74)) (1.5.0)
 Requirement already satisfied: simplegeneric==0.8.1 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 75)) (0.8.1)
@@ -118,7 +100,9 @@ Requirement already satisfied: wcwidth==0.1.7 in /cvmfs/soft.computecanada.ca/ea
 Requirement already satisfied: webencodings==0.5.1 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 85)) (0.5.1)
 Requirement already satisfied: widgetsnbextension==3.4.2 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 86)) (3.4.2)
 Requirement already satisfied: zipp==0.3.3 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 87)) (0.3.3)
-Requirement already satisfied: setuptools>=18.5 in /local/kjslakov.27060076.0/env/lib/python3.6/site-packages (from ipython==6.5.0->-r general_requirements.txt (line 27)) (28.8.0)
+Requirement already satisfied: setuptools>=18.5 in /local/kjslakov.27250065.0/env/lib/python3.6/site-packages (from ipython==6.5.0->-r general_requirements.txt (line 27)) (28.8.0)
+Installing collected packages: joblib, scikit-learn
+Successfully installed joblib-0.14.1 scikit-learn-0.21.2
 copying dataset
 dataset copied
 start imports
@@ -126,4 +110,24 @@ finish imports, start loading df
 loaded_df
 prepped train_data
 model created
-slurmstepd: error: *** JOB 27060076 ON gra284 CANCELLED AT 2020-01-30T17:05:19 DUE TO TIME LIMIT ***
+/localscratch/kjslakov.27250065.0/env/lib/python3.6/site-packages/sklearn/svm/base.py:929: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  "the number of iterations.", ConvergenceWarning)
+[                    ] 0%[                    ] 1%[                    ] 1%[                    ] 2%[                    ] 2%[                    ] 3%[                    ] 3%[                    ] 4%[                    ] 4%[=                   ] 5%[=                   ] 5%[=                   ] 6%[=                   ] 6%[=                   ] 7%[=                   ] 7%[=                   ] 8%[=                   ] 8%[=                   ] 9%[=                   ] 9%[==                  ] 10%[==                  ] 10%[==                  ] 11%[==                  ] 11%[==                  ] 12%[==                  ] 12%[==                  ] 13%[==                  ] 13%[==                  ] 14%[==                  ] 14%[===                 ] 15%[===                 ] 15%[===                 ] 16%[===                 ] 16%[===                 ] 17%[===                 ] 17%[===                 ] 18%[===                 ] 18%[===                 ] 19%[===                 ] 19%[====                ] 20%[====                ] 20%[====                ] 21%[====                ] 21%[====                ] 22%[====                ] 22%[====                ] 23%[====                ] 23%[====                ] 24%[====                ] 24%[=====               ] 25%[=====               ] 25%[=====               ] 26%[=====               ] 26%[=====               ] 27%[=====               ] 27%[=====               ] 28%[=====               ] 28%[=====               ] 28%[=====               ] 29%[======              ] 30%[======              ] 30%[======              ] 31%[======              ] 31%[======              ] 32%[======              ] 32%[======              ] 33%[======              ] 33%[======              ] 34%[======              ] 34%[=======             ] 35%[=======             ] 35%[=======             ] 36%[=======             ] 36%[=======             ] 37%[=======             ] 37%[=======             ] 38%[=======             ] 38%[=======             ] 39%[=======             ] 39%[========            ] 40%[========            ] 40%[========            ] 41%[========            ] 41%[========            ] 42%[========            ] 42%[========            ] 43%[========            ] 43%[========            ] 44%[========            ] 44%[=========           ] 45%[=========           ] 45%[=========           ] 46%[=========           ] 46%[=========           ] 47%[=========           ] 47%[=========           ] 48%[=========           ] 48%[=========           ] 49%[=========           ] 49%[==========          ] 50%[==========          ] 50%[==========          ] 51%[==========          ] 51%[==========          ] 52%[==========          ] 52%[==========          ] 53%[==========          ] 53%[==========          ] 54%[==========          ] 54%[===========         ] 55%[===========         ] 55%[===========         ] 56%[===========         ] 56%[===========         ] 56%[===========         ] 57%[===========         ] 57%[===========         ] 58%[===========         ] 59%[===========         ] 59%[============        ] 60%[============        ] 60%[============        ] 61%[============        ] 61%[============        ] 62%[============        ] 62%[============        ] 63%[============        ] 63%[============        ] 64%[============        ] 64%[=============       ] 65%[=============       ] 65%[=============       ] 66%[=============       ] 66%[=============       ] 67%[=============       ] 67%[=============       ] 68%[=============       ] 68%[=============       ] 69%[=============       ] 69%[==============      ] 70%[==============      ] 70%[==============      ] 71%[==============      ] 71%[==============      ] 72%[==============      ] 72%[==============      ] 73%[==============      ] 73%[==============      ] 74%[==============      ] 74%[===============     ] 75%[===============     ] 75%[===============     ] 76%[===============     ] 76%[===============     ] 77%[===============     ] 77%[===============     ] 78%[===============     ] 78%[===============     ] 79%[===============     ] 79%[================    ] 80%[================    ] 80%[================    ] 81%[================    ] 81%[================    ] 82%[================    ] 82%[================    ] 83%[================    ] 83%[================    ] 84%[================    ] 84%[=================   ] 85%[=================   ] 85%[=================   ] 86%[=================   ] 86%[=================   ] 87%[=================   ] 87%[=================   ] 88%[=================   ] 88%[=================   ] 89%[=================   ] 89%[==================  ] 90%[==================  ] 90%[==================  ] 91%[==================  ] 91%[==================  ] 92%[==================  ] 92%[==================  ] 93%[==================  ] 93%[==================  ] 94%[==================  ] 94%[=================== ] 95%[=================== ] 95%[=================== ] 96%[=================== ] 96%[=================== ] 97%[=================== ] 97%[=================== ] 98%[=================== ] 98%[=================== ] 99%[=================== ] 99%[====================] 100%
+---
+
+(Participant 8) Accuracy: 0.43 (+/- 0.34)
+(Participant 2) Accuracy: 0.54 (+/- 0.45)
+(Participant 11) Accuracy: 0.46 (+/- 0.32)
+(Participant 9) Accuracy: 0.44 (+/- 0.41)
+(Participant 6) Accuracy: 0.40 (+/- 0.32)
+(Participant 5) Accuracy: 0.53 (+/- 0.33)
+(Participant 14) Accuracy: 0.49 (+/- 0.29)
+(Participant 2) Accuracy: 0.51 (+/- 0.32)
+(Participant 14) Accuracy: 0.51 (+/- 0.33)
+(Participant 4) Accuracy: 0.48 (+/- 0.31)
+(Participant 10) Accuracy: 0.51 (+/- 0.35)
+(Participant 7) Accuracy: 0.48 (+/- 0.30)
+(Participant 4) Accuracy: 0.56 (+/- 0.44)
+(Participant 13) Accuracy: 0.55 (+/- 0.30)
+(Participant 11) Accuracy: 0.50 (+/- 0.31)
+(Participant 0) Accuracy: 0.54 (+/- 0.45)
