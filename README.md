@@ -4,7 +4,7 @@ This is the repo for the eeg study in the Janet Werker lab
 # current model scores
 
 # SVMs on complete data sets
-Notes: no bad trial/channel removal
+Notes: 
 
 9m: n=6
 svms (kernal=linear C=1e-9, after some amount of tuning)
