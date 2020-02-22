@@ -131,13 +131,6 @@ def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_
 
     # make label zero indexed 
     df.label -= 1
-
-    # save ml_df here
-    # to get binary y, we can load it ['label'] and then call y_to_binary
-    # averaging can just pass in the df
-    # how to get X? df's data is X?
-
-
     return df
 
 def save_ml_df(df, filepath):

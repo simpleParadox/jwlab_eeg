@@ -5,8 +5,6 @@ from jwlab.constants import bad_trials_filepath
 from jwlab.constants import db_filepath
 from jwlab.constants import messy_trials_filepath
 
-
-
 def get_bad_trials(participants, ys, bad_trials_filepath):
     df = pd.read_csv(bad_trials_filepath)
     df.Ps = df.Ps.interpolate(method="pad")
