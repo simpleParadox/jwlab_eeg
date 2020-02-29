@@ -10,10 +10,13 @@ def get_bad_trials(participants, ys, bad_trials_filepath):
     df.Ps = df.Ps.interpolate(method="pad")
     df = df[df['Reason'] != "left"]
     df = df.drop(columns=["Reason"], axis=1)
-    
+      
     ybad = []
+    trial_count = []
     for i in range(len(participants)):
         p_df = df[df.Ps == int(participants[i])]
+        bad_trials_count = p_df.shape[0]
+        print("The number of bad trials of the participant - [%s] that are removed is [%d]." %(participants[i], bad_trials_count))
         if len(p_df) == 0:
             ybad.append([])
         elif isnan(p_df.tIndex.values[0]):
@@ -29,9 +32,14 @@ def get_bad_trials(participants, ys, bad_trials_filepath):
         if len(messy_string) == 1:
             messy_list = messy_string[0].split(",")
         messy_list = [s for s in messy_list if s.isdigit()]
+        bad_channels_count = len(messy_list)
+        print("The number of bad channels that are removed is - [%d]." % len(messy_list))
+        
         ybad[len(ybad)-1] = ybad[len(ybad)-1] + messy_list
+        trial_count += [bad_channels_count + bad_trials_count]
+        
     ybad = [[int(y) for y in x] for x in ybad]
-    return ybad
+    return ybad, trial_count
 
 def get_ybad_from_cel_obs(participants, i, ys, df, p_df):
     ret = []

@@ -23,7 +23,7 @@ Update on 2020 Feb 22: bad trials and channels are moved in the preparation step
   - test with average_trials: 0.5
   - test with average_trials_and_participants: 0.4375
 
-### All 11-month participants:
+### All 13-month participants:
 - train with no_average:
   - test with no_average: 0.2907
   - test with average_trials: 0.4922
