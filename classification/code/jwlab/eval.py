@@ -2,7 +2,6 @@ from sklearn.model_selection import train_test_split
 import sys
 import numpy as np
 
-
 def eval_normal(model, X, y, num_trials, test_size=0.2, random_state=0, progress_bar=False):
     errs = np.zeros(num_trials)
     for i in range(num_trials):

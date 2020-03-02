@@ -15,6 +15,7 @@ def load_ml_data(filepath, participants):
     df = pd.concat(dfs, axis=0, ignore_index=True)
 
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)) for s in participants]
+    print("loaded", flush=True)
     return df, ys
 
 def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
@@ -26,15 +27,20 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
     df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
-
+    print("0", flush=True)
     # now we need to flatten each
     # "block" of data (ie. 1000 rows of 64 columns of eeg data) into one training example, one row
     # of 64*1000 columns of eeg data
     X = df.values
+    print("0a", flush=True)
     X = np.reshape(X, (1000, 60, -1))
+    print("0b", flush=True)
     X = resample(X, downsample_num, axis=0)
+    print("0c", flush=True)
     (i,j,k) = X.shape
     X = np.reshape(X, (k, j * downsample_num))
+
+    print("1", flush=True)
         
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants, ys, bad_trials_filepath)
@@ -44,13 +50,14 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
             ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
     y = np.concatenate(ys)
 
+    print("2", flush=True)
     assert y.shape[0] == X.shape[0]
     
     # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
     df = pd.DataFrame(data=X)
     df['label'] = y
     df['participant'] = np.concatenate([[ys.index(y)]*len(y) for y in ys])
-    
+    print("3", flush=True)
     # remove bad samples
     df = df[df.label != -1]
 
