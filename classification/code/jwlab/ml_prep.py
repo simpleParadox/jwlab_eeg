@@ -38,11 +38,16 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
 
 
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
-    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+    ybad, bad_trial_count = get_bad_trials(participants, ys, bad_trials_filepath)
     ys = map_first_participants(ys, participants)
+    trial_count = []
     for each_ps in range(len(ys)):
         for bad_trial in range(len(ybad[each_ps])):
             ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+        trial_count += [len(ys[each_ps])]
+    
+    for i in range(len(participants)):
+        print("The number of good trials left for participant - [%s] is - [%d]." % (participants[i], trial_count[i] - bad_trial_count[i]))
     y = np.concatenate(ys)
 
     assert y.shape[0] == X.shape[0]
@@ -131,13 +136,6 @@ def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_
 
     # make label zero indexed 
     df.label -= 1
-
-    # save ml_df here
-    # to get binary y, we can load it ['label'] and then call y_to_binary
-    # averaging can just pass in the df
-    # how to get X? df's data is X?
-
-
     return df
 
 def save_ml_df(df, filepath):
@@ -165,14 +163,14 @@ def average_trials(df):
 
     for p in range(num_participants):
         for w in range(num_words):
-            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean()
+            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean() if df_data[np.logical_and(df.participant == p, df.label == w)].size != 0 else 0
             new_data[p * num_words + w, :] = means
             new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
             participants[p * num_words + w] = p
 
-    new_data = new_data[new_y != -1, :]
-    participants = participants[new_y != -1]
-    new_y = new_y[new_y != -1]
+    #new_data = new_data[new_y != -1, :]
+    #participants = participants[new_y != -1]
+    #new_y = new_y[new_y != -1]
     return new_data, new_y, participants, np.copy(new_y)
 
 def average_trials_and_participants(df):
