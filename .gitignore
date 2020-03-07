@@ -126,3 +126,8 @@ dmypy.json
 *.set
 *.fdt
 *.mff
+*.csv
+data_cleaning/.DS_Store
+
+.DS_Store
+classification/ml_svms_all_noaveraging_validate_on_averaged.ipynb
