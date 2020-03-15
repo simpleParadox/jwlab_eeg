@@ -382,9 +382,10 @@ spoon
 
 def map_first_participants(ys, participants):
     for i in range(len(participants)):
-        if participants[i] in words:
+        if participants[i] in words: # if old participants
+            # Retrieve 1-indexed indices from the word list / mark as -1 if no exists in the word list
             ys[i] = [word_list.index(s) + 1 if s in word_list else -1 for s in words[participants[i]]]
-        else:
+        else: # if new participants
             ys[i] = squish_other_participants(ys[i].tolist())
     return ys
 
