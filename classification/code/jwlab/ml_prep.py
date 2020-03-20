@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from jwlab.first_participants_map import map_first_participants
+from jwlab.participants_map import map_participants
 from jwlab.constants import word_list, bad_trials_filepath
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
@@ -57,7 +57,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
 
             # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
             ybad = get_bad_trials(participants)
-            ys_curr = map_first_participants(ys, participants)
+            ys_curr = map_participants(ys, participants)
 
             # set the value of bad trials in ys_curr to -1 (to exclude from learning)
             trial_count = []
@@ -176,7 +176,7 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_
 
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
-    ys = map_first_participants(ys, participants)
+    ys = map_participants(ys, participants)
     for each_ps in range(len(ys)):
         for bad_trial in range(len(ybad[each_ps])):
             ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
@@ -207,7 +207,7 @@ def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_
 
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
-    ys = map_first_participants(ys, participants)
+    ys = map_participants(ys, participants)
     for each_ps in range(len(ys)):
         for bad_trial in range(len(ybad[each_ps])):
             ys[each_ps][ybad[each_ps][bad_trial]-1] = -1

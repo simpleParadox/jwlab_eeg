@@ -3,6 +3,9 @@
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy", "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
 
 
+# ------------ OLD PARTICIPANTS ------------
+old_participants = ["107", "904", "905", "906"]
+
 # ------------ FILE PATH ------------
 
 ## ---- File path on network drive: ----

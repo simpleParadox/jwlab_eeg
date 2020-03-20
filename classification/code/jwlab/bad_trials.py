@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 from math import isnan
-from jwlab.constants import bad_trials_filepath
-from jwlab.constants import db_filepath
+from jwlab.constants import bad_trials_filepath, db_filepath
 
 bad_trial_df = pd.read_csv(bad_trials_filepath)
 bad_trial_df.Ps = bad_trial_df.Ps.interpolate(method="pad")
@@ -41,5 +40,5 @@ def get_left_trial_each_word(participant):
     bad_word_count_df = bad_trial_df[bad_trial_df.Ps == int(participant)]
     bad_word_count = bad_word_count_df.groupby(['Cell']).size()
 
-    rt = orig_word_count.subtract(bad_word_count, fill_value=0)    
+    rt = orig_word_count.subtract(bad_word_count, fill_value=0).astype(int)
     return rt
