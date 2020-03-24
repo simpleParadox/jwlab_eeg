@@ -32,11 +32,11 @@ def get_bad_trials(participants, ys, bad_trials_filepath):
         if len(messy_string) == 1:
             messy_list = messy_string[0].split(",")
         messy_list = [s for s in messy_list if s.isdigit()]
-        bad_channels_count = len(messy_list)
-        print("The number of bad channels that are removed is - [%d]." % len(messy_list))
+        messy_list_count = len(messy_list)
+        print("The number of messy trials that are removed is - [%d]." % len(messy_list))
         
         ybad[len(ybad)-1] = ybad[len(ybad)-1] + messy_list
-        trial_count += [bad_channels_count + bad_trials_count]
+        trial_count += [messy_list_count + bad_trials_count]
         
     ybad = [[int(y) for y in x] for x in ybad]
     return ybad, trial_count

@@ -11,23 +11,23 @@ Update on 2020 Feb 22: bad trials and channels are moved in the preparation step
 ### All participants
 - raw: 0.33
 
-- average_trials: 0.45
-
-- fully_averaged: 0.43
-
-### All 9-month participants:
-- raw: 0.31
-
-- average_trials: 0.41
+- average_trials: 0.56
 
 - fully_averaged: 0.56
 
+### All 9-month participants:
+- raw: 0.3
+
+- average_trials: 0.44
+
+- fully_averaged: 0.5
+
 ### All 13-month participants:
-- raw: 0.27
+- raw: 0.34
 
-- average_trials: 0.48
+- average_trials: 0.49
 
-- fully_averaged: 0.43
+- fully_averaged: 0.5
 
 
 

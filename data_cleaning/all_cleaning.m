@@ -1,4 +1,4 @@
-addpath '~/projects/def-jwerker/kjslakov/eeglab2019_0'
+% addpath '~/projects/def-jwerker/kjslakov/eeglab2019_0'
 eeglab
 
 % set up the script parameters
@@ -6,7 +6,7 @@ FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/';
 % FILEPATH = 'Y:\Members_Current\Jenn\EEG study\Imported data\';
 % FILEPATH_OUT = 'Y:\Members_Current\Jenn\EEG study\Imported data\cleaned\';
 FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
-SUBJECTS = {'105', '106', '107', '904', '905', '906'};
+SUBJECTS = {'927'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
