@@ -1,12 +1,23 @@
-FILEPATH = '/Users/roxyk/Desktop/lab/cleaned';
-FILEPATH_OUT = '/Users/roxyk/Desktop/lab/db/';
+%FILEPATH = '/Users/roxyk/Desktop/lab/cleaned';
+%FILEPATH_OUT = '/Users/roxyk/Desktop/lab/db/';
+%FILEPATH_OUT_LABEL = '/Users/roxyk/Desktop/lab/cleaned/';
 
-SUBJECTS = {'105', '106', '107', '109', '111', '904', '905', '906', '112', '909', '910', '115', '116', '912'};
-addpath(genpath('./EEGLab'));
+FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
+FILEPATH_OUT_LABEL = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
+FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/db/';
+
+%SUBJECTS = {'105', '106', '107', '109', '111', '904', '905', '906', '112', '909', '910', '115', '116', '912'};
+SUBJECTS = {'913', '916'};
+%addpath(genpath('./EEGLab'));
+%addpath(genpath('./functions'));
+%addpath(genpath('./plugins'));
+
 
 for curr_subject = SUBJECTS
-    EEG = pop_loadset('filename', char(append(curr_subject, '_cleaned_ml.set')), 'filepath', FILEPATH);
-    M = zeros(size(EEG.epoch, 2),3); %create a data matrix with size of [# of trails x 3]                          
+    EEG = pop_loadset('filename', [char(curr_subject) '_cleaned_ml.set'], 'filepath', FILEPATH);
+    %EEG = pop_loadset('filename', char(append(curr_subject, '_cleaned_ml.set')), 'filepath', FILEPATH);
+    M = zeros(size(EEG.epoch, 2) ,3); %create a data matrix with size of [# of trails x 3]
+    label = zeros(size(EEG.epoch, 2), 1); % list for labels (cells). 
     for i = 1:size(EEG.epoch, 2)
         cell_num = EEG.epoch(i).eventmffkey_cel;
         obs_num = EEG.epoch(i).eventmffkey_obs;
@@ -25,10 +36,13 @@ for curr_subject = SUBJECTS
         M(i,1) = i;            % 1st column: trail index
         M(i,2) = cell_num;  % 2nd column: cel#
         M(i,3) = obs_num;  % 3rd column: obs#
+        
+        label(i) = cell_num;
     end
     
-    file_name = char(append(curr_subject, '_trial_cell_obs.csv'));
-    out_path = char(append(FILEPATH_OUT, file_name));
+    file_name = [char(curr_subject) '_trial_cell_obs.csv'];
+    out_path = [char(FILEPATH_OUT) char(file_name)];
+    %out_path = char(append(FILEPATH_OUT, file_name));
     fileID = fopen(out_path,'w','n','UTF-8');
     if fileID == -1
         error('Author:Function:OpenFile', 'Cannot open file');
@@ -38,4 +52,13 @@ for curr_subject = SUBJECTS
     temp = M(2:end, :, :).';      %transpose is important
     fprintf(fileID, '%g,%g,%g\n', temp(:));
     fclose(fileID);
+    
+    
+    file_name_label = [char(curr_subject) '_labels.txt'];
+    %file_name_label = char(append(curr_subject, '_labels.txt'));
+    %out_path_label = char(append(FILEPATH_OUT_LABEL, file_name_label));
+    out_path_label = [char(FILEPATH_OUT_LABEL) char(file_name_label)];
+    fileID_label = fopen(out_path_label,'w','n','UTF-8');
+    fprintf(fileID_label,'%g ', label);
+    fclose(fileID_label);
 end
