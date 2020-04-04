@@ -28,7 +28,7 @@ def prep_ml(filepath, participants, downsample_num=1000, averaging="average_tria
 
 def sliding_window(df, time_length):
     df_list = []
-    for i in range(0, 1000-time_length, 100):
+    for i in range(0, 1100-time_length, 100):
         df_list.append(df[(df.Time < time_length + i) & (df.Time >= i)])
     return df_list
 
@@ -71,15 +71,15 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     for time_length in sliding_window_time_length:
         sw_list_for_all_time_length.append(sliding_window(df, time_length))
 
-    X_list = [[0 for i in range(int((1000-sliding_window_time_length[j])/100))]
+    X_list = [[0 for i in range(int((1100-sliding_window_time_length[j])/100))]
               for j in range(len(sliding_window_time_length))]
-    y_list = [[0 for i in range(int((1000-sliding_window_time_length[j])/100))]
+    y_list = [[0 for i in range(int((1100-sliding_window_time_length[j])/100))]
               for j in range(len(sliding_window_time_length))]
-    p_list = [[0 for i in range(int((1000-sliding_window_time_length[j])/100))]
+    p_list = [[0 for i in range(int((1100-sliding_window_time_length[j])/100))]
               for j in range(len(sliding_window_time_length))]
-    w_list = [[0 for i in range(int((1000-sliding_window_time_length[j])/100))]
+    w_list = [[0 for i in range(int((1100-sliding_window_time_length[j])/100))]
               for j in range(len(sliding_window_time_length))]
-    df_list = [[0 for i in range(int((1000-sliding_window_time_length[j])/100))]
+    df_list = [[0 for i in range(int((1100-sliding_window_time_length[j])/100))]
                for j in range(len(sliding_window_time_length))]
 
     for each_timeLength in range(len(sw_list_for_all_time_length)):

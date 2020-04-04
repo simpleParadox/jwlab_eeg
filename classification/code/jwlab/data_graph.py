@@ -41,29 +41,30 @@ def plot_good_trial_word(participant, data):
     df = df.replace(-1, "-")
     df = df.rename(columns=new_names)
     display(df)
+    
+def generate_window_label(prediction_error):
+    window_len_list = []
+    for i in prediction_error:
+        window_len_list.append(1100-100*len(i))
+    window_label = []
+    for i in window_len_list:
+        count = 0
+        while count <= 1000-i:
+            window_label.append(str(count)+"-"+str(count+i))
+            count += 100
+    return window_label
 
 
-def plot_error_rate_window():
-    pass
-
-# doesn't look good
-
-
-def failed_plot_good_trial_word(participants, data):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    yticks = participants
-    for p in range(len(participants)):
-        xs = np.arange(len(data[p]))
-        ys = data[p].tolist()
-        ax.bar(xs, participants[p], zs=ys, zdir='y', alpha=0.8)
-
-    ax.set_xlabel('Words')
-    ax.set_ylabel('Participants')
-    ax.set_zlabel('Good Trials')
-    ax.set_xticks(np.arange(len(data[0])))
-    ax.set_yticks(np.arange(len(yticks)))
-    ax.set_yticklabels(yticks)
-
+def plot_error_rate_window(prediction_error):
+    count = sum([len(item) for item in prediction_error])
+    data = [round(error_rate,2) for item in prediction_error for error_rate in item]
+    x = np.arange(count)
+    fig, ax = plt.subplots(figsize=(30,10))
+    rects = ax.bar(x, data, label='error rate')
+    ax.set_xticks(x)
+    ax.set_xticklabels(generate_window_label(prediction_error))
+    ax.set_xlabel('Sliding windows (ms)')
+    ax.set_ylabel('Error rate (%)')
+    ax.set_title('Error rate for each sliding window')
+    autolabel(rects, ax)
     plt.show()

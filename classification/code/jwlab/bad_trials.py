@@ -50,5 +50,5 @@ def get_left_trial_each_word(participants):
         bad_word_count = bad_word_count_df.groupby(['Cell']).size()
 
         rt += [orig_word_count.subtract(bad_word_count,
-                                        fill_value=0).astype(int)]ß
+                                        fill_value=0).astype(int)]
     return rt
