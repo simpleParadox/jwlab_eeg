@@ -7,7 +7,7 @@ FILEPATH_OUT_LABEL = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
 FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/db/';
 
 %SUBJECTS = {'105', '106', '107', '109', '111', '904', '905', '906', '112', '909', '910', '115', '116', '912'};
-SUBJECTS = {'913', '916'};
+SUBJECTS = {'124', '928', '929', '930', '932'};
 %addpath(genpath('./EEGLab'));
 %addpath(genpath('./functions'));
 %addpath(genpath('./plugins'));

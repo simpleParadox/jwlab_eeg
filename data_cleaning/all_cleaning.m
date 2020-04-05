@@ -6,7 +6,7 @@ FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/';
 % FILEPATH = 'Y:\Members_Current\Jenn\EEG study\Imported data\';
 % FILEPATH_OUT = 'Y:\Members_Current\Jenn\EEG study\Imported data\cleaned\';
 FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
-SUBJECTS = {'927'};
+SUBJECTS = {'124', '928', '929', '930', '932'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };

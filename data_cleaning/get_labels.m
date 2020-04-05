@@ -1,6 +1,6 @@
 % FILEPATH = 'Y:\Members_Current\Jenn\EEG study\Imported data\cleaned\';
 FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
-SUBJECTS = {'105', '106', '107', '904', '905', '906'};
+SUBJECTS = {'927'};
 
 for curr_subject = SUBJECTS
     EEG = pop_loadset('filename', char(append(curr_subject, '_cleaned_ml.set')), 'filepath', FILEPATH);
