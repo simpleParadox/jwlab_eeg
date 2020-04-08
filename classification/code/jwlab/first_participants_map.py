@@ -1,7 +1,7 @@
 from jwlab.constants import word_list
 
 words = {}
-    
+
 words["107"] = """banana
 bear
 spoon
@@ -314,7 +314,7 @@ dog
 bottle
 -
 -""".split('\n')
-    
+
 words["906"] = """cat
 banana
 cat
