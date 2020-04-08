@@ -176,14 +176,16 @@ def average_trials(df):
     return new_data, new_y, participants, np.copy(new_y)
 
 def average_trials_and_participants(df):
+    num_participants = df.participant.max() + 1
     num_words = len(word_list)
 
     new_data = np.zeros((num_words, len(df.columns) - 2))
     df_data = df.drop(columns=['label', 'participant'], axis=1)
     new_y = np.zeros(num_words)
+
     for w in range(num_words):
-        means = df_data[df.label == w].values.mean()
-        new_data[w, :] = means
+        means = pd.DataFrame([df_data[np.logical_and(df.participant == p, df.label == w)].values.mean() for p in range(num_participants)])
+        new_data[w, :] = means.values.mean()
         new_y[w] = -1 if np.isnan(means).any() else w
 
     new_data = new_data[new_y != -1, :]

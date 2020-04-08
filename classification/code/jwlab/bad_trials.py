@@ -39,8 +39,8 @@ def get_ybad_from_cel_obs(participants, i, ys, df, p_df):
     ret = []
     db = pd.read_csv("%s%s_trial_cell_obs.csv" % (db_filepath, participants[i]))
     for row in df.iterrows():
-        ret=np.append(ret,db[(db['cell'] == row['Cell']) & (db['obs'] == row['Observation']) 
-                             & (int(participants[i]) == row['Ps'])].trial_index.values)
+        ret=np.append(ret,db[(db['cell'] == row[1]['Cell']) & (db['obs'] == row[1]['Observation']) 
+                             & (int(participants[i]) == row[1]['Ps'])].trial_index.values)
     return ret.tolist()
 
 def transform_ybad_indices(ybad, ys):
