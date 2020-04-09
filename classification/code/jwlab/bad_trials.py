@@ -1,57 +1,54 @@
 import numpy as np
 import pandas as pd
 from math import isnan
-from jwlab.constants import bad_trials_filepath
-from jwlab.constants import db_filepath
-from jwlab.constants import messy_trials_filepath
+from jwlab.constants import bad_trials_filepath, db_filepath
 
-def get_bad_trials(participants, ys, bad_trials_filepath):
-    df = pd.read_csv(bad_trials_filepath)
-    df.Ps = df.Ps.interpolate(method="pad")
-    df = df[df['Reason'] != "left"]
-    df = df.drop(columns=["Reason"], axis=1)
-      
+bad_trial_df = pd.read_csv(bad_trials_filepath)
+bad_trial_df.Ps = bad_trial_df.Ps.interpolate(method="pad")
+# drop "looking left" trials because they are not considered as bad trials
+bad_trial_df = bad_trial_df[bad_trial_df['Reason'] != "left"]
+
+
+def get_bad_trials(participants):
+    # Appending bad trials either from cell&obs columns (new segs) or tIndex columns (old segs)
     ybad = []
-    trial_count = []
+    # loop through all participants
     for i in range(len(participants)):
-        p_df = df[df.Ps == int(participants[i])]
-        bad_trials_count = p_df.shape[0]
-        print("The number of bad trials of the participant - [%s] that are removed is [%d]." %(participants[i], bad_trials_count))
-        if len(p_df) == 0:
-            ybad.append([])
-        elif isnan(p_df.tIndex.values[0]):
-            ybad.append(get_ybad_from_cel_obs(participants, i, ys, df, p_df))
-        else:
-            ybad.append(p_df.tIndex.values.tolist())
-        # append bad trials from the summary table
-        messy_trials_df = pd.read_csv(messy_trials_filepath)
-        messy_trials_df = messy_trials_df[messy_trials_df['PS'] == int(participants[i])]
-        messy_trials_df = messy_trials_df[messy_trials_df['MessyData_Jenn'].notnull()]
-        messy_string = messy_trials_df.MessyData_Jenn.values
-        messy_list = []
-        if len(messy_string) == 1:
-            messy_list = messy_string[0].split(",")
-        messy_list = [s for s in messy_list if s.isdigit()]
-        messy_list_count = len(messy_list)
-        print("The number of messy trials that are removed is - [%d]." % len(messy_list))
-        
-        ybad[len(ybad)-1] = ybad[len(ybad)-1] + messy_list
-        trial_count += [messy_list_count + bad_trials_count]
-        
+        # generate a dataframe for each participants
+        p_df = bad_trial_df[bad_trial_df.Ps == int(participants[i])]
+        if len(p_df) == 0:  # if this participant's trials are all good (i.e. no bad trials)
+            ybad.append([])  # append empty list
+        else:  # append bad trials from table (deprecated: tIndex)
+            # Retrieve bad trials based on the cell and obs columns
+            ybad.append(get_ybad_from_cel_obs(participants, i, bad_trial_df))
+
+    # convert all bad trial indices to int
     ybad = [[int(y) for y in x] for x in ybad]
-    return ybad, trial_count
 
-def get_ybad_from_cel_obs(participants, i, ys, df, p_df):
-    ret = []
-    db = pd.read_csv("%s%s_trial_cell_obs.csv" % (db_filepath, participants[i]))
+    return ybad
+
+
+def get_ybad_from_cel_obs(participants, i, df):
+    bad_trials = []
+    orig_trial_df = pd.read_csv(
+        "%s%s_trial_cell_obs.csv" % (db_filepath, participants[i]))
     for index, row in df.iterrows():
-        ret=np.append(ret,db[(db['cell'] == row['Cell']) & (db['obs'] == row['Observation']) 
-                             & (int(participants[i]) == row['Ps'])].trial_index.values)
-    return ret.tolist()
+        # get the trial index by searching for matched combination of cell, obs and participant value
+        bad_trials += orig_trial_df[(orig_trial_df['cell'] == row['Cell']) & (orig_trial_df['obs']
+                                                                              == row['Observation']) & (int(participants[i]) == row['Ps'])].trial_index.values.tolist()
+    return bad_trials
 
-def transform_ybad_indices(ybad, ys):
-    offset = 0
-    for i in range(len(ybad)):
-        ybad[i] = np.array(ybad[i]) + offset
-        offset += len(ys[i])     
-    return np.concatenate(ybad).astype(np.int32)
+
+def get_left_trial_each_word(participants):
+    rt = []
+    for participant in participants:
+        orig_word_count_df = pd.read_csv(
+            "%s%s_trial_cell_obs.csv" % (db_filepath, participant))
+        orig_word_count = orig_word_count_df.groupby(['cell']).size()
+
+        bad_word_count_df = bad_trial_df[bad_trial_df.Ps == int(participant)]
+        bad_word_count = bad_word_count_df.groupby(['Cell']).size()
+
+        rt += [orig_word_count.subtract(bad_word_count,
+                                        fill_value=0).astype(int)]
+    return rt
