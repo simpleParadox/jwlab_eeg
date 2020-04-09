@@ -35,8 +35,9 @@ for curr_subject = SUBJECTS
         label(i) = cell_num;
     end
     
-    file_name = char(append(curr_subject, '_trial_cell_obs.csv'));
-    out_path = char(append(FILEPATH_OUT, file_name));
+    file_name = [char(curr_subject) '_trial_cell_obs.csv'];
+    out_path = [char(FILEPATH_OUT) char(file_name)];
+    %out_path = char(append(FILEPATH_OUT, file_name));
     fileID = fopen(out_path,'w','n','UTF-8');
     if fileID == -1
         error('Author:Function:OpenFile', 'Cannot open file');
