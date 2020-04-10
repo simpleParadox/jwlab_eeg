@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from jwlab.first_participants_map import map_first_participants
-from jwlab.constants import word_list, bad_trials_filepath
+from jwlab.constants import word_list, bad_trials_filepath, messy_trials_filepath, db_filepath
 from jwlab.bad_trials import get_bad_trials, transform_ybad_indices
 from scipy.signal import resample
 
@@ -74,7 +74,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     
     return X, y, p, w, df
 
-def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):
+def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath, messy_trials_filepath=messy_trials_filepath, db_filepath=db_filepath):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -90,11 +90,17 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_
     X = np.reshape(X, (k, j * downsample_num))
         
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
-    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath, db_filepath, messy_trials_filepath)
     ys = map_first_participants(ys, participants)
+    print(ybad)
     for each_ps in range(len(ys)):
+        print("participant:" + participants[each_ps], flush=True)
+        print("len ys: " + str(len(ys[each_ps])), flush=True)
         for bad_trial in range(len(ybad[each_ps])):
-            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+            print("ybad:" + str(ybad[each_ps][bad_trial]), flush=True)
+            print("max: " + str(np.max(ybad[each_ps][bad_trial])), flush=True)
+            ys[each_ps][np.array(ybad[each_ps][bad_trial])-1] = -1
+            print("---------------------", flush=True)
     y = np.concatenate(ys)
 
     assert y.shape[0] == X.shape[0]
@@ -111,7 +117,7 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_
 
     return df
 
-def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):    
+def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath, messy_trials_filepath=messy_trials_filepath, db_filepath=db_filepath):    
     df = df[df.Time >= 0]
     df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
 
@@ -119,7 +125,7 @@ def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_
     df = df.groupby(["id"], as_index=False).agg(pd.Series)
             
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
-    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath, db_filepath, messy_trials_filepath)
     ys = map_first_participants(ys, participants)
     for each_ps in range(len(ys)):
         for bad_trial in range(len(ybad[each_ps])):

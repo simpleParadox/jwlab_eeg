@@ -1,11 +1,8 @@
 import numpy as np
 import pandas as pd
 from math import isnan
-from jwlab.constants import bad_trials_filepath
-from jwlab.constants import db_filepath
-from jwlab.constants import messy_trials_filepath
 
-def get_bad_trials(participants, ys, bad_trials_filepath):
+def get_bad_trials(participants, ys, bad_trials_filepath, db_filepath, messy_trials_filepath):
     df = pd.read_csv(bad_trials_filepath)
     df.Ps = df.Ps.interpolate(method="pad")
     df = df[df['Reason'] != "left"]
@@ -20,7 +17,7 @@ def get_bad_trials(participants, ys, bad_trials_filepath):
         if len(p_df) == 0:
             ybad.append([])
         elif isnan(p_df.tIndex.values[0]):
-            ybad.append(get_ybad_from_cel_obs(participants, i, ys, df, p_df))
+            ybad.append(get_ybad_from_cel_obs(participants, i, ys, df, p_df, db_filepath))
         else:
             ybad.append(p_df.tIndex.values.tolist())
         # append bad trials from the summary table
@@ -41,7 +38,7 @@ def get_bad_trials(participants, ys, bad_trials_filepath):
     ybad = [[int(y) for y in x] for x in ybad]
     return ybad, trial_count
 
-def get_ybad_from_cel_obs(participants, i, ys, df, p_df):
+def get_ybad_from_cel_obs(participants, i, ys, df, p_df, db_filepath):
     ret = []
     db = pd.read_csv("%s%s_trial_cell_obs.csv" % (db_filepath, participants[i]))
     for row in df.iterrows():
