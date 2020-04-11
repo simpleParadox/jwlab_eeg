@@ -26,7 +26,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
-    df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
+    df = df.drop(columns=["Time", "E65"], axis=1) # channels 61-64 are removed prior to referencing 
     # now we need to flatten each
     # "block" of data (ie. 1000 rows of 64 columns of eeg data) into one training example, one row
     # of 64*1000 columns of eeg data
