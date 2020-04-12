@@ -384,9 +384,9 @@ import numpy as np
 def map_first_participants(ys, participants):
     for i in range(len(participants)):
         if participants[i] in words:
-            ys[i] = np.array([word_list.index(s) + 1 if s in word_list else -1 for s in words[participants[i]]])
+            ys[i] = [word_list.index(s) + 1 if s in word_list else -1 for s in words[participants[i]]]
         else:
-            ys[i] = np.array(squish_other_participants(ys[i].tolist()))
+            ys[i] = squish_other_participants(ys[i].tolist())
     return ys
 
 def squish_other_participants(y):

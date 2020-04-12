@@ -8,7 +8,6 @@ bad_trial_df.Ps = bad_trial_df.Ps.interpolate(method="pad")
 # drop "looking left" trials because they are not considered as bad trials
 bad_trial_df = bad_trial_df[bad_trial_df['Reason'] != "left"]
 
-
 def get_bad_trials(participants):
     # Appending bad trials either from cell&obs columns (new segs) or tIndex columns (old segs)
     ybad = []
