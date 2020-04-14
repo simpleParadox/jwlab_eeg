@@ -380,7 +380,6 @@ spoon
 -
 -""".split('\n')
 
-import numpy as np
 def map_first_participants(ys, participants):
     for i in range(len(participants)):
         if participants[i] in words:

@@ -1,0 +1,47 @@
+Current models working on : 
+
+PREDICT ANIMATE vs INANIMATE: 
+basic feature selection (mean, min, max, var, skew, kurtosis) on each channel
+    NOTES: on the new data, number of animate/inanimate trials is skewed so that a constant model could get 0.58 accuracy
+    
+    See basic_feature_extraction notebook for where this comes from
+    no averaging
+        LinearSVC
+            train error 0.37
+            test error 0.45 -- accuracy is 0.55 +/- 0.02
+        Random Forest
+            train error 0
+            test error 0.44 -- accuracy is 0.56 +/- 0.04
+        RBF SVC
+            train error 0.38
+            test error 0.42 -- arruacy is 0.58 +/- 0.02
+            
+     overall -- none are competetent at tackling this problem.
+     Steps forward
+         - extract the features accross windows (200-400ms, 400-600, etc)         
+         - extract other features
+         - optimize parameters
+         
+    with averaging
+        not currently working on
+        
+no feature selection: 
+    not currently working on
+    
+    Steps forward
+        - larger grid parameter search on SVM (very time consuming)
+        
+PREDICT AGE: 
+Since we aren't getting any results predicting animate vs inanimate, I'm starting to spend some time predicting age of candidates.
+This will provide a sanity check that something wrong isn't happening earlier, as well as give us some insight as to which models
+can perform well on this data.
+
+On the last batch of data/data cleaning, linear SVMs with basic feature extraction (min max avg skew kurtosis) was able to significantly
+(but still with low-ish accuracy) distinguish between age groups. On the new batch suddenly that accuracy has dropped. I'm reporting new
+stats here. Notebooks are "basic_feature_extraction -- predict age" and "no feature extraction -- predict age"
+
+
+        
+    
+    
+   

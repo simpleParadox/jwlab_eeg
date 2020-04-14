@@ -6,7 +6,7 @@ from jwlab.constants import word_list
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
 
-sliding_window_time_length = [300]
+sliding_window_time_length = [300, 400, 500, 600]
 
 
 def load_ml_data(filepath, participants):
@@ -204,13 +204,8 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000):
     ybad = get_bad_trials(participants)
     ys = map_participants(ys, participants)
     for each_ps in range(len(ys)):
-        print("participant:" + participants[each_ps], flush=True)
-        print("len ys: " + str(len(ys[each_ps])), flush=True)
         for bad_trial in range(len(ybad[each_ps])):
-            print("ybad:" + str(ybad[each_ps][bad_trial]), flush=True)
-            print("max: " + str(np.max(ybad[each_ps][bad_trial])), flush=True)
             ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
-            print("---------------------", flush=True)
     y = np.concatenate(ys)
 
     assert y.shape[0] == X.shape[0]
