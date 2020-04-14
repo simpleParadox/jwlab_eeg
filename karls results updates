@@ -41,7 +41,15 @@ On the last batch of data/data cleaning, linear SVMs with basic feature extracti
 stats here. Notebooks are "basic_feature_extraction -- predict age" and "no feature extraction -- predict age"
 
 
-        
+Note there are 63% older kids, we want >> that 63% accuracy mark for it to be noteworthy
+	feature extraction accuracies:
+		linear svm : 0.59 +/- 0.05
+	        rbf svm : 0.63 +/- 0.00
+	        random forest : 0.64 +/- 0.10
+       no feature extraction accuracies:
+	        linear svm : 0.51 +/- 0.13
+	        rbf svm : 0.65 +/- 0.07         
+		random forest : 0.66 +/- 0.20       
     
     
    
