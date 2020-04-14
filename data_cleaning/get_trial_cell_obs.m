@@ -7,7 +7,7 @@ FILEPATH_OUT_LABEL = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
 FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/db/';
 
 %SUBJECTS = {'105', '106', '107', '109', '111', '904', '905', '906', '112', '909', '910', '115', '116', '912'};
-SUBJECTS = {'124', '928', '929', '930', '932'};
+SUBJECTS = {'124'};
 %addpath(genpath('./EEGLab'));
 %addpath(genpath('./functions'));
 %addpath(genpath('./plugins'));
@@ -19,12 +19,12 @@ for curr_subject = SUBJECTS
     M = zeros(size(EEG.epoch, 2) ,3); %create a data matrix with size of [# of trails x 3]
     label = zeros(size(EEG.epoch, 2), 1); % list for labels (cells). 
     for i = 1:size(EEG.epoch, 2)
-        cell_num = EEG.epoch(i).eventmffkey_cel;
+        cell_num = EEG.epoch(i).eventmffkey_cel; % cell value 1-36
         obs_num = EEG.epoch(i).eventmffkey_obs;
         if ischar(cell_num) 
             cell_num = str2double(cell_num);
           else   
-            cell_num = str2double(cell_num{1,1});
+            cell_num = str2double(cell_num{1,1}); %sometimes there are two in here, take the first, they will be the same
         end
         
         if ischar(obs_num)
