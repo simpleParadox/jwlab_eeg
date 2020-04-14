@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
-from jwlab.constants import word_list, bad_trials_filepath
+from jwlab.constants import word_list
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
 
@@ -185,7 +185,7 @@ def create_ml_df(filepath, participants, downsample_num=1000):
     return create_ml_df_internal_sktime(df, ys, participants, downsample_num=downsample_num)
 
 
-def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):
+def create_ml_df_internal(df, ys, participants, downsample_num=1000):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -225,7 +225,7 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_
 # --- BEING USED ON COMPUTE CANADA ---
 
 
-def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_filepath):
+def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000):
     df = df[df.Time >= 0]
     df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
 

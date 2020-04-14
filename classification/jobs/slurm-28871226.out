@@ -1,5 +1,5 @@
 Using base prefix '/cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/python/3.6.3'
-New python executable in /localscratch/kjslakov.27050596.0/env/bin/python
+New python executable in /localscratch/kjslakov.28871226.0/env/bin/python
 Installing setuptools, pip, wheel...done.
 Ignoring pip: markers 'python_version < "3"' don't match your environment
 Collecting pip
@@ -11,26 +11,8 @@ Successfully installed pip-18.1
 Ignoring pip: markers 'python_version < "3"' don't match your environment
 Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
 Collecting sklearn
-Collecting scikit-learn (from sklearn)
-Collecting joblib>=0.11 (from scikit-learn->sklearn)
-Requirement already satisfied: scipy>=0.17.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from scikit-learn->sklearn) (1.2.0)
-Requirement already satisfied: numpy>=1.11.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from scikit-learn->sklearn) (1.16.0)
-Installing collected packages: joblib, scikit-learn, sklearn
-Successfully installed joblib-0.14.1 scikit-learn-0.21.2 sklearn-0.0
-Ignoring pip: markers 'python_version < "3"' don't match your environment
-Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
-Collecting sktime
-  Using cached https://files.pythonhosted.org/packages/1d/0d/479992cb0477403238c6248be39493cee9fc9b1c0c41e16e2db0afe279ca/sktime-0.1.0-py3-none-any.whl
-Requirement already satisfied: pandas in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from sktime) (0.23.4)
-Requirement already satisfied: scipy in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from sktime) (1.2.0)
-Requirement already satisfied: scikit-learn in /local/kjslakov.27050596.0/env/lib/python3.6/site-packages (from sktime) (0.21.2)
-Requirement already satisfied: numpy in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from sktime) (1.16.0)
-Requirement already satisfied: python-dateutil>=2.5.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from pandas->sktime) (2.7.5)
-Requirement already satisfied: pytz>=2011k in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from pandas->sktime) (2018.9)
-Requirement already satisfied: joblib>=0.11 in /local/kjslakov.27050596.0/env/lib/python3.6/site-packages (from scikit-learn->sktime) (0.14.1)
-Requirement already satisfied: six>=1.5 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from python-dateutil>=2.5.0->pandas->sktime) (1.12.0)
-Installing collected packages: sktime
-Successfully installed sktime-0.1.0
+  Could not find a version that satisfies the requirement sklearn (from versions: )
+No matching distribution found for sklearn
 Ignoring pip: markers 'python_version < "3"' don't match your environment
 Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
 Requirement already satisfied: arff==0.9 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 3)) (0.9)
@@ -62,7 +44,7 @@ Requirement already satisfied: ipython-genutils==0.2.0 in /cvmfs/soft.computecan
 Requirement already satisfied: ipywidgets==7.4.2 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 29)) (7.4.2)
 Requirement already satisfied: jedi==0.12.1 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 30)) (0.12.1)
 Requirement already satisfied: Jinja2==2.10 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 31)) (2.10)
-Requirement already satisfied: joblib==0.14.1 in /local/kjslakov.27050596.0/env/lib/python3.6/site-packages (from -r general_requirements.txt (line 32)) (0.14.1)
+Collecting joblib==0.14.1 (from -r general_requirements.txt (line 32))
 Requirement already satisfied: jsonschema==2.6.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 33)) (2.6.0)
 Requirement already satisfied: jupyter-client==5.2.4 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 34)) (5.2.4)
 Requirement already satisfied: jupyter-core==4.4.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 35)) (4.4.0)
@@ -102,7 +84,7 @@ Requirement already satisfied: python-dateutil==2.7.5 in /cvmfs/soft.computecana
 Requirement already satisfied: pytz==2018.9 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 69)) (2018.9)
 Requirement already satisfied: pyzmq==17.1.2 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 70)) (17.1.2)
 Requirement already satisfied: requests==2.21.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 71)) (2.21.0)
-Requirement already satisfied: scikit-learn==0.21.2 in /local/kjslakov.27050596.0/env/lib/python3.6/site-packages (from -r general_requirements.txt (line 72)) (0.21.2)
+Collecting scikit-learn==0.21.2 (from -r general_requirements.txt (line 72))
 Requirement already satisfied: scipy==1.2.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 73)) (1.2.0)
 Requirement already satisfied: Send2Trash==1.5.0 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 74)) (1.5.0)
 Requirement already satisfied: simplegeneric==0.8.1 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 75)) (0.8.1)
@@ -118,13 +100,17 @@ Requirement already satisfied: wcwidth==0.1.7 in /cvmfs/soft.computecanada.ca/ea
 Requirement already satisfied: webencodings==0.5.1 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 85)) (0.5.1)
 Requirement already satisfied: widgetsnbextension==3.4.2 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 86)) (3.4.2)
 Requirement already satisfied: zipp==0.3.3 in /cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/scipy-stack/2019a/lib/python3.6/site-packages (from -r general_requirements.txt (line 87)) (0.3.3)
-Requirement already satisfied: setuptools>=18.5 in /local/kjslakov.27050596.0/env/lib/python3.6/site-packages (from ipython==6.5.0->-r general_requirements.txt (line 27)) (28.8.0)
-copying dataset
-dataset copied
-start imports
-finish imports, start loading df
-loaded_df
-prepped train_data
-model created
-[0.55319149 0.5035461  0.55319149 0.46099291 0.49640288]
-Accuracy: 0.51 (+/- 0.07)
+Requirement already satisfied: setuptools>=18.5 in /local/kjslakov.28871226.0/env/lib/python3.6/site-packages (from ipython==6.5.0->-r general_requirements.txt (line 27)) (28.8.0)
+Installing collected packages: joblib, scikit-learn
+Successfully installed joblib-0.14.1 scikit-learn-0.21.2
+loaded
+Traceback (most recent call last):
+  File "//home/kjslakov/projects/def-jwerker/kjslakov/jwlab_eeg/classification/code/jwlab/run/prep_ml_df.py", line 13, in <module>
+    df_final = create_ml_df_internal(df, ys, participants, downsample_num=1000, bad_trials_filepath=bad_trials_path)
+  File "/project/6003615/kjslakov/jwlab_eeg/classification/jobs/../code/jwlab/ml_prep.py", line 88, in create_ml_df_internal
+    ybad = get_bad_trials(participants, ys, bad_trials_filepath)
+  File "/project/6003615/kjslakov/jwlab_eeg/classification/jobs/../code/jwlab/bad_trials.py", line 22, in get_bad_trials
+    ybad.append(get_ybad_from_cel_obs(participants, i, ys, df, p_df))
+  File "/project/6003615/kjslakov/jwlab_eeg/classification/jobs/../code/jwlab/bad_trials.py", line 43, in get_ybad_from_cel_obs
+    & (int(participants[i]) == row['Ps'])].trial_index.values)
+TypeError: tuple indices must be integers or slices, not str

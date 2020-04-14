@@ -8,18 +8,31 @@ word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "
 old_participants = ["107", "904", "905", "906"]
 
 # ------------ FILE PATH ------------
+cleaned_data_filepath = ''
+bad_trials_filepath = ''
+db_filepath = ''
+df_filepath = ''
+df_filepath_sktime = ''
 
-# ---- File path on network drive: ----
-#db_filepath = "/Volumnes/OFFCAMPUS/Jenn/Imported data/db/"
-#cleaned_data_filepath = "/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/"
-#bad_trials_filepath = "/Volumes/OFFCAMPUS/Jenn/Datatracker/ML_badtrials-Table 1.csv"
-
-# ---- File Path on Roxy local: ----
-db_filepath = "/Users/roxyk/Desktop/lab/db/"
-cleaned_data_filepath = "/Users/roxyk/Desktop/lab/cleaned/"
-bad_trials_filepath = "/Users/roxyk/Desktop/lab/Datatracker/ML_badtrials-Table 1.csv"
-
-# ---- File Path on Jenn compute canada: ----
-#db_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/db/"
-#cleaned_data_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/cleaned/"
-#bad_trials_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/Datatracker/ML_badtrials-Table 1.csv"
+from jwlab.profile import user
+if (user == "karl"):
+    cleaned_data_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/cleaned/"
+    bad_trials_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/datatracker/ML_badtrials-Table 1.csv"
+    db_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/db/"
+    df_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/ml_df_readys.pkl"
+    df_filepath_sktime = "/home/kjslakov/projects/def-jwerker/kjslakov/data/ml_df_sktime.pkl"
+elif (user == "jennlocal"):
+    # ---- File path on network drive: ----
+    db_filepath = "/Volumnes/OFFCAMPUS/Jenn/Imported data/db/"
+    cleaned_data_filepath = "/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/"
+    bad_trials_filepath = "/Volumes/OFFCAMPUS/Jenn/Datatracker/ML_badtrials-Table 1.csv"
+elif (user == "roxy"):
+    # ---- File Path on Roxy local: ----
+    db_filepath = "/Users/roxyk/Desktop/lab/db/"
+    cleaned_data_filepath = "/Users/roxyk/Desktop/lab/cleaned/"
+    bad_trials_filepath = "/Users/roxyk/Desktop/lab/Datatracker/ML_badtrials-Table 1.csv"
+elif (user == "jenncc"):
+    # ---- File Path on Jenn compute canada: ----
+    db_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/db/"
+    cleaned_data_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/cleaned/"
+    bad_trials_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/Datatracker/ML_badtrials-Table 1.csv"
