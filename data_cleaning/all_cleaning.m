@@ -6,7 +6,7 @@ FILEPATH = '/Volumes/OFFCAMPUS/Jenn/Imported data/';
 % FILEPATH = 'Y:\Members_Current\Jenn\EEG study\Imported data\';
 % FILEPATH_OUT = 'Y:\Members_Current\Jenn\EEG study\Imported data\cleaned\';
 FILEPATH_OUT = '/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/';
-SUBJECTS = {'927'};
+SUBJECTS = {'929','930','932'};
 
 ML_EVENTS = { 'Wait' };
 PIC_EVENTS = { 'Pict' };
@@ -17,17 +17,20 @@ SAVE_INTERMEDIATE = false;
 for curr_subject = SUBJECTS
     % load each subjects data for cleaning
     curr_EEG = pop_loadset('filename', [char(curr_subject) '.set'], 'filepath', FILEPATH);
-
-    % TODO
-    curr_EEG = clean_bad_channels(curr_EEG);
-
+    
+    
+    
     % First, remove data around "boundary" events, as the data there is
-    % corrupted
+    % corrupted due to timing re-sync
     curr_EEG = pop_rmdat(curr_EEG, BOUNDARY_EVENTS, [-0.5, 0.1], 1);
 
     if SAVE_INTERMEDIATE
         pop_saveset(curr_EEG, 'filename', 'no_boundaries.set', 'filepath', FILEPATH);
     end
+    
+    %remove the extra channels
+    curr_EEG = pop_select(curr_EEG, 'nochannel', [61 : 64]);
+    
 
     % Now break into two sets, ML and picture, and apply appropriate filter
     ml_eeg = pop_eegfiltnew(curr_EEG, .1, 50);
@@ -51,7 +54,7 @@ for curr_subject = SUBJECTS
     ml_eeg = pop_rmbase(ml_eeg, [-200, 0]);
     pic_eeg = pop_rmbase(pic_eeg, [-200, 0]);
 
-    % do avg referencing -- TODO : look into if you're sure this is working
+    % do avg referencing: does not use refernce
     ml_eeg = pop_reref(ml_eeg, []);
     pic_eeg = pop_reref(pic_eeg, []);
 

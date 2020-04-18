@@ -388,10 +388,13 @@ def map_first_participants(ys, participants):
             ys[i] = squish_other_participants(ys[i].tolist())
     return ys
 
+
 def squish_other_participants(y):
     for idx, c_y in enumerate(y):
-        if c_y > 8 and c_y <= 24:
+        if c_y > 8 and c_y <= 16:
             y[idx] = c_y - 8
-        elif c_y > 24:
+        if c_y > 16 and c_y <= 24:
             y[idx] = c_y - 16
+        elif c_y > 24:
+            y[idx] = c_y - 24
     return y
