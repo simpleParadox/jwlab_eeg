@@ -23,9 +23,10 @@ if (user == "karl"):
     df_filepath_sktime = "/home/kjslakov/projects/def-jwerker/kjslakov/data/ml_df_sktime.pkl"
 elif (user == "jennlocal"):
     # ---- File path on network drive: ----
-    db_filepath = "/Volumnes/OFFCAMPUS/Jenn/Imported data/db/"
+    db_filepath = "/Volumes/OFFCAMPUS/Jenn/Imported data/db/"
     cleaned_data_filepath = "/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/"
     bad_trials_filepath = "/Volumes/OFFCAMPUS/Jenn/Datatracker/ML_badtrials-Table 1.csv"
+    messy_trials_filepath = "/Volumes/OFFCAMPUS/Jenn/Datatracker/ML-Table 1.csv"
 elif (user == "roxy"):
     # ---- File Path on Roxy local: ----
     db_filepath = "/Users/roxyk/Desktop/lab/db/"

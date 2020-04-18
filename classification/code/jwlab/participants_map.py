@@ -12,8 +12,6 @@ def map_participants(ys, participants):
 
 def squish_new_participants(y):
     for idx, c_y in enumerate(y):
-        if c_y > 8 and c_y <= 24:
-            y[idx] = c_y - 8
-        elif c_y > 24:
+        if c_y > 16 and c_y <= 32:
             y[idx] = c_y - 16
     return y
