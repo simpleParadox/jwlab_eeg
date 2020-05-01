@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 from math import isnan
-from jwlab.constants import bad_trials_filepath, db_filepath
+from jwlab.constants import bad_trials_filepath, db_filepath, cleaned_data_filepath
 
 bad_trial_df = pd.read_csv(bad_trials_filepath)
 bad_trial_df.Ps = bad_trial_df.Ps.interpolate(method="pad")
 # drop "looking left" trials because they are not considered as bad trials
 bad_trial_df = bad_trial_df[bad_trial_df['Reason'] != "left"]
+
 
 def get_bad_trials(participants):
     # Appending bad trials either from cell&obs columns (new segs) or tIndex columns (old segs)
@@ -44,10 +45,11 @@ def get_left_trial_each_word(participants):
         orig_word_count_df = pd.read_csv(
             "%s%s_trial_cell_obs.csv" % (db_filepath, participant))
         orig_word_count = orig_word_count_df.groupby(['cell']).size()
-
+        
         bad_word_count_df = bad_trial_df[bad_trial_df.Ps == int(participant)]
         bad_word_count = bad_word_count_df.groupby(['Cell']).size()
-
+        
         rt += [orig_word_count.subtract(bad_word_count,
                                         fill_value=0).astype(int)]
+        
     return rt

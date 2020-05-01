@@ -2,7 +2,8 @@ FILEPATH = '/Users/roxyk/Desktop/lab/cleaned';
 FILEPATH_OUT = '/Users/roxyk/Desktop/lab/db/';
 FILEPATH_OUT_LABEL = '/Users/roxyk/Desktop/lab/cleaned/';
 
-%SUBJECTS = {'105', '106', '107', '109', '111', '904', '905', '906', '112', '909', '910', '115', '116', '912'};
+%DO NOT RUN THIS FILE ON 10-107 OR 904-906!!
+%SUBJECTS = { '109', '111', '904', '905', '906', '112', '909', '910', '115', '116', '912'};
 SUBJECTS = {'913'};
 addpath(genpath('./EEGLab'));
 addpath(genpath('./functions'));
