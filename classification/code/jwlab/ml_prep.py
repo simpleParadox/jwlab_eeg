@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
-from jwlab.constants import word_list
+from jwlab.constants import word_list, bad_trials_filepath, old_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
 
@@ -13,7 +13,7 @@ def load_ml_data(filepath, participants):
     # read all participant csvs, concat them into one dataframe
     dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (filepath, s))
            for s in participants]
-    df = pd.concat(dfs, axis=0, ignore_index=True)
+    df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
 
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)).tolist()
           for s in participants]
@@ -22,6 +22,7 @@ def load_ml_data(filepath, participants):
 
 
 def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
+    participants = [p for p in participants if p not in old_participants]
     df, ys = load_ml_data(filepath, participants)
     return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
 
@@ -54,14 +55,11 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
         trial_count += [len(ys[each_ps])]
         bad_trial_count += [len(ybad[each_ps])]
 
-    # print good trial each participant graph
+    # good trial each participant 
     good_trial_participant_count = np.around(np.true_divide(
         np.subtract(trial_count, bad_trial_count), trial_count), decimals=2)
-    plot_good_trial_participant(participants, good_trial_participant_count)
-
-    # print good trial each word graph
+    # good trial each word each participant
     good_trial_word_count = get_left_trial_each_word(participants)
-    plot_good_trial_word(participants, good_trial_word_count)
 
     Y = np.concatenate(ys)
 
@@ -128,8 +126,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
             w_list[each_timeLength][each_df] = w
             df_list[each_timeLength][each_df] = df
 
-    return X, y, p, w, df
-
+    return X_list, y_list, [good_trial_participant_count, good_trial_word_count]
 
 # Raw data
 
