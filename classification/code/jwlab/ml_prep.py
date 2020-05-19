@@ -185,7 +185,7 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
-    df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
+    df = df.drop(columns=["Time", "E65"], axis=1)
 
     # now we need to flatten each
     # "block" of data (ie. 1000 rows of 64 columns of eeg data) into one training example, one row
@@ -223,7 +223,7 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000):
 
 def create_ml_df_internal_sktime(df, ys, participants, downsample_num=1000):
     df = df[df.Time >= 0]
-    df = df.drop(columns=["Time", "E65", "E64", "E63", "E62", "E61"], axis=1)
+    df = df.drop(columns=["Time", "E65"], axis=1)
 
     df['id'] = np.concatenate(
         [[i] * 1000 for i in range(len(df.index) // 1000)])
