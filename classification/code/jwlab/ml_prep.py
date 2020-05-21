@@ -6,7 +6,7 @@ from jwlab.constants import word_list, bad_trials_filepath, old_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
 
-sliding_window_time_length = [300, 400, 500, 600]
+sliding_window_time_length = [1000]
 
 
 def load_ml_data(filepath, participants):
