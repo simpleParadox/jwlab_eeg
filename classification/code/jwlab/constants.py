@@ -5,7 +5,8 @@ word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "
 
 
 # ------------ OLD PARTICIPANTS ------------
-old_participants = ["107", "904", "905", "906"]
+#old_participants = ["107", "904", "905", "906"]
+old_participants = []
 
 # ------------ FILE PATH ------------
 cleaned_data_filepath = ''
