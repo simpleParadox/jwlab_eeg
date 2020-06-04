@@ -16,6 +16,7 @@ df_filepath = ''
 df_filepath_sktime = ''
 
 from jwlab.profile import user
+print(user)
 if (user == "karl"):
     cleaned_data_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/cleaned/"
     bad_trials_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/datatracker/ML_badtrials-Table 1.csv"
@@ -41,3 +42,12 @@ elif (user == "jenncc"):
     db_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/db/"
     cleaned_data_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/cleaned/"
     bad_trials_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/Datatracker/ML_badtrials-Table 1.csv"
+
+elif (user == 'rohan'):
+    print("user rohan")
+    # ---- File path for Rohan on Local machine.
+    cleaned_data_filepath = "Z:\\Jenn\\Imported data\\cleaned\\"
+    bad_trials_filepath = "Z:\\Jenn\\Datatracker\\ML_badtrials-Table 1.csv"
+    db_filepath = "Z:\\Jenn\\Imported data\\db\\"
+    df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
+    df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"

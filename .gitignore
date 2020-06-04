@@ -131,3 +131,9 @@ data_cleaning/.DS_Store
 
 .DS_Store
 classification/ml_svms_all_noaveraging_validate_on_averaged.ipynb
+
+
+# Ignoring w2v_embeddings and Google News pretrained model.
+regression/GoogleNews-vectors-negative300.bin.gz
+regression/test.ipynb
+regression/w2v_embeds/all_w2v_embeds.npz
