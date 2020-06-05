@@ -32,7 +32,7 @@ readys_path = None
 if os =='Windows':
     readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
 elif os=='Linux':
-    readys_path = "data/ml_df_readys.pkl"
+    readys_path = os.getcwd() + "/data/ml_df_readys.pkl"
 
 # with open(pkl_path, 'rb') as f:
 f = open(readys_path, 'rb')
@@ -42,8 +42,17 @@ f.close()
 
 
 eeg_features = readys_data.iloc[:,:18000].values
-w2v_embeds_loaded = load('G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz')
+w2v_path = None
+if os =='Windows':
+    w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
+elif os=='Linux':
+    w2v_path = os.getcwd() + "/w2v_embeds/all_w2v_embeds.npz"
+w2v_embeds_loaded = load(w2v_path)
 w2v_embeds = w2v_embeds_loaded['arr_0']
+
+print("Data Loaded")
+print("Readys shape: ", eeg_features.shape)
+print("w2v shape: ", w2v_embeds.shape)
 
 def monte_carlo_2v2():
     start = time.time()
@@ -57,7 +66,7 @@ def monte_carlo_2v2():
                        refit=True, cv=2, verbose=5)
 
 
-    rs = ShuffleSplit(n_splits=2, train_size=0.80)
+    rs = ShuffleSplit(n_splits=2, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds))]
     f = 1
     score_with_alpha = {}
