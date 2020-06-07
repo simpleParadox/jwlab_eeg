@@ -8,7 +8,7 @@ from numpy import savez_compressed
 from numpy import load
 import platform
 import time
-
+import random
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
@@ -62,11 +62,11 @@ def monte_carlo_2v2():
     parameters_dt = {'random_state': [None]}
 
     ridge = DecisionTreeRegressor()
-    clf = GridSearchCV(ridge, param_grid=parameters_dt, scoring='neg_mean_squared_error',
-                       refit=True, cv=2, verbose=5)
+    clf = GridSearchCV(ridge, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, verbose=5)
 
 
-    rs = ShuffleSplit(n_splits=2, train_size=0.90)
+    rs = ShuffleSplit(n_splits=10, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds))]
     f = 1
     score_with_alpha = {}
@@ -74,16 +74,19 @@ def monte_carlo_2v2():
     for train_index, test_index in rs.split(all_data_indices):
         print("Shuffle Split fold: ", f)
         X_train, X_test = eeg_features[train_index], eeg_features[test_index]
+        # The following two lines are for the permutation test. Comment them out when not using the permutation test.
+        random.shuffle(train_index) # For permutation test only.
+        random.shuffle(test_index) # For permutation test only.
         y_train, y_test = w2v_embeds[train_index], w2v_embeds[test_index]
 
         ss = StandardScaler()
         X_train = ss.fit_transform(X_train)
         X_test = ss.transform(X_test)
 
-        clf.fit(X_train, y_train)
-        preds = clf.predict(X_test)
-        print("Preds", preds.shape)
-        print("y_test:", y_test.shape)
+        ridge.fit(X_train, y_train)
+        preds = ridge.predict(X_test)
+        # print("Preds", preds.shape)
+        # print("y_test:", y_test.shape)
         f += 1
         points = 0
         total_points = 0
@@ -115,6 +118,6 @@ def monte_carlo_2v2():
     stop = time.time()
     print("Total time: ", stop - start)
 
-# monte_carlo_2v2()
+monte_carlo_2v2()
 
 
