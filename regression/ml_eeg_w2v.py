@@ -9,6 +9,7 @@ from numpy import load
 import platform
 import time
 import random
+import os
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
@@ -27,11 +28,11 @@ from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
 
 
-os = platform.system()
+os_name = platform.system()
 readys_path = None
-if os =='Windows':
+if os_name =='Windows':
     readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
-elif os=='Linux':
+elif os_name=='Linux':
     readys_path = os.getcwd() + "/data/ml_df_readys.pkl"
 
 # with open(pkl_path, 'rb') as f:
@@ -43,9 +44,9 @@ f.close()
 
 eeg_features = readys_data.iloc[:,:18000].values
 w2v_path = None
-if os =='Windows':
+if os_name =='Windows':
     w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
-elif os=='Linux':
+elif os_name=='Linux':
     w2v_path = os.getcwd() + "/w2v_embeds/all_w2v_embeds.npz"
 w2v_embeds_loaded = load(w2v_path)
 w2v_embeds = w2v_embeds_loaded['arr_0']
