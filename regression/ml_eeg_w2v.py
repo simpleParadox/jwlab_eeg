@@ -80,6 +80,7 @@ def two_vs_two(y_test, preds):
     return points, total_points, points / total_points  # The last value is the score.
 
 def split_ps_model():
+    start = time.time()
     # Split the readys data into 9 month and 13 month olds.
     # last 13 month old index => 1007.
     t_eeg = eeg_features[:1008,:]
@@ -88,21 +89,33 @@ def split_ps_model():
     t_w2v = w2v_embeds[:1008, :]
     n_w2v = w2v_embeds[1008:, :]
     # Fitting on 9 month old.
-    t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_eeg, t_w2v, train_size=0.90)
-    n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_eeg, n_w2v, train_size=0.90)
+    rounds = 2
+    t_scores = []
+    n_scores = []
+    for r in range(rounds):
 
-    print("Fitting on the 13 month olds first")
-    t_model = DecisionTreeRegressor()
-    t_model.fit(t_X_train, t_y_train)
-    t_preds = t_model.predict(t_X_test)
-    t_points, t_total_points, t_score = two_vs_two(t_y_test, t_preds)
-    print("Score for 13 month olds - no cv, no hyper optim: ", t_score)
+        t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_eeg, t_w2v, train_size=0.90)
+        n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_eeg, n_w2v, train_size=0.90)
 
-    n_model = DecisionTreeRegressor()
-    n_model.fit(n_X_train, n_y_train)
-    n_preds = n_model.predict(n_X_test)
-    n_points, n_total_points, n_score = two_vs_two(n_y_test, n_preds)
-    print("Score for 9 month olds - no cv, no hyper optim: ", n_score)
+        print("Fitting on the 13 month olds.")
+        t_model = DecisionTreeRegressor()
+        t_model.fit(t_X_train, t_y_train)
+        t_preds = t_model.predict(t_X_test)
+        t_points, t_total_points, t_score = two_vs_two(t_y_test, t_preds)
+        t_scores.append(t_score)
+        print("Score for 13 month olds - no cv, no hyper optim: ", t_score)
+        print("------------------------------------------------------------")
+        print("Fitting on the 9 month olds.")
+        n_model = DecisionTreeRegressor()
+        n_model.fit(n_X_train, n_y_train)
+        n_preds = n_model.predict(n_X_test)
+        n_points, n_total_points, n_score = two_vs_two(n_y_test, n_preds)
+        n_scores.append(n_score)
+        print("Score for 9 month olds - no cv, no hyper optim: ", n_score)
+    print("Average score for thirteen month old: ", np.average(t_scores))
+    print("Average score for nice month old: ", np.average(n_scores))
+    stop = time.time()
+    print("Total time taken: ", stop - start)
 
 
 
