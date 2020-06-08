@@ -182,6 +182,7 @@ def create_ml_df(filepath, participants, downsample_num=1000):
 
 
 def create_ml_df_internal(df, ys, participants, downsample_num=1000):
+    print("Internal")
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     df = df[df.Time >= 0]
     # we don't want the time column, or the reference electrode, so drop those columns
@@ -199,11 +200,12 @@ def create_ml_df_internal(df, ys, participants, downsample_num=1000):
     # map first participants (cel from 1-4ß map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
     ys = map_participants(ys, participants)
+    print("ys---", ys)
     for each_ps in range(len(ys)):
         for bad_trial in range(len(ybad[each_ps])):
             ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
     y = np.concatenate(ys)
-
+    print("y---", y)
     assert y.shape[0] == X.shape[0]
     # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
     df = pd.DataFrame(data=X)

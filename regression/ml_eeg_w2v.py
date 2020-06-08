@@ -55,6 +55,58 @@ print("Data Loaded")
 print("Readys shape: ", eeg_features.shape)
 print("w2v shape: ", w2v_embeds.shape)
 
+
+def two_vs_two(y_test, preds):
+    points = 0
+    total_points = 0
+    for i in range(preds.shape[0] - 1):
+        s_i = y_test[i]
+        s_j = y_test[i + 1]
+        s_i_pred = preds[i]
+        s_j_pred = preds[i + 1]
+        # print("S_i", s_i)
+        # print('s_i_pred', s_i_pred)
+        dsii = cosine_similarity([s_i], [s_i_pred])
+        dsjj = cosine_similarity([s_j], [s_j_pred])
+        dsij = cosine_similarity([s_i], [s_j_pred])
+        dsji = cosine_similarity([s_j], [s_i_pred])
+        # print("dsii: ", dsii)
+        # print("dsjj: ", dsjj)
+        # print("dsij: ", dsij)
+        # print("dsji: ", dsji)
+        if (dsii + dsjj) >= (dsij + dsji):
+            points += 1
+        total_points += 1
+    return points, total_points, points / total_points  # The last value is the score.
+
+def split_ps_model():
+    # Split the readys data into 9 month and 13 month olds.
+    # last 13 month old index => 1007.
+    t_eeg = eeg_features[:1008,:]
+    n_eeg = eeg_features[1008:, :]
+
+    t_w2v = w2v_embeds[:1008, :]
+    n_w2v = w2v_embeds[1008:, :]
+    # Fitting on 9 month old.
+    t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_eeg, t_w2v, train_size=0.90)
+    n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_eeg, n_w2v, train_size=0.90)
+
+    print("Fitting on the 13 month olds first")
+    t_model = DecisionTreeRegressor()
+    t_model.fit(t_X_train, t_y_train)
+    t_preds = t_model.predict(t_X_test)
+    t_points, t_total_points, t_score = two_vs_two(t_y_test, t_preds)
+    print("Score for 13 month olds - no cv, no hyper optim: ", t_score)
+
+    n_model = DecisionTreeRegressor()
+    n_model.fit(n_X_train, n_y_train)
+    n_preds = n_model.predict(n_X_test)
+    n_points, n_total_points, n_score = two_vs_two(n_y_test, n_preds)
+    print("Score for 9 month olds - no cv, no hyper optim: ", n_score)
+
+
+
+
 def monte_carlo_2v2():
     start = time.time()
     print("Monte-Carlo CV")
@@ -89,36 +141,18 @@ def monte_carlo_2v2():
         # print("Preds", preds.shape)
         # print("y_test:", y_test.shape)
         f += 1
-        points = 0
-        total_points = 0
-        for i in range(preds.shape[0]-1):
-            s_i = y_test[i]
-            s_j = y_test[i+1]
-            s_i_pred = preds[i]
-            s_j_pred = preds[i+1]
-            # print("S_i", s_i)
-            # print('s_i_pred', s_i_pred)
-            dsii = cosine_similarity([s_i], [s_i_pred])
-            dsjj = cosine_similarity([s_j], [s_j_pred])
-            dsij = cosine_similarity([s_i], [s_j_pred])
-            dsji = cosine_similarity([s_j], [s_i_pred])
-            # print("dsii: ", dsii)
-            # print("dsjj: ", dsjj)
-            # print("dsij: ", dsij)
-            # print("dsji: ", dsji)
-            if (dsii + dsjj) >= (dsij + dsji):
-                points += 1
-            total_points += 1
+        points, total_points, score = two_vs_two(y_test, preds)
         print("Points: ", points)
         print("Total points: ", total_points)
         acc = points / total_points
         cosine_scores.append(acc)
         print(acc)
-    score_with_alpha[str(clf.best_params_)] = np.average(np.array(cosine_scores), axis=0)
+    score_with_alpha['avg'] = np.average(np.array(cosine_scores), axis=0)
     print("All scores: ", score_with_alpha)
     stop = time.time()
     print("Total time: ", stop - start)
 
-monte_carlo_2v2()
+# monte_carlo_2v2()
 
+split_ps_model()
 
