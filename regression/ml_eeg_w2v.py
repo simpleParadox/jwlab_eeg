@@ -27,9 +27,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
 
-from regression.functions import average_trials
-
+# from functions import average_trials
 os_name = platform.system()
+
+if os_name == 'Windows':
+    from regression.functions import average_trials
+else:
+    from functions import average_trials
+
 readys_path = None
 avg_readys_path = None
 if os_name =='Windows':
@@ -86,13 +91,51 @@ def two_vs_two(y_test, preds):
         total_points += 1
     return points, total_points, points / total_points  # The last value is the score.
 
-def avg_trials_model():
+def split_avg_trials_model():
     # First read the data
+    start = time.time()
     avg_eeg_data = pickle.load(open(avg_readys_path, 'rb'))
+    split = 16 * 13  # This value represents the split between the 13 month and nine month olds.
+    t_a_eeg = avg_eeg_data.iloc[:split, :].values
+    n_a_eeg = avg_eeg_data.iloc[split:, :].values
     avg_w2v_data_loaded = load(avg_w2v_path)
     avg_w2v_data = avg_w2v_data_loaded['arr_0']
 
+    t_a_w2v = avg_w2v_data[:split, :]
+    n_a_w2v = avg_w2v_data[split:, :]
     rounds = 1
+    t_a_scores = []
+    n_a_scores = []
+    for r in range(rounds):
+        t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_a_eeg, t_a_w2v, train_size=0.90, shuffle=True)
+        n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_a_eeg, n_a_w2v, train_size=0.90, shuffle=True)
+
+        t_a_model = DecisionTreeRegressor()
+        t_a_model.fit(t_X_train, t_y_train)
+        t_a_preds = t_a_model.predict(t_X_test)
+        t_a_points, t_a_total_points, t_a_score = two_vs_two(t_y_test, t_a_preds)
+        t_a_scores.append(t_a_score)
+
+        n_a_model = DecisionTreeRegressor()
+        n_a_model.fit(n_X_train, n_y_train)
+        n_a_preds = n_a_model.predict(n_X_test)
+        n_a_points, n_a_total_points, n_a_score = two_vs_two(n_y_test, n_a_preds)
+        n_a_scores.append(n_a_score)
+
+    stop = time.time()
+    print("Average score for 13 month averaged trials: ", np.average(t_a_scores))
+    print("Average score for 9 month averaged trials: ", np.average(n_a_scores))
+    print("Total time taken: ", stop - start)
+
+split_avg_trials_model()
+
+def avg_trials_model():
+    # First read the data
+    start = time.time()
+    avg_eeg_data = pickle.load(open(avg_readys_path, 'rb'))
+    avg_w2v_data_loaded = load(avg_w2v_path)
+    avg_w2v_data = avg_w2v_data_loaded['arr_0']
+    rounds = 100
     a_scores = []
     for r in range(rounds):
         X_train, X_test, y_train, y_test = train_test_split(avg_eeg_data, avg_w2v_data, train_size=0.90, shuffle=True)
@@ -101,9 +144,11 @@ def avg_trials_model():
         preds = dt_model.predict(X_test)
         a_points, a_total_points, a_score = two_vs_two(y_test, preds)
         a_scores.append(a_score)
+    stop = time.time()
     print("Average score for averaged trials: ", np.average(a_scores))
+    print("Total time taken: ", stop - start)
 
-avg_trials_model()
+# avg_trials_model()
 
 def create_avg_data_embeds():
     # First average the trials
@@ -142,7 +187,7 @@ def split_ps_model():
     t_w2v = w2v_embeds[:1008, :]
     n_w2v = w2v_embeds[1008:, :]
     # Fitting on 9 month old.
-    rounds = 2
+    rounds = 100
     t_scores = []
     n_scores = []
     for r in range(rounds):
