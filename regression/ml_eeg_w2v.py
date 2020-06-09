@@ -1,4 +1,3 @@
-
 import sklearn
 import pandas as pd
 import numpy as np
@@ -13,6 +12,7 @@ import os
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
+import gensim
 from sklearn.linear_model import Ridge
 from sklearn.kernel_ridge import KernelRidge
 # from sklearn.svm import LinearSVR
@@ -27,13 +27,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
 
+from regression.functions import average_trials
 
 os_name = platform.system()
 readys_path = None
 if os_name =='Windows':
     readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
 elif os_name=='Linux':
-    readys_path = os.getcwd() + "/data/ml_df_readys.pkl"
+    readys_path = os.getcwd() + "/regression/data/ml_df_readys.pkl"
 
 # with open(pkl_path, 'rb') as f:
 f = open(readys_path, 'rb')
@@ -47,7 +48,7 @@ w2v_path = None
 if os_name =='Windows':
     w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
 elif os_name=='Linux':
-    w2v_path = os.getcwd() + "/w2v_embeds/all_w2v_embeds.npz"
+    w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
 w2v_embeds_loaded = load(w2v_path)
 w2v_embeds = w2v_embeds_loaded['arr_0']
 
@@ -79,12 +80,41 @@ def two_vs_two(y_test, preds):
         total_points += 1
     return points, total_points, points / total_points  # The last value is the score.
 
+def avg_trials_model():
+    pass
+
+def create_avg_data_embeds():
+    # First average the trials
+    labels_mapping = {0:'baby', 1:'bear', 2:'bird', 3: 'bunny',
+                      4:'cat', 5 : 'dog', 6: 'duck', 7: 'mom',
+                      8: 'banana', 9: 'bottle', 10: 'cookie',
+                      11: 'cracker', 12: 'cup', 13: 'juice',
+                      14: 'milk', 15: 'spoon'}
+    avg_trial_data, labels, participants, labels_copy = average_trials(readys_data)
+    # Now create the word2vec embeddings from the labels.
+    # word_labels = readys_data['label'].values
+    model = gensim.models.KeyedVectors.load_word2vec_format('regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
+    # First obtain all the embeddings for the words in the labels mapping.
+    w2v_label_embeds = {}
+    # pca = PCA(n_components=15)
+    for key in labels_mapping:
+        w2v_label_embeds[key] = model[labels_mapping[key]]
+    all_embeds = []
+    for label in labels:
+        all_embeds.append(w2v_label_embeds[int(label)])
+    savez_compressed('regression/w2v_embeds/all_w2v_embeds_pcs_avg_trial.npz', all_embeds)
+    avg_data = pd.DataFrame(avg_trial_data)
+
+
+
 def split_ps_model():
     start = time.time()
     # Split the readys data into 9 month and 13 month olds.
     # last 13 month old index => 1007.
-    t_eeg = eeg_features[:1008,:]
+    t_eeg = eeg_features[:1008, :]
     n_eeg = eeg_features[1008:, :]
+
+
 
     t_w2v = w2v_embeds[:1008, :]
     n_w2v = w2v_embeds[1008:, :]
@@ -167,5 +197,5 @@ def monte_carlo_2v2():
 
 # monte_carlo_2v2()
 
-split_ps_model()
+# split_ps_model()
 
