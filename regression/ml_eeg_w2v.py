@@ -31,30 +31,36 @@ from regression.functions import average_trials
 
 os_name = platform.system()
 readys_path = None
+avg_readys_path = None
 if os_name =='Windows':
     readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
+    avg_readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_data_readys.pkl"
 elif os_name=='Linux':
     readys_path = os.getcwd() + "/regression/data/ml_df_readys.pkl"
+    avg_readys_path = os.getcwd() + "/regression/data/avg_trials_data_readys.pkl"
 
 # with open(pkl_path, 'rb') as f:
-f = open(readys_path, 'rb')
-readys_data = pickle.load(f)
-f.close()
+# f = open(readys_path, 'rb')
+# readys_data = pickle.load(f)
+# f.close()
 
 
 
-eeg_features = readys_data.iloc[:,:18000].values
+# eeg_features = readys_data.iloc[:,:18000].values
 w2v_path = None
+avg_w2v_path = None
 if os_name =='Windows':
     w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
+    avg_w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds_avg_trial.npz"
 elif os_name=='Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
-w2v_embeds_loaded = load(w2v_path)
-w2v_embeds = w2v_embeds_loaded['arr_0']
-
-print("Data Loaded")
-print("Readys shape: ", eeg_features.shape)
-print("w2v shape: ", w2v_embeds.shape)
+    avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
+# w2v_embeds_loaded = load(w2v_path)
+# w2v_embeds = w2v_embeds_loaded['arr_0']
+#
+# print("Data Loaded")
+# print("Readys shape: ", eeg_features.shape)
+# print("w2v shape: ", w2v_embeds.shape)
 
 
 def two_vs_two(y_test, preds):
@@ -81,7 +87,23 @@ def two_vs_two(y_test, preds):
     return points, total_points, points / total_points  # The last value is the score.
 
 def avg_trials_model():
-    pass
+    # First read the data
+    avg_eeg_data = pickle.load(open(avg_readys_path, 'rb'))
+    avg_w2v_data_loaded = load(avg_w2v_path)
+    avg_w2v_data = avg_w2v_data_loaded['arr_0']
+
+    rounds = 1
+    a_scores = []
+    for r in range(rounds):
+        X_train, X_test, y_train, y_test = train_test_split(avg_eeg_data, avg_w2v_data, train_size=0.90, shuffle=True)
+        dt_model = DecisionTreeRegressor()
+        dt_model.fit(X_train, y_train)
+        preds = dt_model.predict(X_test)
+        a_points, a_total_points, a_score = two_vs_two(y_test, preds)
+        a_scores.append(a_score)
+    print("Average score for averaged trials: ", np.average(a_scores))
+
+avg_trials_model()
 
 def create_avg_data_embeds():
     # First average the trials
@@ -93,7 +115,7 @@ def create_avg_data_embeds():
     avg_trial_data, labels, participants, labels_copy = average_trials(readys_data)
     # Now create the word2vec embeddings from the labels.
     # word_labels = readys_data['label'].values
-    model = gensim.models.KeyedVectors.load_word2vec_format('regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
+    model = gensim.models.KeyedVectors.load_word2vec_format('GoogleNews-vectors-negative300.bin.gz', binary=True)
     # First obtain all the embeddings for the words in the labels mapping.
     w2v_label_embeds = {}
     # pca = PCA(n_components=15)
@@ -102,10 +124,11 @@ def create_avg_data_embeds():
     all_embeds = []
     for label in labels:
         all_embeds.append(w2v_label_embeds[int(label)])
-    savez_compressed('regression/w2v_embeds/all_w2v_embeds_pcs_avg_trial.npz', all_embeds)
+    savez_compressed('w2v_embeds/all_w2v_embeds_avg_trial.npz', all_embeds)
     avg_data = pd.DataFrame(avg_trial_data)
+    avg_data.to_pickle('data/avg_trials_data_readys.pkl')
 
-
+# create_avg_data_embeds()
 
 def split_ps_model():
     start = time.time()
