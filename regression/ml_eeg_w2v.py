@@ -22,27 +22,31 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 
-from sklearn.metrics.pairwise import cosine_similarity
+
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
 
-# from functions import average_trials
 os_name = platform.system()
 
 if os_name == 'Windows':
-    from regression.functions import average_trials
+    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two
 else:
-    from functions import average_trials
+    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two
 
 readys_path = None
 avg_readys_path = None
 if os_name =='Windows':
     readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
     avg_readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_data_readys.pkl"
+    avg_trials_and_ps_9m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_9m.pkl"
+    avg_trials_and_ps_13m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_13m.pkl"
+    avg_trials_and_ps_9and13_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_9and13.pkl"
 elif os_name=='Linux':
     readys_path = os.getcwd() + "/regression/data/ml_df_readys.pkl"
     avg_readys_path = os.getcwd() + "/regression/data/avg_trials_data_readys.pkl"
+    avg_trials_and_ps_9m_path = os.getcwd() +  "/regression/data/avg_trials_and_ps_9m.pkl"
+    avg_trials_and_ps_13m_path = os.getcwd() + "/regression/data/avg_trials_and_ps_13m.pkl"
+    avg_trials_and_ps_9and13_path = os.getcwd() + "/regression/data/avg_trials_and_ps_9and13.pkl"
 
 # with open(pkl_path, 'rb') as f:
 # f = open(readys_path, 'rb')
@@ -57,9 +61,11 @@ avg_w2v_path = None
 if os_name =='Windows':
     w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
     avg_w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds_avg_trial.npz"
+    gen_w2v_all_ps_avg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\gen_w2v_embeds_avg_trial_and_ps.npz"
 elif os_name=='Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
+    gen_w2v_all_ps_avg_path = "/regression/w2v_embeds/gen_w2v_embeds_avg_trial_and_ps.npz"
 # w2v_embeds_loaded = load(w2v_path)
 # w2v_embeds = w2v_embeds_loaded['arr_0']
 #
@@ -68,28 +74,7 @@ elif os_name=='Linux':
 # print("w2v shape: ", w2v_embeds.shape)
 
 
-def two_vs_two(y_test, preds):
-    points = 0
-    total_points = 0
-    for i in range(preds.shape[0] - 1):
-        s_i = y_test[i]
-        s_j = y_test[i + 1]
-        s_i_pred = preds[i]
-        s_j_pred = preds[i + 1]
-        # print("S_i", s_i)
-        # print('s_i_pred', s_i_pred)
-        dsii = cosine_similarity([s_i], [s_i_pred])
-        dsjj = cosine_similarity([s_j], [s_j_pred])
-        dsij = cosine_similarity([s_i], [s_j_pred])
-        dsji = cosine_similarity([s_j], [s_i_pred])
-        # print("dsii: ", dsii)
-        # print("dsjj: ", dsjj)
-        # print("dsij: ", dsij)
-        # print("dsji: ", dsji)
-        if (dsii + dsjj) >= (dsij + dsji):
-            points += 1
-        total_points += 1
-    return points, total_points, points / total_points  # The last value is the score.
+  # The last value is the score.
 
 def split_avg_trials_model():
     # First read the data
@@ -127,57 +112,82 @@ def split_avg_trials_model():
     print("Average score for 9 month averaged trials: ", np.average(n_a_scores))
     print("Total time taken: ", stop - start)
 
-split_avg_trials_model()
+# split_avg_trials_model()
 
-def avg_trials_model():
+def avg_trials_and_ps_model():
     # First read the data
     start = time.time()
-    avg_eeg_data = pickle.load(open(avg_readys_path, 'rb'))
-    avg_w2v_data_loaded = load(avg_w2v_path)
+
+    avg_eeg_data = pickle.load(open(avg_trials_and_ps_9and13_path, 'rb'))
+    avg_w2v_data_loaded = load(gen_w2v_all_ps_avg_path)
     avg_w2v_data = avg_w2v_data_loaded['arr_0']
-    rounds = 100
+    print("Avg all ps trial shape: ", avg_eeg_data.shape)
+    print("Avg w2v gen shape: ", avg_w2v_data.shape)
+    rounds = 10000
     a_scores = []
     for r in range(rounds):
+        print("Round: ", r + 1)
         X_train, X_test, y_train, y_test = train_test_split(avg_eeg_data, avg_w2v_data, train_size=0.90, shuffle=True)
-        dt_model = DecisionTreeRegressor()
+        # print(X_train.shape)
+        dt_model = Ridge()
         dt_model.fit(X_train, y_train)
         preds = dt_model.predict(X_test)
         a_points, a_total_points, a_score = two_vs_two(y_test, preds)
         a_scores.append(a_score)
     stop = time.time()
-    print("Average score for averaged trials: ", np.average(a_scores))
+    print("Average score for averaged trials and ps no cv: ", np.average(a_scores))
     print("Total time taken: ", stop - start)
 
-# avg_trials_model()
+
+avg_trials_and_ps_model()
+
+
+def get_ps():
+    # participants = ["904", "905", "906", "909", "910", "912", "908", "913", "914", "916", "917", "919", "920", "921", "923", "924","927", "928", "929", "930", "932"]
+    # participants = [ "909", "910", "912", "908", "913", "914", "916", "917", "919", "920", "921", "923", "924","927", "928", "929", "930", "932"]
+    # 9m with >40 trials
+    # participants = [ "909", "912", "908", "913", "914", "916", "917", "919", "920", "921", "924","927", "930"]
+
+    # 12m all
+    # participants = ["105", "107", "109", "111", "112", "115", "116", "117", "119", "121", "122", "120", "124"]
+    # 12m with >40 trials
+    # participants = ["109", "111", "112", "115", "124"]
+
+    # all participants
+    participants = [ "904", "905", "906", "909", "910", "912", "908", "913", "914", "916", "917", "919", "920", "921", "923", "924","927", "928", "929", "930", "932",
+                  "105", "107", "109", "111", "112", "115", "116", "117", "119", "121", "122", "120", "124"]
+    return participants
+
 
 def create_avg_data_embeds():
     # First average the trials
-    labels_mapping = {0:'baby', 1:'bear', 2:'bird', 3: 'bunny',
-                      4:'cat', 5 : 'dog', 6: 'duck', 7: 'mom',
-                      8: 'banana', 9: 'bottle', 10: 'cookie',
-                      11: 'cracker', 12: 'cup', 13: 'juice',
-                      14: 'milk', 15: 'spoon'}
-    avg_trial_data, labels, participants, labels_copy = average_trials(readys_data)
+    ps = get_ps()
+    avg_trial_ps_data, labels, participants, labels_copy = average_trials_and_participants(readys_data, ps)
+
+    all_avg_df = pd.DataFrame(avg_trial_ps_data)
+    all_avg_df['label'] = labels
+    all_avg_df['participants'] = participants
     # Now create the word2vec embeddings from the labels.
     # word_labels = readys_data['label'].values
-    model = gensim.models.KeyedVectors.load_word2vec_format('GoogleNews-vectors-negative300.bin.gz', binary=True)
-    # First obtain all the embeddings for the words in the labels mapping.
-    w2v_label_embeds = {}
-    # pca = PCA(n_components=15)
-    for key in labels_mapping:
-        w2v_label_embeds[key] = model[labels_mapping[key]]
-    all_embeds = []
-    for label in labels:
-        all_embeds.append(w2v_label_embeds[int(label)])
-    savez_compressed('w2v_embeds/all_w2v_embeds_avg_trial.npz', all_embeds)
-    avg_data = pd.DataFrame(avg_trial_data)
-    avg_data.to_pickle('data/avg_trials_data_readys.pkl')
+    # model = gensim.models.KeyedVectors.load_word2vec_format('GoogleNews-vectors-negative300.bin.gz', binary=True)
+    # # First obtain all the embeddings for the words in the labels mapping.
+    # w2v_label_embeds = {}
+    # # pca = PCA(n_components=15)
+    # for key in labels_mapping:
+    #     w2v_label_embeds[key] = model[labels_mapping[key]]
+    # all_embeds = []
+    # for label in labels:
+    #     all_embeds.append(w2v_label_embeds[int(label)])
+    # savez_compressed('w2v_embeds/gen_w2v_embeds_avg_trial_and_ps_test.npz', all_embeds)
+
+    # avg_data = pd.DataFrame(avg_trial_ps_data)
+    # avg_data.to_pickle('data/avg_trials_and_ps_9and13.pkl')
 
 # create_avg_data_embeds()
 
 def split_ps_model():
     start = time.time()
-    # Split the readys data into 9 month and 13 month olds.
+    # Split the readys data into 13 month and 9 month olds.
     # last 13 month old index => 1007.
     t_eeg = eeg_features[:1008, :]
     n_eeg = eeg_features[1008:, :]
@@ -214,8 +224,6 @@ def split_ps_model():
     print("Average score for nice month old: ", np.average(n_scores))
     stop = time.time()
     print("Total time taken: ", stop - start)
-
-
 
 
 def monte_carlo_2v2():
