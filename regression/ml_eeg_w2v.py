@@ -76,24 +76,19 @@ elif os_name=='Linux':
 
   # The last value is the score.
 
-def split_avg_trials_model():
+def split_avg_trials_and_ps_model():
     # First read the data
     start = time.time()
-    avg_eeg_data = pickle.load(open(avg_readys_path, 'rb'))
-    split = 16 * 13  # This value represents the split between the 13 month and nine month olds.
-    t_a_eeg = avg_eeg_data.iloc[:split, :].values
-    n_a_eeg = avg_eeg_data.iloc[split:, :].values
-    avg_w2v_data_loaded = load(avg_w2v_path)
+    t_a_eeg = pickle.load(open(avg_trials_and_ps_13m_path, 'rb'))
+    n_a_eeg = pickle.load(open(avg_trials_and_ps_9m_path, 'rb'))
+    avg_w2v_data_loaded = load(gen_w2v_all_ps_avg_path)
     avg_w2v_data = avg_w2v_data_loaded['arr_0']
-
-    t_a_w2v = avg_w2v_data[:split, :]
-    n_a_w2v = avg_w2v_data[split:, :]
-    rounds = 1
+    rounds = 50
     t_a_scores = []
     n_a_scores = []
     for r in range(rounds):
-        t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_a_eeg, t_a_w2v, train_size=0.90, shuffle=True)
-        n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_a_eeg, n_a_w2v, train_size=0.90, shuffle=True)
+        t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_a_eeg, avg_w2v_data, train_size=0.90, shuffle=True)
+        n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_a_eeg, avg_w2v_data, train_size=0.90, shuffle=True)
 
         t_a_model = DecisionTreeRegressor()
         t_a_model.fit(t_X_train, t_y_train)
@@ -108,11 +103,11 @@ def split_avg_trials_model():
         n_a_scores.append(n_a_score)
 
     stop = time.time()
-    print("Average score for 13 month averaged trials: ", np.average(t_a_scores))
-    print("Average score for 9 month averaged trials: ", np.average(n_a_scores))
+    print("Average score for 13 month averaged trials and ps: ", np.average(t_a_scores))
+    print("Average score for 9 month averaged trials and ps: ", np.average(n_a_scores))
     print("Total time taken: ", stop - start)
 
-# split_avg_trials_model()
+split_avg_trials_and_ps_model()
 
 def avg_trials_and_ps_model():
     # First read the data
@@ -139,7 +134,7 @@ def avg_trials_and_ps_model():
     print("Total time taken: ", stop - start)
 
 
-avg_trials_and_ps_model()
+# avg_trials_and_ps_model()
 
 
 def get_ps():
