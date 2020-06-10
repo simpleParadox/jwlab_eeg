@@ -35,6 +35,7 @@ def prep_ml_first20(filepath, participants, downsample_num=1000, averaging="aver
 
 def sliding_window(df, time_length):
     df_list = []
+    # initial, end, step
     for i in range(0, 1100-time_length, 100):
         df_list.append(df[(df.Time < time_length + i) & (df.Time >= i)])
     return df_list
@@ -256,7 +257,7 @@ def average_trials(df):
 
     for p in range(num_participants):
         for w in range(num_words):
-            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(
+            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(axis=0
             ) if df_data[np.logical_and(df.participant == p, df.label == w)].size != 0 else 0
             new_data[p * num_words + w, :] = means
             new_y[p * num_words + w] = -1 if np.isnan(means).any() else w

@@ -6,7 +6,9 @@ from jwlab.constants import word_list
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
 
-sliding_window_time_length = [300, 400, 500, 600]
+# changed to sizes of 100ms
+sliding_window_time_length = [100]
+
 
 
 def load_ml_data(filepath, participants):
@@ -28,7 +30,7 @@ def prep_ml_graphs(filepath, participants, downsample_num=1000, averaging="avera
 
 def sliding_window(df, time_length):
     df_list = []
-    for i in range(0, 1100-time_length, 100):
+    for i in range(0, 1100-time_length, 100): 
         df_list.append(df[(df.Time < time_length + i) & (df.Time >= i)])
     return df_list
 
@@ -68,6 +70,7 @@ def prep_ml_internal_no_sliding_window(df, ys, participants, downsample_num=1000
     # now we need to flatten each
     # "block" of data (ie. 1000 rows of 64 columns of eeg data) into one training example, one row
     # of 64*1000 columns of eeg data
+    
     X = df.values
     X = np.reshape(X, (1000, 60, -1))
     X = resample(X, downsample_num, axis=0)
@@ -226,6 +229,7 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
     for time_length in sliding_window_time_length:
         sw_list_for_all_time_length.append(sliding_window(df, time_length))
 
+        # changed last from 100 to 10
     X_list = [[0 for i in range(int((1100-sliding_window_time_length[j])/100))]
               for j in range(len(sliding_window_time_length))]
     y_list = [[0 for i in range(int((1100-sliding_window_time_length[j])/100))]
@@ -252,7 +256,8 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
             #X = resample(X, downsample_num, axis=0)
             (i, j, k) = X.shape
             X = np.reshape(X, (k, j * sliding_window_time_length[each_timeLength]))
-
+            
+                               
             # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
             df = pd.DataFrame(data=X)
             df['label'] = Y
@@ -310,7 +315,7 @@ def average_trials(df):
 
     for p in range(num_participants):
         for w in range(num_words):
-            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(
+            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(axis=0
             ) if df_data[np.logical_and(df.participant == p, df.label == w)].size != 0 else 0
             new_data[p * num_words + w, :] = means
             new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
