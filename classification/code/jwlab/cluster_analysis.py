@@ -89,6 +89,9 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1000, av
 
         # make label zero indexed
         df.label -= 1
+        
+        # get the first 20 rows of each participant
+        df = df.groupby('participant').head(20)
 
         # different averaging processes
         if averaging == "no_averaging":
