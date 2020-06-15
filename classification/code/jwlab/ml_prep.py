@@ -212,7 +212,7 @@ def prep_ml_internal_first20(df, ys, participants, downsample_num=500, averaging
             df.label -= 1
             
             # get the first 20 rows of each participant
-            df = df.groupby('participant').head(20)
+            #df = df.groupby('participant').head(20)
                 
             # different averaging processes
             if averaging == "no_averaging":
