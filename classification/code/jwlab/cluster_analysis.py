@@ -8,9 +8,11 @@ from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 
 
 def slide_df(df, length_per_window):
-    num_windows = int(1000 / length_per_window) 
+    num_windows = int(1200 / length_per_window) 
     windows_list = []
-    for i in range(num_windows):
+    for i in range(20, 0, -1):
+          windows_list.append(df[(df.Time < -(i-1) * length_per_window) & (df.Time >= -i * length_per_window)])
+    for i in range(100):
         windows_list.append(df[(df.Time < ((i+1) * length_per_window)) & (df.Time >= i * length_per_window)])
     assert len(windows_list) == num_windows
     return windows_list
@@ -26,14 +28,14 @@ def load_ml_data(filepath, participants):
     print("loaded", flush=True)
     return df, ys
 
-def prep_cluster_analysis(filepath, participants, downsample_num=1000, averaging="average_trials_and_participants", length_per_window=10):
+def prep_cluster_analysis(filepath, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10):
     df, ys = load_ml_data(filepath, participants)
     return prep_cluster_analysis_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging, length_per_window=length_per_window)
 
 
-def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1000, averaging="average_trials_and_participants", length_per_window=10):
+def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
-    df = df[df.Time >= 0]
+    #df = df[df.Time >= 0]
 
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
@@ -63,7 +65,7 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1000, av
 
     windows_list = slide_df(df, length_per_window)
 
-    X_list = [0] * int(1000 / length_per_window)
+    X_list = [0] * int(1200 / length_per_window)
     y_list = X_list[:]
     p_list = X_list[:]
     w_list = X_list[:]
