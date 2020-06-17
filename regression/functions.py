@@ -3,6 +3,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from copy import deepcopy
 import pandas as pd
 import pickle
+import random
+import gensim
+from numpy import load, savez_compressed
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
@@ -109,3 +112,75 @@ def two_vs_two(y_test, preds):
             points += 1
         total_points += 1
     return points, total_points, points / total_points
+
+
+def divide_by_labels(data):
+    """
+    :param data is an ndarray containing the values to be separated into groups.
+    :param labels is an ndarray which contains the values using which the data will be grouped.
+    :returns grouped data, and grouped labels.
+    """
+    temp_data = []
+    temp_labels = []
+    for i in range(16):
+        t = data.loc[data.label == i]
+        temp_data.append(t.iloc[:, :18000])
+        temp_labels.append(t.iloc[:, 18000])
+
+    return temp_data, temp_labels
+
+def random_subgroup(data, labels):
+    group_factor = 20
+    all_grouped_data = []
+    all_grouped_labels = []
+    for i in range(len(data)):
+        curr_data = np.array(data[i])
+        curr_labels = np.array(labels[i])
+        shuff_idxs = np.random.permutation(len(curr_data))
+        # print(shuff_idxs)
+        s_curr_data = curr_data[shuff_idxs]
+        s_curr_labels = curr_labels[shuff_idxs]
+        grouped_data = [s_curr_data[i:i + group_factor] for i in range(0, len(s_curr_data), group_factor)]
+        grouped_labels = [s_curr_labels[i:i + group_factor] for i in range(0, len(s_curr_labels), group_factor)]
+        all_grouped_data.append(grouped_data)
+        all_grouped_labels.append(grouped_labels)
+    return all_grouped_data, all_grouped_labels
+
+def average_grouped_data(data, labels):
+    meaned_data = []
+    meaned_labels = []
+    for i in range(len(data)):
+        curr_data_set = data[i]
+        curr_label_set = labels[i]
+        temp_meaned_data = []
+        temp_meaned_labels = []
+        for j in range(len(curr_data_set)):
+            # First subgroup of the group.
+            # Average the values
+            avg = np.array(curr_data_set[j]).mean(axis=0)
+            temp_meaned_data.append(avg)
+            temp_meaned_labels.append(curr_label_set[j][0])
+        meaned_data.append(temp_meaned_data)
+        meaned_labels.append(temp_meaned_labels)
+    data_res = []
+    labels_res = []
+    for l in meaned_data:
+        for m in l:
+            data_res.append(m.tolist())
+    for l in meaned_labels:
+        for m in l:
+            labels_res.append(m)
+
+    return data_res, labels_res
+
+def get_w2v_embeds(labels):
+    model = gensim.models.KeyedVectors.load_word2vec_format('G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
+    w2v_label_embeds = {}
+    for key in labels_mapping:
+        w2v_label_embeds[key] = model[labels_mapping[key]]
+    all_embeds = []
+    all_embeds.append(w2v_label_embeds)
+    savez_compressed('G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz', all_embeds)
+    # for label in labels:
+    #     all_embeds.append(w2v_label_embeds[int(label)])
+    # return all_embeds
