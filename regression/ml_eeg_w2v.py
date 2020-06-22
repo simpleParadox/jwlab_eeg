@@ -62,18 +62,20 @@ if os_name =='Windows':
     w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
     avg_w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds_avg_trial.npz"
     gen_w2v_all_ps_avg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\gen_w2v_embeds_avg_trial_and_ps.npz"
+    embeds_with_label_path = 'G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz'
 elif os_name=='Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
     gen_w2v_all_ps_avg_path = os.getcwd() + "/regression/w2v_embeds/gen_w2v_embeds_avg_trial_and_ps.npz"
-w2v_embeds_loaded = load(gen_w2v_all_ps_avg_path)
-w2v_embeds = w2v_embeds_loaded['arr_0']
+    embeds_with_label_path = os.getcwd() + "/regression/w2v_embeds/embeds_with_label_dict.npz"
+# w2v_embeds_loaded = load(gen_w2v_all_ps_avg_path)
+# w2v_embeds = w2v_embeds_loaded['arr_0']
 
-print("Data Loaded")
-print("Readys shape: ", readys_data.shape)
-print("w2v shape: ", w2v_embeds.shape)
-print("data type: ", type(readys_data))
-print("w2v type", type(w2v_embeds))
+# print("Data Loaded")
+# print("Readys shape: ", readys_data.shape)
+# print("w2v shape: ", w2v_embeds.shape)
+# print("data type: ", type(readys_data))
+# print("w2v type", type(w2v_embeds))
 
 
   # The last value is the score.
@@ -223,9 +225,9 @@ def split_ps_model():
     print("Total time taken: ", stop - start)
 
 
-def monte_carlo_2v2(X,Y):
-    start = time.time()
-    print("Monte-Carlo CV Ridge")
+def monte_carlo_2v2_permuted(X,Y):
+    # start = time.time()
+    print("Monte-Carlo CV DT Permuted")
     # Split into training and testing data
     # parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
     parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
@@ -234,20 +236,74 @@ def monte_carlo_2v2(X,Y):
 
     dt = DecisionTreeRegressor()
     clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, verbose=5, n_jobs=1)
+                       refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
-    print(eeg_features.shape)
-    print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=10000, train_size=0.90)
+    # print(eeg_features.shape)
+    # print(w2v_embeds_mod.shape)
+    rs = ShuffleSplit(n_splits=8, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
     cosine_scores = []
     for train_index, test_index in rs.split(all_data_indices):
-        print("Shuffle Split fold: ", f)
+        # print("Shuffle Split fold: ", f)
+        X_train, X_test = eeg_features[train_index], eeg_features[test_index]
+        # The following two lines are for the permutation test. Comment them out when not using the permutation test.
+        # print("Train index before", train_index)
+        random.shuffle(train_index) # For permutation test only.
+        random.shuffle(test_index) # For permutation test only.
+        # print("Train index after: ", train_index)
+        y_train, y_test = w2v_embeds_mod[train_index], w2v_embeds_mod[test_index]
+
+        # ss = StandardScaler()
+        # X_train = ss.fit_transform(X_train)
+        # X_test = ss.transform(X_test)
+        clf.fit(X_train, y_train)
+        preds = clf.predict(X_test)
+        # print("Preds", preds.shape)
+        # print("y_test:", y_test.shape)
+        f += 1
+        points, total_points, score = two_vs_two(y_test, preds)
+        # print("Points: ", points)
+        # print("Total points: ", total_points)
+        acc = points / total_points
+        cosine_scores.append(acc)
+        # print(acc)
+    score_with_alpha['avg'] = np.average(np.array(cosine_scores), axis=0)
+    print("All scores: ", score_with_alpha)
+    # stop = time.time()
+    # print("Total time: ", stop - start)
+    return score_with_alpha['avg']
+
+
+def monte_carlo_2v2(X,Y):
+    # start = time.time()
+    print("Monte-Carlo CV DT Normal")
+    # Split into training and testing data
+    # parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
+    parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
+
+
+
+    dt = DecisionTreeRegressor()
+    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=4)
+
+    eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
+    w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
+
+    # print(eeg_features.shape)
+    # print(w2v_embeds_mod.shape)
+    rs = ShuffleSplit(n_splits=8, train_size=0.90)
+    all_data_indices = [i for i in range(len(w2v_embeds_mod))]
+    f = 1
+    score_with_alpha = {}
+    cosine_scores = []
+    for train_index, test_index in rs.split(all_data_indices):
+        # print("Shuffle Split fold: ", f)
         X_train, X_test = eeg_features[train_index], eeg_features[test_index]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
@@ -265,15 +321,16 @@ def monte_carlo_2v2(X,Y):
         # print("y_test:", y_test.shape)
         f += 1
         points, total_points, score = two_vs_two(y_test, preds)
-        print("Points: ", points)
-        print("Total points: ", total_points)
+        # print("Points: ", points)
+        # print("Total points: ", total_points)
         acc = points / total_points
         cosine_scores.append(acc)
-        print(acc)
+        # print(acc)
     score_with_alpha['avg'] = np.average(np.array(cosine_scores), axis=0)
     print("All scores: ", score_with_alpha)
-    stop = time.time()
-    print("Total time: ", stop - start)
+    # stop = time.time()
+    # print("Total time: ", stop - start)
+    return score_with_alpha['avg']
 
 def test_model(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
@@ -284,26 +341,39 @@ def test_model(X, y):
     print(c)
 
 def random_groups():
-    grouped_data, grouped_labels = divide_by_labels(readys_data)
-    all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels)
-    # Now average the groups of data and then combine them.
-    data_res, labels_res = average_grouped_data(all_grouped_data, all_grouped_labels)
-    data_res = np.array(data_res)
-    # final_df = pd.DataFrame(data_res)
-    # final_df['label'] = labels_res
-    # get_w2v_embeds(labels_res)
-    embeds_loaded = load('G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz', allow_pickle=True)
-    embeds_local = embeds_loaded['arr_0']
-    embeds = embeds_local[0]
-    y = []
-    for label in labels_res:
-        y.append(embeds[label])
-    # random.shuffle(y)
-    monte_carlo_2v2(data_res, np.array(y))
+    start = time.time()
+    print("Random Groups 12 months")
+    all_scores_wo_perm = []
+    all_scores_wi_perm = []
+    for dummy in range(50):
+        grouped_data, grouped_labels = divide_by_labels(readys_data[:1008])
+        all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels)
+        # Now average the groups of data and then combine them.
+        data_res, labels_res = average_grouped_data(all_grouped_data, all_grouped_labels)
+        data_res = np.array(data_res)
+        # final_df = pd.DataFrame(data_res)
+        # final_df['label'] = labels_res
+        # get_w2v_embeds(labels_res)
+        embeds_loaded = load(embeds_with_label_path, allow_pickle=True)
+        embeds_local = embeds_loaded['arr_0']
+        embeds = embeds_local[0]
+        y = []
+        for label in labels_res:
+            y.append(embeds[label])
 
+        wo_perm_score = monte_carlo_2v2(data_res, np.array(y))
+        wi_perm_score = monte_carlo_2v2_permuted(data_res, np.array(y))
+        all_scores_wo_perm.append(wo_perm_score)
+        all_scores_wi_perm.append(wi_perm_score)
 
-    # print(embeds_local[0])
-    # print("Hello")
+    # print(all_scores_wo_perm)
+    # print(all_scores_wi_perm)
+    # print("Come on!")
+    print("Averaged scores after rerandomization non-permuted", np.average(all_scores_wo_perm))
+    print("Averaged scores after rerandomization permuted", np.average(all_scores_wi_perm))
+    stop = time.time()
+    print("Total time taken: ", stop - start)
+
 
 random_groups()
 
