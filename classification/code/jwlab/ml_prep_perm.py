@@ -7,11 +7,7 @@ from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
 from jwlab.ml_prep import  average_trials_and_participants, no_average, average_trials
 
-
-
 sliding_window_time_length = [300, 400, 500, 600]
-
-
 
 
 def load_ml_data(filepath, participants):
@@ -26,7 +22,7 @@ def load_ml_data(filepath, participants):
     return df, ys
 
 
-def prep_ml_graphs_first20(filepath, participants, downsample_num=1000, averaging="average_trials"):
+def prep_ml(filepath, participants, downsample_num=1000, averaging="average_trials"):
     df, ys = load_ml_data(filepath, participants)
     return prep_ml_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging)
 
@@ -254,10 +250,11 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
             X = df.values
             X = np.reshape(
                 X, (sliding_window_time_length[each_timeLength], 60, -1))
+            print(X.shape)
             #X = resample(X, downsample_num, axis=0)
             (i, j, k) = X.shape
             X = np.reshape(X, (k, j * sliding_window_time_length[each_timeLength]))
-
+            print(X.shape)
             # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
             df = pd.DataFrame(data=X)
             df['label'] = Y
@@ -293,11 +290,6 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
             df_list[each_timeLength][each_df] = df
 
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count]
-
-
-# Raw data
-
-
 
 
 def create_ml_df(filepath, participants, downsample_num=1000):

@@ -5,6 +5,7 @@ from jwlab.participants_map import map_participants
 from jwlab.constants import word_list, bad_trials_filepath, old_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from scipy.signal import resample
+from jwlab.ml_prep import  average_trials_and_participants, no_average, average_trials
 
 sliding_window_time_length = [1000]
 
@@ -171,52 +172,6 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
 
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count]
 
-# Raw data
-
-
-def no_average(df):
-    return df.drop(columns=['label', 'participant'], axis=1), df.label.values.flatten(), df.participant.values, df.label.values
-
-# For each participant, average the value for each word. Expected shape[0] is len(participants) x len(word_list)
-
-
-def average_trials(df):
-    num_participants = df.participant.max() + 1
-    num_words = len(word_list)
-
-    new_data = np.zeros((num_participants * num_words, len(df.columns) - 2))
-    df_data = df.drop(columns=['label', 'participant'], axis=1)
-    new_y = np.zeros(num_participants * num_words)
-    participants = np.zeros(num_participants * num_words)
-
-    for p in range(num_participants):
-        for w in range(num_words):
-            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(axis=0
-            ) if df_data[np.logical_and(df.participant == p, df.label == w)].size != 0 else 0
-            new_data[p * num_words + w, :] = means
-            new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
-            participants[p * num_words + w] = p
-
-    return new_data, new_y, participants, np.copy(new_y)
-
-# Average the value of each word across participants. Expected shape[0] is len(word_list)
-
-
-def average_trials_and_participants(df, participants):
-    num_words = len(word_list)
-    data, y, participants_rt, w = average_trials(df)
-    new_data = np.zeros((num_words, len(df.columns) - 2))
-    new_y = np.zeros(num_words)
-    for w in range(num_words):
-        count = 0
-        for p in range(len(participants)):
-            count += data[p * num_words + w]
-        mean = count / len(participants)
-        new_data[w, :] = mean
-        new_y[w] = -1 if np.isnan(mean).any() else w
-    new_data = new_data[new_y != -1, :]
-    new_y = new_y[new_y != -1]
-    return new_data, new_y, np.ones(new_y.shape[0]) * -1, np.copy(new_y)
 
 
 def create_ml_df(filepath, participants, downsample_num=1000):
