@@ -9,6 +9,7 @@ import platform
 import time
 import random
 import os
+from copy import deepcopy
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
@@ -225,7 +226,7 @@ def split_ps_model():
     print("Total time taken: ", stop - start)
 
 
-def monte_carlo_2v2_permuted(X,Y):
+def monte_carlo_2v2_permuted(X, Y, split_idxs):
     # start = time.time()
     print("Monte-Carlo CV DT Permuted")
     # Split into training and testing data
@@ -236,27 +237,32 @@ def monte_carlo_2v2_permuted(X,Y):
 
     dt = DecisionTreeRegressor()
     clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=4)
+                       refit=True, cv=5, n_jobs=1)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=8, train_size=0.90)
+    rs = ShuffleSplit(n_splits=2, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
     cosine_scores = []
-    for train_index, test_index in rs.split(all_data_indices):
+    # for train_index, test_index in rs.split(all_data_indices):
+    for idxs in split_idxs:
         # print("Shuffle Split fold: ", f)
-        X_train, X_test = eeg_features[train_index], eeg_features[test_index]
+        train_idx = idxs[0]
+        test_idx = idxs[1]
+        print("train index: ", train_idx)
+        print("test index: ", test_idx)
+        X_train, X_test = eeg_features[train_idx], eeg_features[test_idx]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
-        random.shuffle(train_index) # For permutation test only.
-        random.shuffle(test_index) # For permutation test only.
+        # random.shuffle(train_idx) # For permutation test only.
+        # random.shuffle(test_idx) # For permutation test only.
         # print("Train index after: ", train_index)
-        y_train, y_test = w2v_embeds_mod[train_index], w2v_embeds_mod[test_index]
+        y_train, y_test = w2v_embeds_mod[train_idx], w2v_embeds_mod[test_idx]
 
         # ss = StandardScaler()
         # X_train = ss.fit_transform(X_train)
@@ -290,20 +296,22 @@ def monte_carlo_2v2(X,Y):
 
     dt = DecisionTreeRegressor()
     clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=4)
+                       refit=True, cv=5, verbose=5, n_jobs=1)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=8, train_size=0.90)
+    rs = ShuffleSplit(n_splits=2, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
     cosine_scores = []
+    shuffle_split_idxs = []
     for train_index, test_index in rs.split(all_data_indices):
         # print("Shuffle Split fold: ", f)
+        shuffle_split_idxs.append([train_index, test_index])
         X_train, X_test = eeg_features[train_index], eeg_features[test_index]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
@@ -330,7 +338,7 @@ def monte_carlo_2v2(X,Y):
     print("All scores: ", score_with_alpha)
     # stop = time.time()
     # print("Total time: ", stop - start)
-    return score_with_alpha['avg']
+    return score_with_alpha['avg'], shuffle_split_idxs
 
 def test_model(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
@@ -345,15 +353,16 @@ def random_groups():
     print("Random Groups 12 months")
     all_scores_wo_perm = []
     all_scores_wi_perm = []
-    for dummy in range(50):
+    for dummy in range(10):
         grouped_data, grouped_labels = divide_by_labels(readys_data[:1008])
         all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels)
         # Now average the groups of data and then combine them.
-        data_res, labels_res = average_grouped_data(all_grouped_data, all_grouped_labels)
+        data_res, labels_res, meaned_labels = average_grouped_data(all_grouped_data, all_grouped_labels)
         data_res = np.array(data_res)
         # final_df = pd.DataFrame(data_res)
         # final_df['label'] = labels_res
         # get_w2v_embeds(labels_res)
+
         embeds_loaded = load(embeds_with_label_path, allow_pickle=True)
         embeds_local = embeds_loaded['arr_0']
         embeds = embeds_local[0]
@@ -361,14 +370,30 @@ def random_groups():
         for label in labels_res:
             y.append(embeds[label])
 
-        wo_perm_score = monte_carlo_2v2(data_res, np.array(y))
-        wi_perm_score = monte_carlo_2v2_permuted(data_res, np.array(y))
+        wo_perm_score, shuffle_idxs = monte_carlo_2v2(data_res, np.array(y))
+        print("Shuffle idxs: ", shuffle_idxs[0][0])
+        # Here, each group of the labels for the averaged samples is the given the same value.
+
+        key = list(set(labels_res))
+        random.shuffle(key)
+        new_meaned_labels = deepcopy(meaned_labels)
+        for o in range(len(meaned_labels)):
+            for p in range(len(meaned_labels[o])):
+                new_meaned_labels[o][p] = key[o]
+
+        permuted_new_labels = []
+        for l in new_meaned_labels:
+            for m in l:
+                permuted_new_labels.append(m.tolist())
+
+        y = []
+        for label in permuted_new_labels:
+            y.append(embeds[label])
+
+        wi_perm_score = monte_carlo_2v2_permuted(data_res, np.array(y), shuffle_idxs)
         all_scores_wo_perm.append(wo_perm_score)
         all_scores_wi_perm.append(wi_perm_score)
 
-    # print(all_scores_wo_perm)
-    # print(all_scores_wi_perm)
-    # print("Come on!")
     print("Averaged scores after rerandomization non-permuted", np.average(all_scores_wo_perm))
     print("Averaged scores after rerandomization permuted", np.average(all_scores_wi_perm))
     stop = time.time()

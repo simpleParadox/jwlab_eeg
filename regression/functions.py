@@ -171,7 +171,7 @@ def average_grouped_data(data, labels):
         for m in l:
             labels_res.append(m)
 
-    return data_res, labels_res
+    return data_res, labels_res, meaned_labels
 
 def get_w2v_embeds(labels):
     model = gensim.models.KeyedVectors.load_word2vec_format('G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
