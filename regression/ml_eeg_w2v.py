@@ -230,21 +230,21 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
     # start = time.time()
     print("Monte-Carlo CV DT Permuted")
     # Split into training and testing data
-    # parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
+    parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
+    # parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
 
 
 
-    dt = DecisionTreeRegressor()
-    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=1)
+    dt = Ridge(solver='cholesky')
+    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=2, train_size=0.90)
+    # rs = ShuffleSplit(n_splits=10, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
@@ -254,8 +254,8 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
         # print("Shuffle Split fold: ", f)
         train_idx = idxs[0]
         test_idx = idxs[1]
-        print("train index: ", train_idx)
-        print("test index: ", test_idx)
+        # print("train index: ", train_idx)
+        # print("test index: ", test_idx)
         X_train, X_test = eeg_features[train_idx], eeg_features[test_idx]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
@@ -289,21 +289,21 @@ def monte_carlo_2v2(X,Y):
     # start = time.time()
     print("Monte-Carlo CV DT Normal")
     # Split into training and testing data
-    # parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
+    parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
+    # parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
 
 
 
-    dt = DecisionTreeRegressor()
-    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, verbose=5, n_jobs=1)
+    dt = Ridge(solver='cholesky')
+    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=2, train_size=0.90)
+    rs = ShuffleSplit(n_splits=100, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
@@ -353,7 +353,7 @@ def random_groups():
     print("Random Groups 12 months")
     all_scores_wo_perm = []
     all_scores_wi_perm = []
-    for dummy in range(10):
+    for dummy in range(1):
         grouped_data, grouped_labels = divide_by_labels(readys_data[:1008])
         all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels)
         # Now average the groups of data and then combine them.
@@ -371,7 +371,7 @@ def random_groups():
             y.append(embeds[label])
 
         wo_perm_score, shuffle_idxs = monte_carlo_2v2(data_res, np.array(y))
-        print("Shuffle idxs: ", shuffle_idxs[0][0])
+        # print("Shuffle idxs: ", shuffle_idxs[0][0])
         # Here, each group of the labels for the averaged samples is the given the same value.
 
         key = list(set(labels_res))
