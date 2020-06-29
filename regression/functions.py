@@ -129,8 +129,9 @@ def divide_by_labels(data):
 
     return temp_data, temp_labels
 
-def random_subgroup(data, labels):
-    group_factor = 20
+
+def random_subgroup(data, labels, factor):
+    group_factor = factor
     all_grouped_data = []
     all_grouped_labels = []
     for i in range(len(data)):

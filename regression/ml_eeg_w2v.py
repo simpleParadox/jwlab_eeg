@@ -285,7 +285,7 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
     return score_with_alpha['avg']
 
 
-def monte_carlo_2v2_modified(X, Y):  # Train on correct, test on permuted.
+def monte_carlo_2v2_modified(X, Y):  # Train on correct, test on permuted. Use the same model to test on permuted.
     # start = time.time()
     print("Monte-Carlo CV DT Normal")
     # Split into training and testing data
@@ -361,14 +361,14 @@ def monte_carlo_2v2(X,Y):
 
     dt = Ridge(solver='cholesky')
     clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=4)
+                       refit=True, cv=5, n_jobs=1)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=100, train_size=0.90)
+    rs = ShuffleSplit(n_splits=10, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
@@ -419,8 +419,8 @@ def random_groups():
     all_scores_wo_perm = []
     all_scores_wi_perm = []
     for dummy in range(2):
-        grouped_data, grouped_labels = divide_by_labels(readys_data[:1008])
-        all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels)
+        grouped_data, grouped_labels = divide_by_labels(readys_data)
+        all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels, 10)
         # Now average the groups of data and then combine them.
         data_res, labels_res, meaned_labels = average_grouped_data(all_grouped_data, all_grouped_labels)
         data_res = np.array(data_res)
@@ -432,28 +432,28 @@ def random_groups():
         for label in labels_res:
             y.append(embeds[label])
 
-        # wo_perm_score, shuffle_idxs = monte_carlo_2v2(data_res, np.array(y))
-        wo_perm_score, wi_perm_score, shuffle_idxs = monte_carlo_2v2_modified(data_res, np.array(y))
+        wo_perm_score, shuffle_idxs = monte_carlo_2v2(data_res, np.array(y))
+        # wo_perm_score, wi_perm_score, shuffle_idxs = monte_carlo_2v2_modified(data_res, np.array(y))
         # Here, each group of the labels for the averaged samples is the given the same value.
 
-        # key = list(set(labels_res))
-        # random.shuffle(key)
-        # new_meaned_labels = deepcopy(meaned_labels)
-        # for o in range(len(meaned_labels)):
-        #     for p in range(len(meaned_labels[o])):
-        #         new_meaned_labels[o][p] = key[o]
-        #
-        #
-        # permuted_new_labels = []
-        # for l in new_meaned_labels:
-        #     for m in l:
-        #         permuted_new_labels.append(m.tolist())
-        #
-        # y = []
-        # for label in permuted_new_labels:
-        #     y.append(embeds[label])
-        #
-        # wi_perm_score = monte_carlo_2v2_permuted(data_res, np.array(y), shuffle_idxs)
+        key = list(set(labels_res))
+        random.shuffle(key)
+        new_meaned_labels = deepcopy(meaned_labels)
+        for o in range(len(meaned_labels)):
+            for p in range(len(meaned_labels[o])):
+                new_meaned_labels[o][p] = key[o]
+
+
+        permuted_new_labels = []
+        for l in new_meaned_labels:
+            for m in l:
+                permuted_new_labels.append(m.tolist())
+
+        y = []
+        for label in permuted_new_labels:
+            y.append(embeds[label])
+
+        wi_perm_score = monte_carlo_2v2_permuted(data_res, np.array(y), shuffle_idxs)
         all_scores_wo_perm.append(wo_perm_score)
         all_scores_wi_perm.append(wi_perm_score)
 
