@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from jwlab.constants import cleaned_data_filepath
-from jwlab.ml_prep import  average_trials_and_participants, no_average, average_trials
+from jwlab.ml_prep import  average_trials_and_participants, no_average, average_trials, no_average_labels
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
 from jwlab.constants import word_list, bad_trials_filepath, old_participants
@@ -97,6 +97,7 @@ def prep_cluster_analysis_permutation(filepath, participants, downsample_num=100
 def prep_cluster_analysis(filepath, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10):
     df, ys = load_ml_data(filepath, participants)
     return prep_cluster_analysis_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging, length_per_window=length_per_window)
+
 
 def prep_cluster_analysis_internal_permutation(df, ys, participants, downsample_num=1000, length_per_window=10, useRandomizedLabel=False):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
@@ -250,6 +251,8 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
             X, y, p, w = average_trials(df)
         elif averaging == "average_trials_and_participants":
             X, y, p, w = average_trials_and_participants(df, participants)
+        elif averaging == "no_average_labels":
+            X, y, p, w = no_average_labels(df)
         else:
             raise ValueError("Unsupported averaging!")
 

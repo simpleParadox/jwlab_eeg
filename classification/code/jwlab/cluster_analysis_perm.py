@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC, LinearSVC
 from sklearn.model_selection import RepeatedKFold
 from jwlab.ml_prep_perm import prep_ml
+from matplotlib import pyplot as plt
 
 ################################ Analysis procedure ################################
 
@@ -42,8 +43,8 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
                 X_train, X_test = X_temp[train_index], X_temp[test_index]
                 y_train, y_test = y_temp[train_index], y_temp[test_index]
 
-                #model = SVC(kernel = 'rbf')
-                model = LinearSVC(C=1e-9, max_iter=1000)
+                #model = SVC(kernel = 'rbf', C=1e-8, gamma = .0001)
+                model = LinearSVC(C=1e-8, max_iter=1000)
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
                 testScore = accuracy_score(y_test,y_pred)
@@ -54,7 +55,8 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
                     temp_results[j] = [testScore]
 
             temp_scoreMean.append(round(np.mean(temp_results[j]), 2))
-            temp_stdev.append(round(np.std(temp_results[j]), 2))
+            #temp_stdev.append(round(np.std(temp_results[j]), 2))
+            temp_stdev.append(round(stats.sem(temp_results[j]), 2))
         results.append(temp_results)
         scoreMean.append(temp_scoreMean)
         stdev.append(temp_stdev)
@@ -65,6 +67,15 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
         
     print("mean: {0}".format(scoreMean))
     print("stdev: {0}".format(stdev))
+    for i in range(len(scoreMean)):
+        length_per_window_plt = 1200/ len(scoreMean[i])
+        x_graph = np.arange(-200,1000,length_per_window_plt) 
+        y_graph = scoreMean[i]
+        stdevplt = np.array(stdev[i])
+        error = stdevplt
+        plt.plot(x_graph, y_graph, 'k-')
+        plt.fill_between(x_graph, y_graph-error, y_graph+error)
+        plt.show()
     
     return results
 
