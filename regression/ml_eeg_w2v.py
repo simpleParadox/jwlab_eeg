@@ -10,9 +10,11 @@ import time
 import random
 import os
 from copy import deepcopy
+from scipy.io import loadmat
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
+from sklearn.preprocessing import PolynomialFeatures
 import gensim
 from sklearn.linear_model import Ridge
 from sklearn.kernel_ridge import KernelRidge
@@ -23,16 +25,15 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 
-
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 
 os_name = platform.system()
 
 if os_name == 'Windows':
-    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
+    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
 else:
-    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
+    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
 
 readys_path = None
 avg_readys_path = None
@@ -42,6 +43,7 @@ if os_name =='Windows':
     avg_trials_and_ps_9m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_9m.pkl"
     avg_trials_and_ps_13m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_13m.pkl"
     avg_trials_and_ps_9and13_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_9and13.pkl"
+    bag_of_features = "G:\jw_lab\jwlab_eeg\Scratches\data\\bagOfFeatures (1).mat"
 elif os_name=='Linux':
     readys_path = os.getcwd() + "/regression/data/ml_df_readys.pkl"
     avg_readys_path = os.getcwd() + "/regression/data/avg_trials_data_readys.pkl"
@@ -53,6 +55,9 @@ elif os_name=='Linux':
 f = open(readys_path, 'rb')
 readys_data = pickle.load(f)
 f.close()
+
+# bof_data = loadmat('/regression/data/bagOfFeatures (1).mat')
+
 
 
 
@@ -231,12 +236,12 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
     print("Monte-Carlo CV DT Permuted")
     # Split into training and testing data
     parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    # parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
+    parameters_dt = {'min_samples_split': [4, 6, 8, 10, 20]}  #
 
 
 
-    dt = Ridge(solver='cholesky')
-    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
+    dt = DecisionTreeRegressor()
+    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
@@ -279,7 +284,7 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
         cosine_scores.append(acc)
         # print(acc)
     score_with_alpha['avg'] = np.average(np.array(cosine_scores), axis=0)
-    print("All scores: ", score_with_alpha)
+    # print("All scores: ", score_with_alpha)
     # stop = time.time()
     # print("Total time: ", stop - start)
     return score_with_alpha['avg']
@@ -287,23 +292,23 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
 
 def monte_carlo_2v2_modified(X, Y):  # Train on correct, test on permuted. Use the same model to test on permuted.
     # start = time.time()
-    print("Monte-Carlo CV DT Normal")
+    print("Monte-Carlo CV DT Modified")
     # Split into training and testing data
     parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
+    parameters_dt = {'min_samples_split': [4, 6, 8, 10, 20]}  #
 
 
 
     dt = DecisionTreeRegressor()
     clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=1)
+                       refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=2, train_size=0.90)
+    rs = ShuffleSplit(n_splits=10, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
@@ -328,7 +333,7 @@ def monte_carlo_2v2_modified(X, Y):  # Train on correct, test on permuted. Use t
         clf.fit(X_train, y_train)
         preds = clf.predict(X_test)
         points, total_points, score = two_vs_two(y_test, preds)
-        cosine_scores_modified.append(score)  # Correct labels
+        cosine_scores.append(score)  # Correct labels
 
         # Permute the test labels here.
         mod_permute_indices = [_ for _ in range(len(y_test))]
@@ -338,9 +343,10 @@ def monte_carlo_2v2_modified(X, Y):  # Train on correct, test on permuted. Use t
         # preds = clf.predict(X_test)
         # print("Preds", preds.shape)
         # print("y_test:", y_test.shape)
-        f += 1
+
         points, total_points, score = two_vs_two(y_test, preds)
-        cosine_scores.append(score)
+        cosine_scores_modified.append(score)
+        f += 1
         # print(acc)
     score_with_alpha['avg'] = np.average(np.array(cosine_scores), axis=0)
     score_with_alpha_modified['avg'] = np.average(np.array(cosine_scores_modified), axis=0)
@@ -355,13 +361,13 @@ def monte_carlo_2v2(X,Y):
     print("Monte-Carlo CV DT Normal")
     # Split into training and testing data
     parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    # parameters_dt = {'min_samples_split': [2, 4, 6, 8, 10]}  #
+    parameters_dt = {'min_samples_split': [4, 6, 8, 10, 20]}  #
 
 
 
-    dt = Ridge(solver='cholesky')
-    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=1)
+    dt = DecisionTreeRegressor()
+    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
@@ -400,27 +406,29 @@ def monte_carlo_2v2(X,Y):
         cosine_scores.append(acc)
         # print(acc)
     score_with_alpha['avg'] = np.average(np.array(cosine_scores), axis=0)
-    print("All scores: ", score_with_alpha)
+    # print("All scores: ", score_with_alpha)
     # stop = time.time()
     # print("Total time: ", stop - start)
     return score_with_alpha['avg'], shuffle_split_idxs
 
 def test_model(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
-    model = DecisionTreeRegressor(min_samples_split=8)
+    model = Ridge()
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
-    a,b,c = two_vs_two(y_test, preds)
+    a,b,c = two_vs_two(y_test.tolist(), preds)
     print(c)
+
+test_model(readys_data.iloc[:,:18000].values, readys_data.iloc[:, 18000].values)
 
 def random_groups():
     start = time.time()
-    print("Random Groups 12 months")
+    print("Random Groups 9 months 15 group factor")
     all_scores_wo_perm = []
     all_scores_wi_perm = []
-    for dummy in range(2):
+    for dummy in range(10):
         grouped_data, grouped_labels = divide_by_labels(readys_data)
-        all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels, 10)
+        all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels, 15)
         # Now average the groups of data and then combine them.
         data_res, labels_res, meaned_labels = average_grouped_data(all_grouped_data, all_grouped_labels)
         data_res = np.array(data_res)

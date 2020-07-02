@@ -90,7 +90,34 @@ def average_trials_and_participants(df, participants):
     return new_data, new_y, np.ones(new_y.shape[0]) * -1, np.copy(new_y)
 
 
+def two_vs_two_test(y_test, preds):
+    # print("Ytest", y_test)
+    # print("Preds",preds)
+    points = 0
+    total_points = 0
+    for i in range(preds.shape[0] - 1):
+        s_i = y_test[i]
+        s_j = y_test[i + 1]
+        s_i_pred = preds[i]
+        s_j_pred = preds[i + 1]
+        # print("S_i", s_i)
+        # print('s_i_pred', s_i_pred)
+        dsii = cosine_similarity([[s_i]], [[s_i_pred]])
+        dsjj = cosine_similarity([[s_j]], [[s_j_pred]])
+        dsij = cosine_similarity([[s_i]], [[s_j_pred]])
+        dsji = cosine_similarity([[s_j]], [[s_i_pred]])
+        # print("dsii: ", dsii)
+        # print("dsjj: ", dsjj)
+        # print("dsij: ", dsij)
+        # print("dsji: ", dsji)
+        if (dsii + dsjj) >= (dsij + dsji):
+            points += 1
+        total_points += 1
+    return points, total_points, points / total_points
+
 def two_vs_two(y_test, preds):
+    # print("Ytest", y_test[0])
+    # print("Preds",preds[0])
     points = 0
     total_points = 0
     for i in range(preds.shape[0] - 1):
