@@ -26,6 +26,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import TruncatedSVD
 from sklearn.model_selection import GridSearchCV
 
 os_name = platform.system()
@@ -34,6 +35,11 @@ if os_name == 'Windows':
     from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
 else:
     from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
+
+
+
+
+
 
 readys_path = None
 avg_readys_path = None
@@ -231,6 +237,12 @@ def split_ps_model():
     print("Total time taken: ", stop - start)
 
 
+def do_svd(ref):
+    tsvd = TruncatedSVD(n_components=50)
+    ref = tsvd.fit_transform(ref)
+    return ref
+
+
 def monte_carlo_2v2_permuted(X, Y, split_idxs):
     # start = time.time()
     print("Monte-Carlo CV DT Permuted")
@@ -240,8 +252,8 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
 
 
 
-    dt = DecisionTreeRegressor()
-    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
+    dt = Ridge()
+    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
@@ -356,7 +368,8 @@ def monte_carlo_2v2_modified(X, Y):  # Train on correct, test on permuted. Use t
     # print("Total time: ", stop - start)
     return score_with_alpha['avg'], score_with_alpha_modified['avg'], shuffle_split_idxs
 
-def monte_carlo_2v2(X,Y):
+
+def monte_carlo_2v2(X, Y):
     # start = time.time()
     print("Monte-Carlo CV DT Normal")
     # Split into training and testing data
@@ -365,12 +378,12 @@ def monte_carlo_2v2(X,Y):
 
 
 
-    dt = DecisionTreeRegressor()
-    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
+    dt = Ridge()
+    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=4)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
-    w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
+    w2v_embeds_mod = Y  # w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
@@ -411,6 +424,7 @@ def monte_carlo_2v2(X,Y):
     # print("Total time: ", stop - start)
     return score_with_alpha['avg'], shuffle_split_idxs
 
+
 def test_model(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
     model = Ridge()
@@ -419,16 +433,18 @@ def test_model(X, y):
     a,b,c = two_vs_two(y_test.tolist(), preds)
     print(c)
 
-test_model(readys_data.iloc[:,:18000].values, readys_data.iloc[:, 18000].values)
+
+# test_model(readys_data.iloc[:,:18000].values, readys_data.iloc[:, 18000].values)
 
 def random_groups():
     start = time.time()
-    print("Random Groups 9 months 15 group factor")
+    print("Random Groups all months 20 group factor with SVD")
     all_scores_wo_perm = []
     all_scores_wi_perm = []
     for dummy in range(10):
+        print("Iteration: ", dummy)
         grouped_data, grouped_labels = divide_by_labels(readys_data)
-        all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels, 15)
+        all_grouped_data, all_grouped_labels = random_subgroup(grouped_data, grouped_labels, 20)
         # Now average the groups of data and then combine them.
         data_res, labels_res, meaned_labels = average_grouped_data(all_grouped_data, all_grouped_labels)
         data_res = np.array(data_res)
@@ -440,7 +456,9 @@ def random_groups():
         for label in labels_res:
             y.append(embeds[label])
 
-        wo_perm_score, shuffle_idxs = monte_carlo_2v2(data_res, np.array(y))
+        y = np.array(y)
+        y = do_svd(deepcopy(y))
+        wo_perm_score, shuffle_idxs = monte_carlo_2v2(data_res, y)
         # wo_perm_score, wi_perm_score, shuffle_idxs = monte_carlo_2v2_modified(data_res, np.array(y))
         # Here, each group of the labels for the averaged samples is the given the same value.
 
@@ -461,7 +479,10 @@ def random_groups():
         for label in permuted_new_labels:
             y.append(embeds[label])
 
-        wi_perm_score = monte_carlo_2v2_permuted(data_res, np.array(y), shuffle_idxs)
+        y = np.array(y)
+        y = do_svd(deepcopy(y))
+
+        wi_perm_score = monte_carlo_2v2_permuted(data_res, y, shuffle_idxs)
         all_scores_wo_perm.append(wo_perm_score)
         all_scores_wi_perm.append(wi_perm_score)
 
