@@ -6,6 +6,8 @@ import pickle
 import random
 import gensim
 from numpy import load, savez_compressed
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import train_test_split
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
@@ -15,7 +17,25 @@ labels_mapping = {0:'baby', 1:'bear', 2:'bird', 3: 'bunny',
                       8: 'banana', 9: 'bottle', 10: 'cookie',
                       11: 'cracker', 12: 'cup', 13: 'juice',
                       14: 'milk', 15: 'spoon'}
+def test_model_permute(X, y):
+    random.shuffle(y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
+    model = Ridge()
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    a,b,c = two_vs_two(y_test, preds)
+    print(c)
 
+def test_model(X, y):
+    # random.shuffle(y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.80, shuffle=True)
+    print(X_train.shape)
+    print(y_train.shape)
+    model = Ridge()
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    a,b,c = two_vs_two(y_test, preds)
+    print(c)
 def average_trials(df):
     num_participants = int(df.participant.max()) + 1
     print(num_participants)
