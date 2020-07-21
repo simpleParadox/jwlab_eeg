@@ -268,6 +268,101 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count]
 
 
+def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows):
+    # set up for new df with labels and ps
+    num_participants = len(participants)
+    num_indices = len(X[0])
+    fivefold_testsize = int(.20*num_indices)
+    test_indices = np.random.choice(num_indices-1, fivefold_testsize, replace=False)
+
+    df_test = []
+    df_train = []
+
+    for i in range(num_sliding_windows):
+        ## will need each window
+        X[i] = X[i].reset_index()
+
+        # #create new df with these indices and removing from orig
+        df_test.append(X[i].iloc[test_indices])
+        df_train.append(X[i].drop(X[i].index[test_indices]))
+        assert(len(df_train[i]) + len(df_test[i]) == len(X[i]))
+        df_test[i] = df_test[i].drop(columns=['index'], axis=1) 
+        df_train[i] = df_train[i].drop(columns=['index'], axis=1)
+
+
+
+    # create training matrix:
+    X_train=[]
+    y_train=[]
+    for i in range(num_sliding_windows):
+        y_train.append(df_train[i].label.values)
+        X_train.append(df_train[i].drop(columns = ['label', 'participant'], axis = 1))
+
+    # create test matrices
+    X_test = [] # test raw trials
+    y_test = [] 
+    X_test_t = [] # test avg trials
+    y_test_t = [] 
+    X_test_pt = [] # test avg trials and ps
+    y_test_pt = [] 
+
+    for i in range(num_sliding_windows):
+        y_test.append(df_test[i].label.values)
+        X_test.append(df_test[i].drop(columns = ['label', 'participant'], axis = 1))
+
+        X_test_t_temp, y_test_temp, ps, w = average_trials(df_test[0])
+        X_test_t.append(pd.DataFrame(X_test_t_temp))
+        y_test_t.append(y_test_temp)
+
+        X_test_pt_temp, y_test_temp_pt, ps, w = average_trials_and_participants(df_test[0], participants)
+        X_test_pt.append(pd.DataFrame(X_test_pt_temp))
+        y_test_pt.append(y_test_temp_pt)
+
+        # to predict the letter b (word onset)
+    for i in range(num_sliding_windows):
+        y_train[i][y_train[i] < 5] = 0 # b
+        y_train[i][y_train[i] == 9] = 0 # b
+        y_train[i][y_train[i] == 10] = 0 # b
+        y_train[i][y_train[i] == 5] = 1
+        y_train[i][y_train[i] == 6] = 1
+        y_train[i][y_train[i] == 7] = 1
+        y_train[i][y_train[i] == 8] = 1
+        y_train[i][y_train[i] > 10] = 1
+
+
+        y_test[i][y_test[i] < 5] = 0 # b
+        y_test[i][y_test[i] == 9] = 0 # b
+        y_test[i][y_test[i] == 10] = 0 # b
+        y_test[i][y_test[i] == 5] = 1
+        y_test[i][y_test[i] == 6] = 1
+        y_test[i][y_test[i] == 7] = 1
+        y_test[i][y_test[i] == 8] = 1
+        y_test[i][y_test[i] > 10] = 1
+
+
+        y_test_t[i][y_test_t[i] < 5] = 0 # b
+        y_test_t[i][y_test_t[i] == 9] = 0 # b
+        y_test_t[i][y_test_t[i] == 10] = 0 # b
+        y_test_t[i][y_test_t[i] == 5] = 1
+        y_test_t[i][y_test_t[i] == 6] = 1
+        y_test_t[i][y_test_t[i] == 7] = 1
+        y_test_t[i][y_test_t[i] == 8] = 1
+        y_test_t[i][y_test_t[i] > 10] = 1
+
+
+        y_test_pt[i][y_test_pt[i] < 5] = 0 # b
+        y_test_pt[i][y_test_pt[i] == 9] = 0 # b
+        y_test_pt[i][y_test_pt[i] == 10] = 0 # b
+        y_test_pt[i][y_test_pt[i] == 5] = 1
+        y_test_pt[i][y_test_pt[i] == 6] = 1
+        y_test_pt[i][y_test_pt[i] == 7] = 1
+        y_test_pt[i][y_test_pt[i] == 8] = 1
+        y_test_pt[i][y_test_pt[i] > 10] = 1
+        
+        
+    return X_train, y_train, X_test, y_test, X_test_t, y_test_t, X_test_pt, y_test_pt
+
+
 ################################ Analysis procedure ################################
 
 def init(age_group):
