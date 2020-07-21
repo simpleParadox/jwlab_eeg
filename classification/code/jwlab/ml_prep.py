@@ -221,7 +221,7 @@ def prep_ml_internal_raw(df, ys, participants, downsample_num=1000, averaging="a
 
             # different averaging processes
             if averaging == "no_averaging":
-                X, y, p, w = no_average_raw(df)
+                X, y, p, w = no_average_labels(df)
             else:
                 raise ValueError("Unsupported averaging!")
 

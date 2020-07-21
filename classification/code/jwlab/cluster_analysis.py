@@ -67,7 +67,7 @@ def permutation_and_average(df, avg_trial):
 ################################ prep data ################################
 
 def slide_df(df, length_per_window):
-    num_windows = int(1200 / length_per_window) 
+    num_windows = int(1200 / length_per_window) #changed from 1000
     windows_list = []
     first_range = int(200 / length_per_window) 
     for i in range(first_range, 0, -1):
@@ -94,7 +94,7 @@ def prep_cluster_analysis_permutation(filepath, participants, downsample_num=100
     return prep_cluster_analysis_internal_permutation(df, ys, participants, downsample_num=downsample_num, length_per_window=length_per_window, useRandomizedLabel=useRandomizedLabel)
 
 
-def prep_cluster_analysis(filepath, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10):
+def prep_cluster_analysis(filepath, participants, downsample_num=1000, averaging="average_trials_and_participants", length_per_window=10):
     df, ys = load_ml_data(filepath, participants)
     return prep_cluster_analysis_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging, length_per_window=length_per_window)
 
@@ -181,7 +181,7 @@ def prep_cluster_analysis_internal_permutation(df, ys, participants, downsample_
 
 def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
-    #df = df[df.Time >= 0]
+    # df = df[df.Time >= 0] #removed comment out
 
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
@@ -211,7 +211,7 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
 
     windows_list = slide_df(df, length_per_window)
 
-    X_list = [0] * int(1200 / length_per_window)
+    X_list = [0] * int(1200 / length_per_window) # changed to post length
     y_list = X_list[:]
     p_list = X_list[:]
     w_list = X_list[:]
@@ -307,7 +307,8 @@ def cross_validaton(num_iterations, num_sliding_windows, num_folds, X, y):
             X_train, X_test = X_temp[train_index], X_temp[test_index]
             y_train, y_test = y_temp[train_index], y_temp[test_index]
             
-            model = SVC(kernel = 'rbf')
+            #model = SVC(kernel = 'rbf')
+            model = LinearSVC(C=1e-9, max_iter=5000)
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
             testScore = accuracy_score(y_test,y_pred)

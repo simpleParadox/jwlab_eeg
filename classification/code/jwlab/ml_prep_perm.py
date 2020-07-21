@@ -13,8 +13,10 @@ from jwlab.constants import word_list, bad_trials_filepath, old_participants, cl
 
 def init(age_group):
     if age_group is 9:
-        participants = ["904", "905", "906", "908", "909","910", "912", "913", "914",  "916", "917", "921", "923", "927", "929", "930", "932"] 
-#         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]  
+#         participants = ["904", "905", "906", "908", "909","910", "912", "913", "914",  "916", "917", "921", "923", "927", "929", "930", "932"] 
+
+#all
+        participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]  
     elif age_group is 11:
         participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
@@ -117,33 +119,34 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             elif averaging == "average_trials_and_participants":
                 X, y, p, w = average_trials_and_participants(df, participants)
             elif averaging == "permutation":
+                ## 5 is the averaging set size
                 df = permutation_and_average(df, 5)
                 X, y, p, w = no_average(df)
             else:
                 raise ValueError("Unsupported averaging!")
-
+## binary: animacy
             y[y < 8] = 0
             y[y >= 8] = 1
 
 #     #mom and baby vs all
-#             y[y == 1] = 0
-#             y[y == 2] = 1
-#             y[y == 3] = 1
-#             y[y == 4] = 1
-#             y[y == 5] = 1
-#             y[y == 6] = 1
-#             y[y == 7] = 1
-#             y[y == 8] = 0
+#             y[y == 1] = 1
+#             y[y == 2] = 0
+#             y[y == 3] = 0
+#             y[y == 4] = 0
+#             y[y == 5] = 0
+#             y[y == 6] = 0
+#             y[y == 7] = 0
+#             y[y == 8] = 1
             
-#             y[y == 9] = 1
-#             y[y == 10] = 1
-#             y[y == 11] = 1
-#             y[y == 12] = 1
-#             y[y == 14] = 1
-#             y[y == 15] = 1
-#             y[y == 10] = 1
-#             y[y == 13] = 1
-#             y[y == 16] = 1
+#             y[y == 9] = 0
+#             y[y == 10] = 0
+#             y[y == 11] = 0
+#             y[y == 12] = 0
+#             y[y == 14] = 0
+#             y[y == 15] = 0
+#             y[y == 10] = 0
+#             y[y == 13] = 0
+#             y[y == 16] = 0
 
 #             #new groups 
 #             #0: people

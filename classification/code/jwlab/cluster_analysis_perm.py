@@ -43,8 +43,8 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
                 X_train, X_test = X_temp[train_index], X_temp[test_index]
                 y_train, y_test = y_temp[train_index], y_temp[test_index]
 
-                #model = SVC(kernel = 'rbf', C=1e-8, gamma = .0001)
-                model = LinearSVC(C=1e-8, max_iter=1000)
+                #model = SVC(kernel = 'rbf', C=1e-3, gamma = .0001)
+                model = LinearSVC(C=1e-7, max_iter=1000)
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
                 testScore = accuracy_score(y_test,y_pred)
@@ -96,8 +96,12 @@ def find_clusters(pvalues):
     # Obtain clusters (3 or more consecutive meaningful time)
     clusters = [list(group) for group in mit.consecutive_groups(valid_window)]
     clusters = [group for group in clusters if len(group) >= 3]
-    print("Clusters are: {0}\n".format(clusters))
     
+    adj_clusters = []
+    for c in clusters: 
+        new_list = [((x*10)-200) for x in c]
+        adj_clusters.append(new_list)
+    print("Clusters are: {0}\n".format(adj_clusters))
     return clusters
 
 def get_max_t_mass(clusters, pvalues):
