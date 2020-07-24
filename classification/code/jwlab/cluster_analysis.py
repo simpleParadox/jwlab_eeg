@@ -181,11 +181,11 @@ def prep_cluster_analysis_internal_permutation(df, ys, participants, downsample_
 
 def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
-    # df = df[df.Time >= 0] #removed comment out
+    # df = df[df.Time >= 0] #removed
 
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
-    ys = map_participants(ys, participants)
+    ys = map_participants(ys, participants) # makes a 1 -16 array for each trial type
 
     # set the value of bad trials in ys_curr to -1 (to exclude from learning)
     trial_count = []
@@ -310,54 +310,66 @@ def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows):
         y_test.append(df_test[i].label.values)
         X_test.append(df_test[i].drop(columns = ['label', 'participant'], axis = 1))
 
-        X_test_t_temp, y_test_temp, ps, w = average_trials(df_test[0])
+        X_test_t_temp, y_test_temp, ps, w = average_trials(df_test[i])
         X_test_t.append(pd.DataFrame(X_test_t_temp))
         y_test_t.append(y_test_temp)
 
-        X_test_pt_temp, y_test_temp_pt, ps, w = average_trials_and_participants(df_test[0], participants)
+        X_test_pt_temp, y_test_temp_pt, ps, w = average_trials_and_participants(df_test[i], participants)
         X_test_pt.append(pd.DataFrame(X_test_pt_temp))
         y_test_pt.append(y_test_temp_pt)
 
+        
+        
+        y_train[i][y_train[i] < 8] = 0
+        y_train[i][y_train[i] >= 8] = 1
+        
+        y_test[i][y_test[i] < 8] = 0
+        y_test[i][y_test[i] >= 8] = 1
+        
+        y_test_t[i][y_test_t[i] < 8] = 0
+        y_test_t[i][y_test_t[i] >= 8] = 1
+        
+        y_test_pt[i][y_test_pt[i] < 8] = 0
+        y_test_pt[i][y_test_pt[i] >= 8] = 1
+        
+        
         # to predict the letter b (word onset)
-    for i in range(num_sliding_windows):
-        y_train[i][y_train[i] < 5] = 0 # b
-        y_train[i][y_train[i] == 9] = 0 # b
-        y_train[i][y_train[i] == 10] = 0 # b
-        y_train[i][y_train[i] == 5] = 1
-        y_train[i][y_train[i] == 6] = 1
-        y_train[i][y_train[i] == 7] = 1
-        y_train[i][y_train[i] == 8] = 1
-        y_train[i][y_train[i] > 10] = 1
+#     for i in range(num_sliding_windows):
+#         y_train[i][y_train[i] < 4] = 0 # b
+#         y_train[i][y_train[i] == 8] = 0 # b
+#         y_train[i][y_train[i] == 9] = 0 # b
+#         y_train[i][y_train[i] == 4] = 1
+#         y_train[i][y_train[i] == 5] = 1
+#         y_train[i][y_train[i] == 6] = 1
+#         y_train[i][y_train[i] == 7] = 1
+#         y_train[i][y_train[i] > 9] = 1
 
+#         y_test[i][y_test[i] < 4] = 0 # b
+#         y_test[i][y_test[i] == 8] = 0 # b
+#         y_test[i][y_test[i] == 9] = 0 # b
+#         y_test[i][y_test[i] == 4] = 1
+#         y_test[i][y_test[i] == 5] = 1
+#         y_test[i][y_test[i] == 6] = 1
+#         y_test[i][y_test[i] == 7] = 1
+#         y_test[i][y_test[i] > 9] = 1
 
-        y_test[i][y_test[i] < 5] = 0 # b
-        y_test[i][y_test[i] == 9] = 0 # b
-        y_test[i][y_test[i] == 10] = 0 # b
-        y_test[i][y_test[i] == 5] = 1
-        y_test[i][y_test[i] == 6] = 1
-        y_test[i][y_test[i] == 7] = 1
-        y_test[i][y_test[i] == 8] = 1
-        y_test[i][y_test[i] > 10] = 1
+#         y_test_t[i][y_test_t[i] < 4] = 0 # b
+#         y_test_t[i][y_test_t[i] == 8] = 0 # b
+#         y_test_t[i][y_test_t[i] == 9] = 0 # b
+#         y_test_t[i][y_test_t[i] == 4] = 1
+#         y_test_t[i][y_test_t[i] == 5] = 1
+#         y_test_t[i][y_test_t[i] == 6] = 1
+#         y_test_t[i][y_test_t[i] == 7] = 1
+#         y_test_t[i][y_test_t[i] > 9] = 1
 
-
-        y_test_t[i][y_test_t[i] < 5] = 0 # b
-        y_test_t[i][y_test_t[i] == 9] = 0 # b
-        y_test_t[i][y_test_t[i] == 10] = 0 # b
-        y_test_t[i][y_test_t[i] == 5] = 1
-        y_test_t[i][y_test_t[i] == 6] = 1
-        y_test_t[i][y_test_t[i] == 7] = 1
-        y_test_t[i][y_test_t[i] == 8] = 1
-        y_test_t[i][y_test_t[i] > 10] = 1
-
-
-        y_test_pt[i][y_test_pt[i] < 5] = 0 # b
-        y_test_pt[i][y_test_pt[i] == 9] = 0 # b
-        y_test_pt[i][y_test_pt[i] == 10] = 0 # b
-        y_test_pt[i][y_test_pt[i] == 5] = 1
-        y_test_pt[i][y_test_pt[i] == 6] = 1
-        y_test_pt[i][y_test_pt[i] == 7] = 1
-        y_test_pt[i][y_test_pt[i] == 8] = 1
-        y_test_pt[i][y_test_pt[i] > 10] = 1
+#         y_test_pt[i][y_test_pt[i] < 4] = 0 # b
+#         y_test_pt[i][y_test_pt[i] == 8] = 0 # b
+#         y_test_pt[i][y_test_pt[i] == 9] = 0 # b
+#         y_test_pt[i][y_test_pt[i] == 4] = 1
+#         y_test_pt[i][y_test_pt[i] == 5] = 1
+#         y_test_pt[i][y_test_pt[i] == 6] = 1
+#         y_test_pt[i][y_test_pt[i] == 7] = 1
+#         y_test_pt[i][y_test_pt[i] > 9] = 1
         
         
     return X_train, y_train, X_test, y_test, X_test_t, y_test_t, X_test_pt, y_test_pt

@@ -44,7 +44,7 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
                 y_train, y_test = y_temp[train_index], y_temp[test_index]
 
                 #model = SVC(kernel = 'rbf', C=1e-3, gamma = .0001)
-                model = LinearSVC(C=1e-7, max_iter=1000)
+                model = LinearSVC(C=1e-9, max_iter=1000)
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
                 testScore = accuracy_score(y_test,y_pred)

@@ -120,7 +120,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
                 X, y, p, w = average_trials_and_participants(df, participants)
             elif averaging == "permutation":
                 ## 5 is the averaging set size
-                df = permutation_and_average(df, 5)
+                df = permutation_and_average(df, 20)
                 X, y, p, w = no_average(df)
             else:
                 raise ValueError("Unsupported averaging!")
@@ -129,24 +129,23 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             y[y >= 8] = 1
 
 #     #mom and baby vs all
-#             y[y == 1] = 1
+#             y[y == 0] = 1
+#             y[y == 1] = 0
 #             y[y == 2] = 0
 #             y[y == 3] = 0
 #             y[y == 4] = 0
 #             y[y == 5] = 0
 #             y[y == 6] = 0
-#             y[y == 7] = 0
-#             y[y == 8] = 1
+#             y[y == 7] = 1
             
+#             y[y == 8] = 0
 #             y[y == 9] = 0
 #             y[y == 10] = 0
 #             y[y == 11] = 0
 #             y[y == 12] = 0
+#             y[y == 13] = 0
 #             y[y == 14] = 0
 #             y[y == 15] = 0
-#             y[y == 10] = 0
-#             y[y == 13] = 0
-#             y[y == 16] = 0
 
 #             #new groups 
 #             #0: people
@@ -154,24 +153,23 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
 #             #2: food
 #             #3: kitchen objects
             
-#             y[y == 1] = 0
+#             y[y == 0] = 0
+#             y[y == 1] = 1
 #             y[y == 2] = 1
 #             y[y == 3] = 1
 #             y[y == 4] = 1
 #             y[y == 5] = 1
 #             y[y == 6] = 1
-#             y[y == 7] = 1
-#             y[y == 8] = 0
+#             y[y == 7] = 0
             
-#             y[y == 9] = 2
-#             y[y == 10] = 3
+#             y[y == 8] = 2
+#             y[y == 9] = 3
+#             y[y == 10] = 2
 #             y[y == 11] = 2
-#             y[y == 12] = 2
+#             y[y == 12] = 3
+#             y[y == 13] = 2
 #             y[y == 14] = 2
-#             y[y == 15] = 2
-#             y[y == 10] = 3
-#             y[y == 13] = 3
-#             y[y == 16] = 3
+#             y[y == 15] = 3
 
             X_list[length_per_window][each_window] = X
             y_list[length_per_window][each_window] = y

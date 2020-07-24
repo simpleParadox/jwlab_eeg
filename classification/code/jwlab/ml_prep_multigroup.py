@@ -124,45 +124,27 @@ def prep_ml_internal(df, ys, participants, downsample_num=1000, averaging="avera
             #2: food
             #3: kitchen objects
             
-            y[y == 1] = 0
+            y[y == 0] = 0
+            y[y == 1] = 1
             y[y == 2] = 1
             y[y == 3] = 1
             y[y == 4] = 1
             y[y == 5] = 1
             y[y == 6] = 1
-            y[y == 7] = 1
-            y[y == 8] = 0
+            y[y == 7] = 0
             
-            y[y == 9] = 2
-            y[y == 10] = 3
+            y[y == 8] = 2
+            y[y == 9] = 3
+            y[y == 10] = 2
             y[y == 11] = 2
-            y[y == 12] = 2
+            y[y == 13] = 2
             y[y == 14] = 2
-            y[y == 15] = 2
-            y[y == 10] = 3
-            y[y == 13] = 3
-            y[y == 16] = 3
+            y[y == 9] = 3
+            y[y == 12] = 3
+            y[y == 15] = 3
            
     
-    #mom vs all
-#             y[y == 1] = 1
-#             y[y == 2] = 1
-#             y[y == 3] = 1
-#             y[y == 4] = 1
-#             y[y == 5] = 1
-#             y[y == 6] = 1
-#             y[y == 7] = 1
-#             y[y == 8] = 0
-            
-#             y[y == 9] = 1
-#             y[y == 10] = 1
-#             y[y == 11] = 1
-#             y[y == 12] = 1
-#             y[y == 14] = 1
-#             y[y == 15] = 1
-#             y[y == 10] = 1
-#             y[y == 13] = 1
-#             y[y == 16] = 1
+
 
             X_list[each_timeLength][each_df] = X
             y_list[each_timeLength][each_df] = y
