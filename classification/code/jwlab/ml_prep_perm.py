@@ -1,5 +1,6 @@
 import math
 import random
+from numpy import copy
 import pandas as pd
 import numpy as np
 from scipy.signal import resample
@@ -32,7 +33,8 @@ def load_ml_data(participants):
 
     ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
           for s in participants]
-    print("loaded", flush=True)
+    
+    # print("loaded", flush=True)
     return df, ys
 
 def prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
@@ -70,9 +72,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
 
     Y = np.concatenate(ys)
     
-    if useRandomizedLabel:
-        random.shuffle(Y)
-        print("labels shuffled")
+
         
     #### Sliding window section ####
     start_time = sliding_window_config[0]
@@ -119,16 +119,21 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             elif averaging == "average_trials_and_participants":
                 X, y, p, w = average_trials_and_participants(df, participants)
             elif averaging == "permutation":
-                ## 5 is the averaging set size
+                ## change below to change the averaging set size
                 df = permutation_and_average(df, 20)
                 X, y, p, w = no_average(df)
             else:
                 raise ValueError("Unsupported averaging!")
+                
+                
+            if useRandomizedLabel:
+                y = remap_label(y)
+                
 ## binary: animacy
             y[y < 8] = 0
             y[y >= 8] = 1
 
-#     #mom and baby vs all
+    #mom and baby vs all
 #             y[y == 0] = 1
 #             y[y == 1] = 0
 #             y[y == 2] = 0
@@ -170,6 +175,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
 #             y[y == 13] = 2
 #             y[y == 14] = 2
 #             y[y == 15] = 3
+            
 
             X_list[length_per_window][each_window] = X
             y_list[length_per_window][each_window] = y
@@ -218,6 +224,22 @@ def average_trials_and_participants(df, participants):
     new_data = new_data[new_y != -1, :]
     new_y = new_y[new_y != -1]
     return new_data, new_y, np.ones(new_y.shape[0]) * -1, np.copy(new_y)
+
+def remap_label(y): 
+    labels_temp = list(range(0, 16))
+    random.shuffle(labels_temp)
+
+    mapdict = {}
+    for i in range(16):
+        mapdict[i] = labels_temp.index(i)
+
+    newArray = copy(y)
+
+    for k, v in mapdict.items():
+        newArray[y==k] = v
+
+    
+    return newArray
 
 ################################ Sliding Window ################################
 # start time, end time: int, in ms

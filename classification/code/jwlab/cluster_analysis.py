@@ -86,7 +86,7 @@ def load_ml_data(filepath, participants):
 
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)).tolist()
           for s in participants]
-    print("loaded", flush=True)
+    #print("loaded", flush=True)
     return df, ys
 
 def prep_cluster_analysis_permutation(filepath, participants, downsample_num=1000, length_per_window=10, useRandomizedLabel=False):
@@ -195,7 +195,7 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
             # ys_curr[each_ps]: for the total trial sub-list of each participant of ys_curr...
             # ybad[each_ps][bad_trial]: for each trial index in the bad trial sub-list of each participant of ybad...
             # minus 1 since in ys_curr trials are zero-indexed while in bad_trial it's one-indexed (because they are directly read from csv)
-            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1  # so now 0 to 15
 
         # count the total number of trials for each participant
         trial_count += [len(ys[each_ps])]
@@ -331,7 +331,9 @@ def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows):
         
         y_test_pt[i][y_test_pt[i] < 8] = 0
         y_test_pt[i][y_test_pt[i] >= 8] = 1
-        
+
+
+
         
         # to predict the letter b (word onset)
 #     for i in range(num_sliding_windows):
