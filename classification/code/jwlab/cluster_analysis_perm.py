@@ -17,11 +17,11 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
     results = cross_validaton(num_iterations, num_win, num_folds, X, y)
 
-    pvalues = t_test(results, num_iterations, num_win, num_folds)
+    pvalues, tvalues = t_test(results, num_iterations, num_win, num_folds)
 
-    clusters = find_clusters(pvalues)
+    clusters = find_clusters(pvalues, tvalues)
 
-    max_t_mass = get_max_t_mass(clusters, pvalues)
+    max_t_mass = get_max_t_mass(clusters, tvalues)
 
     return max_t_mass
 
@@ -48,7 +48,7 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
                 testScore = accuracy_score(y_test,y_pred) 
-                print(testScore)
+                
                 
 
                 if j in temp_results.keys(): 
@@ -68,7 +68,7 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
             assert len(results[i][j]) == num_iterations * num_folds
         
     
-    #supress graph for null dist
+#     #supress graph for null dist
 #     for i in range(len(scoreMean)):
 #         length_per_window_plt = 1200/ len(scoreMean[i])
 #         x_graph = np.arange(-200,1000,length_per_window_plt) 
@@ -83,19 +83,21 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
 
 def t_test(results, num_iterations, num_win, num_folds):
     pvalues = []
+    tvalues = []
     for i in range(len(results)):
         for j in range(num_win[i]):
             # change the second argument below for comparison
             istat = stats.ttest_1samp(results[i][j], .5)
             pvalues += [istat.pvalue] if istat.statistic > 0 else [1]
+            tvalues += [istat.statistic] if istat.statistic > 0 else [0]
     
-    return pvalues
+    return pvalues, tvalues
 
 # Finding contiguous time cluster
-def find_clusters(pvalues):
+def find_clusters(pvalues, tvalues):
     valid_window = [i for i,v in enumerate(pvalues) if v <= 0.025]
     
-    # print("Valid windows are: {0}\n".format(valid_window))
+#     print("Valid windows are: {0}\n".format(valid_window))
     
     # Obtain clusters (3 or more consecutive meaningful time)
     clusters = [list(group) for group in mit.consecutive_groups(valid_window)]
@@ -105,19 +107,19 @@ def find_clusters(pvalues):
     for c in clusters: 
         new_list = [((x*10)-200) for x in c]
         adj_clusters.append(new_list)
-    # print("Clusters are: {0}\n".format(adj_clusters))
+#     print("Clusters are: {0}\n".format(adj_clusters))
     return clusters
 
-def get_max_t_mass(clusters, pvalues):
+def get_max_t_mass(clusters, tvalues):
     t_mass = [0]
     for c in clusters:
         t_scores = 0
         for time in c:
-            t_scores += pvalues[time]
+            t_scores += tvalues[time]
         t_mass += [t_scores]
     
     max_t_mass = max(t_mass)
     
-    # print("The max t mass is: {0}\n".format(max_t_mass))
+#     print("The max t mass is: {0}\n".format(max_t_mass))
     
     return max_t_mass
