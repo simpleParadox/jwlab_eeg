@@ -68,16 +68,16 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
             assert len(results[i][j]) == num_iterations * num_folds
         
     
-#     #supress graph for null dist
-#     for i in range(len(scoreMean)):
-#         length_per_window_plt = 1200/ len(scoreMean[i])
-#         x_graph = np.arange(-200,1000,length_per_window_plt) 
-#         y_graph = scoreMean[i]
-#         stdevplt = np.array(stdev[i])
-#         error = stdevplt
-#         plt.plot(x_graph, y_graph, 'k-')
-#         plt.fill_between(x_graph, y_graph-error, y_graph+error)
-#         plt.show()
+    #supress graph for null dist
+    for i in range(len(scoreMean)):
+        length_per_window_plt = 1200/ len(scoreMean[i])
+        x_graph = np.arange(-200,1000,length_per_window_plt) 
+        y_graph = scoreMean[i]
+        stdevplt = np.array(stdev[i])
+        error = stdevplt
+        plt.plot(x_graph, y_graph, 'k-')
+        plt.fill_between(x_graph, y_graph-error, y_graph+error)
+        plt.show()
     
     return results
 
@@ -97,7 +97,7 @@ def t_test(results, num_iterations, num_win, num_folds):
 def find_clusters(pvalues, tvalues):
     valid_window = [i for i,v in enumerate(pvalues) if v <= 0.025]
     
-#     print("Valid windows are: {0}\n".format(valid_window))
+    print("Valid windows are: {0}\n".format(valid_window))
     
     # Obtain clusters (3 or more consecutive meaningful time)
     clusters = [list(group) for group in mit.consecutive_groups(valid_window)]
@@ -107,7 +107,7 @@ def find_clusters(pvalues, tvalues):
     for c in clusters: 
         new_list = [((x*10)-200) for x in c]
         adj_clusters.append(new_list)
-#     print("Clusters are: {0}\n".format(adj_clusters))
+    print("Clusters are: {0}\n".format(adj_clusters))
     return clusters
 
 def get_max_t_mass(clusters, tvalues):
@@ -120,6 +120,6 @@ def get_max_t_mass(clusters, tvalues):
     
     max_t_mass = max(t_mass)
     
-#     print("The max t mass is: {0}\n".format(max_t_mass))
+    print("The max t mass is: {0}\n".format(max_t_mass))
     
     return max_t_mass
