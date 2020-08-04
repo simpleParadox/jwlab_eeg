@@ -2,6 +2,7 @@ import sklearn
 import pandas as pd
 import numpy as np
 import pickle
+import matplotlib.pyplot as plt
 import gensim
 from numpy import savez_compressed
 from numpy import load
@@ -14,7 +15,9 @@ from scipy.io import loadmat
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
-from sklearn.decomposition import TruncatedSVD, PCA
+from sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 import gensim
 from sklearn.linear_model import Ridge
 from sklearn.kernel_ridge import KernelRidge
@@ -26,10 +29,10 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 
 
-labels_mapping_mod_ratings = {0:'baby', 1:'bear', 2:'bird', 3: 'rabbit',
-                      4:'cat', 5 : 'dog', 6: 'duck',
+labels_mapping = {0:'baby', 1:'bear', 2:'bird', 3: 'bunny',
+                      4:'cat', 5 : 'dog', 6: 'duck', 7: 'mom',
                       8: 'banana', 9: 'bottle', 10: 'cookie',
-                      11: 'biscuit', 12: 'cup', 13: 'juice',
+                      11: 'cracker', 12: 'cup', 13: 'juice',
                       14: 'milk', 15: 'spoon'}
 
 from sklearn.preprocessing import StandardScaler
@@ -45,7 +48,6 @@ else:
 readys_path = None
 avg_readys_path = None
 if os_name =='Windows':
-    # readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
     readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\\data\\ml_df_readys.pkl"
     avg_readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_data_readys.pkl"
     avg_trials_and_ps_9m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_9m.pkl"
@@ -65,7 +67,7 @@ elif os_name=='Linux':
 # readys_data = pickle.load(f)
 # f.close()
 
-# bof_data = loadmat(bag_of_features)
+
 
 
 
@@ -86,26 +88,6 @@ elif os_name=='Linux':
     bof_embeds_path = os.getcwd() + "/regression/w2v_embeds/bof_w2v_embeds.npz"
 
 
-def get_w2v_embeds(labels):
-
-    model = gensim.models.KeyedVectors.load_word2vec_format('G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
-    all_embeds = []
-    present_indices = []
-    idx = 0
-    for i in labels:
-        word = i[0][0].lower()
-        try:
-            all_embeds.append(model[word])
-            present_indices.append(idx)
-        except:
-            print("Not in vocabulary")
-            print(idx)
-        idx += 1
-    print("Total length: ", len(all_embeds))
-    savez_compressed('/regression/w2v_embeds/bof_w2v_embeds.npz', all_embeds)
-    # for label in labels:
-    #     all_embeds.append(w2v_label_embeds[int(label)])
-    # return all_embeds
 
 
 def monte_carlo_2v2_permuted(X, Y, split_idxs):
@@ -225,186 +207,73 @@ def monte_carlo_2v2(X,Y):
 
 
 
-# a = bof_data['features'][:, :218]
-# b_loaded = load(bof_embeds_path)
-# b = b_loaded['arr_0']
-#
-# nouns = [temp[0][0].lower() for temp in bof_data['nouns']]
-
-
-# def select_ratings():
-print("Select ratings")
-f = open(readys_path, 'rb')  # Load readys_data.
+"""
+Run some test experiments.
+    1. Load the EEG data.
+    2. Create the Word2Vec embeddings.
+    3. Align the word length from the w2v embeddings to the EEG data.
+    4. Fit model.
+    5. Predict.
+"""
+# 1. Load the EEG Data.
+f = open(readys_path, 'rb')
 readys_data = pickle.load(f)
 f.close()
-# Store, indices from the ratings dataset, labels from the readys_data.
-# First obtain the indices of the ratings for the words present in the labels_mapping_mod_ratings
-# rating_idxs = []
-# for w in labels_mapping_mod_ratings:
-#     word = labels_mapping_mod_ratings[w]
-#     for n_idx in range(len(nouns)):
-#         if word == nouns[n_idx]:
-#             rating_idxs.append(n_idx)
-#             break
-# print(rating_idxs)
-# print(len(rating_idxs))
+
+# 2. Load the BoF Data.
+bof_data = loadmat(bag_of_features)
+
+# Align data.
+# def align_data():
+# First extract the labels.
+labels = readys_data.iloc[:, 18000].values
+eeg_data = readys_data.iloc[:, :18000].values
+# Now create a new list with the length of the words in it.
+word_labels = []
+model = gensim.models.KeyedVectors.load_word2vec_format('G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
+for label in labels:
+    word_labels.append(model[labels_mapping[int(label)]])
+
+correct_labels = deepcopy(np.array(word_labels))
+
+# tsne = TSNE(n_components=100, perplexity=50,method='exact')
+# eeg_data = tsne.fit_transform(eeg_data, correct_labels)
 
 
-#  Create mapping
-# labels = readys_data.iloc[:, 18000].values
-# # First note the indices where the the label is 7 -> word 'mom
-# filtered_idxs = []  # Contains indices from readys_data without the label '7'.
-# for l in range(len(labels)):
-#     if labels[l] != 7:
-#         filtered_idxs.append(l)
-# filtered_readys_data = readys_data.iloc[filtered_idxs,:18000].values # Store this
-# readys_ratings = []  # Store this. The eeg data and corresponding ratings.
-# for j in filtered_idxs:
-#     lab_idx = labels[j]  # This is in agreement to the labels_mod_mapping.
-#     # print(lab_idx)
-#     word = labels_mapping_mod_ratings[lab_idx]
-#     bof_rating_index = nouns.index(word)
-#     rating = a[bof_rating_index]
-#     readys_ratings.append(rating)
-# readys_ratings = np.array(readys_ratings)
-# The EEG data and ratings are aligned now with the label '7' removed.
+word_labels = np.array(word_labels)
+
+correct_scores = []
+for i in range(0, 100):
+    correct_scores.append(test_model(eeg_data, correct_labels, deepcopy(labels)))
+print("Correct Scores Average: ", np.mean(correct_scores))
+
+permuted_scores = []
+idxs = [_ for _ in range(len(word_labels))]
+for i in range(0, 100):
+    random.shuffle(idxs)
+    word_labels = word_labels[idxs]
+    permuted_scores.append(test_model_permute(eeg_data, deepcopy(word_labels), deepcopy(labels)))
+
+print("Permuted Scores Average: ", np.mean(permuted_scores))
 
 
-# tsvd = TruncatedSVD(n_components=50)
-# readys_ratings = tsvd.fit_transform(readys_ratings)
-
-# readys_tsvd = TruncatedSVD(n_components=300)
-# filtered_readys_data = readys_tsvd.fit_transform(filtered_readys_data)
-#
-# test_model(filtered_readys_data, deepcopy(readys_ratings))
-# test_model_permute(filtered_readys_data, deepcopy(readys_ratings))
-
-
-def simple_mod_cv():
-    wo_score, shfl_idxs = monte_carlo_2v2(filtered_readys_data, deepcopy(readys_ratings))
-    print(wo_score)
-    wi_score = monte_carlo_2v2_permuted(filtered_readys_data, deepcopy(readys_ratings), shfl_idxs)
-    print(wi_score)
-
-
-# simple_mod_cv()
-
-def simple_cv():
-    idxs = [i for i in range(0, 1000) if i not in [162, 473, 925]]
-    wo_score, shfl_idxs = monte_carlo_2v2(a[idxs], deepcopy(b))
-    print(wo_score)
-    wi_score = monte_carlo_2v2_permuted(a[idxs], deepcopy(b), shfl_idxs)
-    print(wi_score)
-
-# simple_cv()
-
-#  Scratches and rough code
-
-# In the following section I find the first k columns that have the lowest average standard deviation across all labels.
-# Then use those columns from the EEG data to predict ratings and also the embeddings directly using two separate experiments.
-
-
-# readys_data_9m = readys_data[1008:]
-# # readys_data_9m = readys_data[:1008]
-# col_idxs = [t for t in range(18000)]
-# std_list = []
-# for lab in range(0, 16):
-#     inspect = readys_data[readys_data['label'] == lab]
-#     std_list.append(np.std(inspect.iloc[:,:18000].values, axis=0))
-# std_list = np.average(std_list, axis=0).tolist()
-#
-# # Now find the first 300 columns that have the minimum standard deviation
-# list1, list_idxs = zip(*sorted(zip(std_list, col_idxs)))
-#
-# all_w2v_embeds_loaded = load(w2v_path)
-# all_w2v_embeds = all_w2v_embeds_loaded['arr_0']
-#
-# w2v_embeds = all_w2v_embeds[1008:]
-# w2v_idxs = [t for t in range(len(w2v_embeds))]
-# scores = []
-# for r in range(20):
-#     # random.shuffle(w2v_idxs)
-#     # w2v_embeds = w2v_embeds[w2v_idxs]
-#     scores.append(test_model(readys_data_9m.iloc[:, list(list_idxs)[:500]].values, deepcopy(w2v_embeds)))
-# print("Average", np.average(scores))
-
-
-
-# Step 1: Filter the data based on animate and inanimate words
-
-animate_words = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0]
-
-inanimate_words = [8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0]
-
-def filter_data_by_words(df, type):
-    """
-    Filter words by animate or inanimate.
-    """
-    reduced_data = None
-    if type == 'animate':
-        reduced_data = df[df['label'].isin(animate_words)]
-    elif type == 'inanimate':
-        reduced_data = df[df['label'].isin(inanimate_words)]
-    else:
-        reduced_data = df
-    return reduced_data
-
-# Step 2: Assign labels to the correct word embeddings and then
-# def train():
-type = 'all'
-df = filter_data_by_words(deepcopy(readys_data), type)  # Contains only animate or inanimate words.
-w2v_labels = []
-embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
-embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']
-embeds_with_labels_dict = embeds_with_labels_dict[0]
-label_numbers = df.iloc[:, 18000].values
-
-# Do PCA on data.
+# # Plot the variance vs components graph
+# pca = PCA(n_components=4)
 # scaler = StandardScaler()
-# X_scaled = scaler.fit_transform(df.iloc[:, :18000].values)
-# pca = PCA(n_components=50)
-# X = pca.fit_transform(X_scaled)
+# X_scaled = scaler.fit_transform(eeg_data)
+# X_mod = pca.fit_transform(X_scaled)
+# comps = pca.components_
+# variances = pca.explained_variance_
+# var_list = [_ for _ in range(len(variances))]
+# print(comps.shape)
+# print(variances.shape)
+# var_ratio = pca.explained_variance_ratio_
+# plt.plot(var_list, var_ratio)
+# plt.xlim([0,10])
+# plt.show()
 
-X = df.iloc[:, :18000].values
-
-for label in label_numbers:
-    w2v_labels.append(embeds_with_labels_dict[int(label)])
-
-
-w2v_labels = np.array(w2v_labels)
-
-
-# Check if the labels are present in the w2v_labels. -> Result => They are.
-# true_list = []
-# for val in embeds_with_labels_dict.values():
-#     for _ in range(len(w2v_labels)):
-#         if np.array_equal(val, w2v_labels[_]):
-#             true_list.append(True)
-
-
-
-# w2v_scaler = StandardScaler()
-# w2v_labels = w2v_scaler.fit_transform(w2v_labels)
-
-scores = []
-# for i in range(1000):
-score = test_model(deepcopy(X), deepcopy(w2v_labels), embeds_with_labels_dict)
-# scores.append(score)
-print(score)
-# print(np.mean(scores))
-
-# Permuting the labels here.
-# y = deepcopy(w2v_labels)
-# np.random.shuffle(y)
-# # y_indices = [i for i in range(len(w2v_labels))]
-# # random.shuffle(y_indices)
-# # y = w2v_labels[y_indices]
-# permute_score = test_model(deepcopy(X), y)
-# print(permute_score)
-
-# train()
-
-
-
-
-
+## Todo: animate vs animate, animate vs inanimate, inanimate vs inanimate.
+## First label the words as animate or inanimate.
+## Predic the word2vec embeddings
+# How about train on one group of labels and predict on others?
+# This should be based on the similarity of the words. Let's try animates and inanimates only.

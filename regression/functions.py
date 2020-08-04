@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_distances
 from copy import deepcopy
 import pandas as pd
 import pickle
@@ -7,6 +8,10 @@ import random
 import gensim
 from numpy import load, savez_compressed
 from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Lasso
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
@@ -18,24 +23,50 @@ labels_mapping = {0:'baby', 1:'bear', 2:'bird', 3: 'bunny',
                       11: 'cracker', 12: 'cup', 13: 'juice',
                       14: 'milk', 15: 'spoon'}
 def test_model_permute(X, y):
-    random.shuffle(y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
+    # print("Test model permute")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90)
     model = Ridge()
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
+    # print(model.score(X_test, y_test))
     a,b,c = two_vs_two(y_test, preds)
-    print(c)
+    # print(c)
+    return c
 
-def test_model(X, y):
-    # random.shuffle(y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.80, shuffle=True)
-    print(X_train.shape)
-    print(y_train.shape)
-    model = Ridge()
+def test_model(X, y, labels_dict=None):
+    print("New test?")
+    # print("Test model")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90)
+    # print(X_train.shape)
+    # print(y_train.shape)
+    model = RandomForestRegressor(verbose=2, n_jobs=4)
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
+    # print(model.score(X_test, y_test))
+    # check_and_assign_labels(y_test, preds, labels_dict)
     a,b,c = two_vs_two(y_test, preds)
-    print(c)
+    # print(a)
+    # print(b)
+    # print(c)
+    return c
+
+def check_and_assign_labels(ytest, preds, labels_dict):
+    """
+    For y_test assign the correct keys as numbers from the labels_dict.
+    For preds, do the same.
+    """
+    ytest_numbers = []
+    preds_numbers = []
+    for i in range(len(ytest)):
+        for key, value in labels_dict.items():
+            print("type(ytest[i]): ", type(ytest[i]))
+            print("type(value): ", type(value))
+            if np.array_equal(ytest[i], value):
+                ytest_numbers.append(key)
+            if np.array_equal(preds[i], value):
+                preds_numbers.append(key)
+
+
 def average_trials(df):
     num_participants = int(df.participant.max()) + 1
     print(num_participants)
@@ -93,14 +124,13 @@ def average_trials_and_participants(df, participants):
     num_words = len(word_list)
     data, y, participants_rt, w = average_trials(df)
 
-
     new_data = np.zeros((num_words, len(df.columns) - 2))
     new_y = np.zeros(num_words)
     for w in range(num_words):
         count = 0
         for p in range(13):
             count += data[p * num_words + w]
-        mean = count / 13  #len(participants)
+        mean = count / len(participants)
         new_data[w, :] = mean
         new_y[w] = -1 if np.isnan(mean).any() else w
     new_data = new_data[new_y != -1, :]
@@ -151,11 +181,16 @@ def two_vs_two(y_test, preds):
         dsjj = cosine_similarity([s_j], [s_j_pred])
         dsij = cosine_similarity([s_i], [s_j_pred])
         dsji = cosine_similarity([s_j], [s_i_pred])
+        # dsii = cosine_distances([s_i], [s_i_pred])
+        # dsjj = cosine_distances([s_j], [s_j_pred])
+        # dsij = cosine_distances([s_i], [s_j_pred])
+        # dsji = cosine_distances([s_j], [s_i_pred])
         # print("dsii: ", dsii)
-        # print("dsjj: ", dsjj)
+        # print("dsii abs: ", np.abs(dsii[0][0]))
         # print("dsij: ", dsij)
         # print("dsji: ", dsji)
-        if (dsii + dsjj) >= (dsij + dsji):
+        # print("Addition", dsii+dsjj)
+        if np.abs(dsii[0][0]) + np.abs(dsjj[0][0]) >= np.abs(dsij[0][0]) + np.abs(dsji[0][0]):
             points += 1
         total_points += 1
     return points, total_points, points / total_points

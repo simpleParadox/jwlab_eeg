@@ -27,14 +27,16 @@ from sklearn.tree import DecisionTreeRegressor
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import TruncatedSVD
+from sklearn.manifold import MDS
+from sklearn.manifold import TSNE
 from sklearn.model_selection import GridSearchCV
 
 os_name = platform.system()
 
 if os_name == 'Windows':
-    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
+    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
 else:
-    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
+    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, two_vs_two_test, test_model, test_model_permute, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
 
 
 
@@ -44,7 +46,7 @@ else:
 readys_path = None
 avg_readys_path = None
 if os_name =='Windows':
-    readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
+    readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\\data\\ml_df_readys.pkl"
     avg_readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_data_readys.pkl"
     avg_trials_and_ps_9m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_9m.pkl"
     avg_trials_and_ps_13m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_13m.pkl"
@@ -58,9 +60,9 @@ elif os_name=='Linux':
     avg_trials_and_ps_9and13_path = os.getcwd() + "/regression/data/avg_trials_and_ps_9and13.pkl"
 
 # with open(pkl_path, 'rb') as f:
-f = open(readys_path, 'rb')
-readys_data = pickle.load(f)
-f.close()
+# f = open(readys_path, 'rb')
+# readys_data = pickle.load(f)
+# f.close()
 
 # bof_data = loadmat('/regression/data/bagOfFeatures (1).mat')
 
@@ -92,65 +94,9 @@ elif os_name=='Linux':
 
   # The last value is the score.
 
-def split_avg_trials_and_ps_model():
-    # First read the data
-    start = time.time()
-    t_a_eeg = pickle.load(open(avg_trials_and_ps_13m_path, 'rb'))
-    n_a_eeg = pickle.load(open(avg_trials_and_ps_9m_path, 'rb'))
-    avg_w2v_data_loaded = load(gen_w2v_all_ps_avg_path)
-    avg_w2v_data = avg_w2v_data_loaded['arr_0']
-    rounds = 50
-    t_a_scores = []
-    n_a_scores = []
-    for r in range(rounds):
-        t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_a_eeg, avg_w2v_data, train_size=0.90, shuffle=True)
-        n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_a_eeg, avg_w2v_data, train_size=0.90, shuffle=True)
-
-        t_a_model = DecisionTreeRegressor()
-        t_a_model.fit(t_X_train, t_y_train)
-        t_a_preds = t_a_model.predict(t_X_test)
-        t_a_points, t_a_total_points, t_a_score = two_vs_two(t_y_test, t_a_preds)
-        t_a_scores.append(t_a_score)
-
-        n_a_model = DecisionTreeRegressor()
-        n_a_model.fit(n_X_train, n_y_train)
-        n_a_preds = n_a_model.predict(n_X_test)
-        n_a_points, n_a_total_points, n_a_score = two_vs_two(n_y_test, n_a_preds)
-        n_a_scores.append(n_a_score)
-
-    stop = time.time()
-    print("Average score for 13 month averaged trials and ps: ", np.average(t_a_scores))
-    print("Average score for 9 month averaged trials and ps: ", np.average(n_a_scores))
-    print("Total time taken: ", stop - start)
-
-# split_avg_trials_and_ps_model()
-
-def avg_trials_and_ps_model():
-    # First read the data
-    start = time.time()
-
-    avg_eeg_data = pickle.load(open(avg_trials_and_ps_9and13_path, 'rb'))
-    avg_w2v_data_loaded = load(gen_w2v_all_ps_avg_path)
-    avg_w2v_data = avg_w2v_data_loaded['arr_0']
-    print("Avg all ps trial shape: ", avg_eeg_data.shape)
-    print("Avg w2v gen shape: ", avg_w2v_data.shape)
-    rounds = 10000
-    a_scores = []
-    for r in range(rounds):
-        print("Round: ", r + 1)
-        X_train, X_test, y_train, y_test = train_test_split(avg_eeg_data, avg_w2v_data, train_size=0.90, shuffle=True)
-        # print(X_train.shape)
-        dt_model = Ridge()
-        dt_model.fit(X_train, y_train)
-        preds = dt_model.predict(X_test)
-        a_points, a_total_points, a_score = two_vs_two(y_test, preds)
-        a_scores.append(a_score)
-    stop = time.time()
-    print("Average score for averaged trials and ps no cv: ", np.average(a_scores))
-    print("Total time taken: ", stop - start)
 
 
-# avg_trials_and_ps_model()
+
 
 
 def get_ps():
@@ -238,13 +184,14 @@ def split_ps_model():
 
 
 def do_svd(ref):
-    tsvd = TruncatedSVD(n_components=50)
+    tsvd = TruncatedSVD(n_components=500)
     ref = tsvd.fit_transform(ref)
     return ref
 
 
 def monte_carlo_2v2_permuted(X, Y, split_idxs):
     # start = time.time()
+    # NOTE: Shuffling of data should be done before calling this function.
     print("Monte-Carlo CV DT Permuted")
     # Split into training and testing data
     parameters_ridge = {'alpha': [10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
@@ -252,9 +199,9 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
 
 
 
-    dt = Ridge()
-    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=4)
+    dt = DecisionTreeRegressor()
+    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=1)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
@@ -273,7 +220,7 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
         test_idx = idxs[1]
         # print("train index: ", train_idx)
         # print("test index: ", test_idx)
-        X_train, X_test = eeg_features[train_idx], eeg_features[test_idx]
+        X_train, X_test = eeg_features.iloc[train_idx, :].values, eeg_features.iloc[test_idx,:].values
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
         # random.shuffle(train_idx) # For permutation test only.
@@ -378,16 +325,16 @@ def monte_carlo_2v2(X, Y):
 
 
 
-    dt = Ridge()
-    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=4)
+    dt = DecisionTreeRegressor()
+    clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=1)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y  # w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=10, train_size=0.90)
+    rs = ShuffleSplit(n_splits=100, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
@@ -396,14 +343,15 @@ def monte_carlo_2v2(X, Y):
     for train_index, test_index in rs.split(all_data_indices):
         # print("Shuffle Split fold: ", f)
         shuffle_split_idxs.append([train_index, test_index])
-        X_train, X_test = eeg_features[train_index], eeg_features[test_index]
+        X_train, X_test = eeg_features.iloc[train_index,:].values, eeg_features.iloc[test_index,:].values
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
         # random.shuffle(train_index) # For permutation test only.
         # random.shuffle(test_index) # For permutation test only.
         # print("Train index after: ", train_index)
         y_train, y_test = w2v_embeds_mod[train_index], w2v_embeds_mod[test_index]
-
+        # print(X_train.shape)
+        # print(y_train.shape)
         # ss = StandardScaler()
         # X_train = ss.fit_transform(X_train)
         # X_test = ss.transform(X_test)
@@ -424,17 +372,122 @@ def monte_carlo_2v2(X, Y):
     # print("Total time: ", stop - start)
     return score_with_alpha['avg'], shuffle_split_idxs
 
+def avg_trials_and_ps_model():
+    # First read the data
+    print("Avg trials and ps model")
+    avg_eeg_data = pickle.load(open(avg_trials_and_ps_9and13_path, 'rb'))
+    avg_w2v_data_loaded = load(gen_w2v_all_ps_avg_path)
+    avg_w2v_data = avg_w2v_data_loaded['arr_0']
+    # print("Avg all ps trial shape: ", avg_eeg_data.shape)
+    # print("Avg w2v gen shape: ", avg_w2v_data.shape)
+    rounds = 1
+    a_scores = []
+    p_scores = []
+    data_idxs = [t for t in range(len(avg_w2v_data))]
+    for r in range(rounds):
+        # print("Round: ", r + 1)
+        # X_train, X_test, y_train, y_test = train_test_split(avg_eeg_data, avg_w2v_data, train_size=0.90, shuffle=True)
+        # # print(X_train.shape)
+        # dt_model = Ridge()
+        # dt_model.fit(X_train, y_train)
+        # preds = dt_model.predict(X_test)
+        # a_points, a_total_points, a_score = two_vs_two(y_test, preds)
+        # a_scores.append(a_score)
+        a_score, shfl_indices = monte_carlo_2v2(avg_eeg_data, deepcopy(avg_w2v_data))
+        a_scores.append(a_score)
+        random.shuffle(data_idxs)
+        mod_avg_w2v_data = avg_w2v_data[data_idxs]
+        p_score = monte_carlo_2v2_permuted(avg_eeg_data, deepcopy(mod_avg_w2v_data), shfl_indices)
+        p_scores.append(p_score)
+    print("Average score for all averaged trials and ps no cv: ", np.average(a_scores))
+    print("Average score for all averaged trials and ps no cv permuted: ", np.average(p_scores))
 
-def test_model(X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
-    model = Ridge()
-    model.fit(X_train, y_train)
-    preds = model.predict(X_test)
-    a,b,c = two_vs_two(y_test.tolist(), preds)
-    print(c)
+    # avg_w2v_data_idxs = [t for t in range(16)]
+    # for r in range(rounds):
+    #     random.shuffle(avg_w2v_data_idxs)
+    #     avg_w2v_data = avg_w2v_data[avg_w2v_data_idxs]
+    #     print("Round: ", r + 1)
+    #     X_train, X_test, y_train, y_test = train_test_split(avg_eeg_data, avg_w2v_data, train_size=0.90, shuffle=True)
+    #     # print(X_train.shape)
+    #     dt_model = Ridge()
+    #     dt_model.fit(X_train, y_train)
+    #     preds = dt_model.predict(X_test)
+    #     a_points, a_total_points, p_score = two_vs_two(y_test, preds)
+    #     p_scores.append(p_score)
 
+avg_trials_and_ps_model()
 
-# test_model(readys_data.iloc[:,:18000].values, readys_data.iloc[:, 18000].values)
+def split_avg_trials_and_ps_model():
+    # First read the data
+    print("Split avg trial and ps model")
+    start = time.time()
+    t_a_eeg = pickle.load(open(avg_trials_and_ps_13m_path, 'rb'))
+    n_a_eeg = pickle.load(open(avg_trials_and_ps_9m_path, 'rb'))
+    avg_w2v_data_loaded = load(gen_w2v_all_ps_avg_path)
+    avg_w2v_data = avg_w2v_data_loaded['arr_0']
+    rounds = 1
+    t_a_scores = []
+    n_a_scores = []
+    t_a_scores_perm = []
+    n_a_scores_perm = []
+    data_idxs = [t for t in range(len(avg_w2v_data))]
+    for r in range(rounds):
+        # t_X_train, t_X_test, t_y_train, t_y_test = train_test_split(t_a_eeg, avg_w2v_data, train_size=0.90, shuffle=True)
+        # n_X_train, n_X_test, n_y_train, n_y_test = train_test_split(n_a_eeg, avg_w2v_data, train_size=0.90, shuffle=True)
+        #
+        # t_a_model = DecisionTreeRegressor()
+        # t_a_model.fit(t_X_train, t_y_train)
+        # t_a_preds = t_a_model.predict(t_X_test)
+        # t_a_points, t_a_total_points, t_a_score = two_vs_two(t_y_test, t_a_preds)
+        t_a_score, shfl_indices = monte_carlo_2v2(t_a_eeg, deepcopy(avg_w2v_data))
+        t_a_scores.append(t_a_score)
+        random.shuffle(data_idxs)
+        mod_avg_w2v_data = avg_w2v_data[data_idxs]
+        t_a_score_perm = monte_carlo_2v2_permuted(t_a_eeg, deepcopy(mod_avg_w2v_data), shfl_indices)
+        t_a_scores_perm.append(t_a_score_perm)
+
+        # n_a_model = DecisionTreeRegressor()
+        # n_a_model.fit(n_X_train, n_y_train)
+        # n_a_preds = n_a_model.predict(n_X_test)
+        # n_a_points, n_a_total_points, n_a_score = two_vs_two(n_y_test, n_a_preds)
+        n_a_score, shfl_indices = monte_carlo_2v2(n_a_eeg, deepcopy(avg_w2v_data))
+        n_a_scores.append(n_a_score)
+        random.shuffle(data_idxs)
+        mod_avg_w2v_data = avg_w2v_data[data_idxs]
+        n_a_score_perm = monte_carlo_2v2_permuted(n_a_eeg, deepcopy(mod_avg_w2v_data), shfl_indices)
+        n_a_scores_perm.append(n_a_score_perm)
+
+    stop = time.time()
+    print("Average score for 13 month averaged trials and ps: ", np.average(t_a_scores))
+    print("Average score for 9 month averaged trials and ps: ", np.average(n_a_scores))
+    print("Average score for 13 month averaged trials and ps permuted: ", np.average(t_a_scores_perm))
+    print("Average score for 9 month averaged trials and ps permuted: ", np.average(n_a_scores_perm))
+    print("Total time taken: ", stop - start)
+
+# split_avg_trials_and_ps_model()
+
+# def test_model(X, y):
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90, shuffle=True)
+#     model = Ridge()
+#     model.fit(X_train, y_train)
+#     preds = model.predict(X_test)
+#     a,b,c = two_vs_two(y_test.tolist(), preds)
+#     print(c)
+
+# test_file = load("G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\\all_w2v_embeds.npz")
+# test_data = test_file['arr_0']
+# test_scores_non = []
+# test_scores_perm = []
+# mds = MDS(n_components=100)
+# X = mds.fit_transform(readys_data.iloc[:,:].values)
+# for _ in range(10):
+#     score = test_model(X, deepcopy(test_data))
+#     test_scores_non.append(score)
+#     score = test_model_permute(X, deepcopy(test_data))
+#     test_scores_perm.append(score)
+# print("Non-permuted : ", np.average(test_scores_non))
+# print("Permuted : ", np.average(test_scores_perm))
+
 
 def random_groups():
     start = time.time()
@@ -492,7 +545,7 @@ def random_groups():
     print("Total time taken: ", stop - start)
 
 
-random_groups()
+# random_groups()
 
 
 # monte_carlo_2v2()
