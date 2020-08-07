@@ -1,6 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics.pairwise import cosine_distances
+from scipy.spatial.distance import cosine
 from copy import deepcopy
 import pandas as pd
 import pickle
@@ -36,10 +38,10 @@ def test_model_permute(X, y):
 def test_model(X, y, labels_dict=None):
     print("New test?")
     # print("Test model")
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.80)
     # print(X_train.shape)
     # print(y_train.shape)
-    model = RandomForestRegressor(verbose=2, n_jobs=4)
+    model = Ridge()
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
     # print(model.score(X_test, y_test))
@@ -170,6 +172,9 @@ def two_vs_two(y_test, preds):
     # print("Preds",preds[0])
     points = 0
     total_points = 0
+    diff_ii_jj = []
+    diff_ij_ji = []
+    x_length = [_ for _ in range(preds.shape[0]-1)]
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
         s_j = y_test[i + 1]
@@ -177,22 +182,24 @@ def two_vs_two(y_test, preds):
         s_j_pred = preds[i + 1]
         # print("S_i", s_i)
         # print('s_i_pred', s_i_pred)
-        dsii = cosine_similarity([s_i], [s_i_pred])
-        dsjj = cosine_similarity([s_j], [s_j_pred])
-        dsij = cosine_similarity([s_i], [s_j_pred])
-        dsji = cosine_similarity([s_j], [s_i_pred])
-        # dsii = cosine_distances([s_i], [s_i_pred])
-        # dsjj = cosine_distances([s_j], [s_j_pred])
-        # dsij = cosine_distances([s_i], [s_j_pred])
-        # dsji = cosine_distances([s_j], [s_i_pred])
+        dsii = cosine(s_i, s_i_pred)
+        dsjj = cosine(s_j, s_j_pred)
+        dsij = cosine(s_i, s_j_pred)
+        dsji = cosine(s_j, s_i_pred)
         # print("dsii: ", dsii)
         # print("dsii abs: ", np.abs(dsii[0][0]))
         # print("dsij: ", dsij)
         # print("dsji: ", dsji)
         # print("Addition", dsii+dsjj)
-        if np.abs(dsii[0][0]) + np.abs(dsjj[0][0]) >= np.abs(dsij[0][0]) + np.abs(dsji[0][0]):
+        diff_ii_jj.append(dsii-dsjj)
+        diff_ij_ji.append(dsij-dsji)
+        if dsii + dsjj <= dsij + dsji:
             points += 1
         total_points += 1
+    plt.plot(x_length, diff_ii_jj, color='b', label='correct')
+    plt.plot(x_length, diff_ij_ji, color='r', label='alternate')
+    plt.legend(loc='upper left')
+    plt.show()
     return points, total_points, points / total_points
 
 

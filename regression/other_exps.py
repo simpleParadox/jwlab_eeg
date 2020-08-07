@@ -1,5 +1,6 @@
 import sklearn
 import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import gensim
@@ -367,44 +368,65 @@ label_numbers = df.iloc[:, 18000].values
 
 X = df.iloc[:, :18000].values
 
+pca = PCA(n_components=15)
+x_pca = pca.fit_transform(X)
+# var_ratios = pca.explained_variance_ratio_
+# cum_var_ratios = np.cumsum(var_ratios)
+# comps = [_ for _ in range(len(cum_var_ratios))]
+# plt.plot(comps, cum_var_ratios)
+# plt.xlabel("Components")
+# plt.ylabel("Variance explained (ratio)")
+# plt.title("Ratio of total variance explained by components animate")
+# plt.show()
+
+
 for label in label_numbers:
     w2v_labels.append(embeds_with_labels_dict[int(label)])
-
-
+#
+#
 w2v_labels = np.array(w2v_labels)
-
-
-# Check if the labels are present in the w2v_labels. -> Result => They are.
-# true_list = []
-# for val in embeds_with_labels_dict.values():
-#     for _ in range(len(w2v_labels)):
-#         if np.array_equal(val, w2v_labels[_]):
-#             true_list.append(True)
-
-
-
-# w2v_scaler = StandardScaler()
-# w2v_labels = w2v_scaler.fit_transform(w2v_labels)
-
-scores = []
+#
+#
+# # Check if the labels are present in the w2v_labels. -> Result => They are.
+# # true_list = []
+# # for val in embeds_with_labels_dict.values():
+# #     for _ in range(len(w2v_labels)):
+# #         if np.array_equal(val, w2v_labels[_]):
+# #             true_list.append(True)
+#
+#
+#
+# # w2v_scaler = StandardScaler()
+# # w2v_labels = w2v_scaler.fit_transform(w2v_labels)
+#
+# scores = []
 # for i in range(1000):
 score = test_model(deepcopy(X), deepcopy(w2v_labels), embeds_with_labels_dict)
-# scores.append(score)
+    # scores.append(score)
 print(score)
 # print(np.mean(scores))
 
-# Permuting the labels here.
+# # Permuting the labels here.
 # y = deepcopy(w2v_labels)
-# np.random.shuffle(y)
-# # y_indices = [i for i in range(len(w2v_labels))]
-# # random.shuffle(y_indices)
-# # y = w2v_labels[y_indices]
-# permute_score = test_model(deepcopy(X), y)
+# permute_scores = []
+# for j in range(1000):
+#     np.random.shuffle(y)
+#     permute_score = test_model(deepcopy(X), y)
+#     permute_scores.append(permute_score)
 # print(permute_score)
 
-# train()
+# print(np.mean(permute_scores))
 
-
-
-
+# y = deepcopy(w2v_labels)
+#
+# np.random.shuffle(y)
+# permute_score = test_model(deepcopy(X), y)
+# print(permute_score)
+#
+#
+# # # y_indices = [i for i in range(len(w2v_labels))]
+# # # random.shuffle(y_indices)
+# # # y = w2v_labels[y_indices]
+#
+# # train()
 

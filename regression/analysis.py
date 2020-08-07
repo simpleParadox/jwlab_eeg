@@ -71,14 +71,15 @@ f.close()
 
 
 
-ps = 32  # [12 months -> 0-12 (indices 0-1007), 9 months -> 13-end (indices 1008-end)]
-word = 0
-group = 9
+ps = 0  # [12 months -> 0-12 (indices 0-1007), 9 months -> 13-end (indices 1008-end)]
+word = 15
+group = 12
 
-df, ps, word = rsa_helper.eeg_filter_subject(readys_data, ps, word)  # Returns data for a subject for a specific word.
-# df, parts, ps, word = rsa_helper.eeg_filter_by_group(readys_data, group,word)
-# df, ps, word = rsa_helper.eeg_filter_subject_all_words(readys_data, ps)
-# print(parts)00
+# df, ps, word = rsa_helper.eeg_filter_subject(deepcopy(readys_data), ps, word)  # Returns data for a subject for a specific word.
+df, parts, ps, word = rsa_helper.eeg_filter_by_group(readys_data, group,word)  # Filter out data for different months - for single word. For example. 9 month olds - word 0, 12 month olds word 1, etc.
+# df, ps, word = rsa_helper.eeg_filter_subject_all_words(readys_data, ps)  # Filter out all the words averaged together for a single participants
+# print(parts)
+df = df[~np.isnan(df).any(axis=1)]  # removes nan values from the numpy
 rdm = rsa_helper.eeg_rdm_dist_corr(df)
 
 rsa_helper.RDM_vis(rdm, ps, word)

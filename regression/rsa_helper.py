@@ -41,7 +41,7 @@ def eeg_filter_by_group(data, group, word):
         eeg_data = data[data['participant']==part].iloc[:, :18000].values
         eeg_means.append(np.mean(eeg_data, axis=0))
     eeg_means = np.array(eeg_means)
-    return eeg_means, participants, 'all 9 months', word
+    return eeg_means, participants, 'all' + str(group)+ ' months', word
 
 
 def eeg_filter_subject(data, subject, word):
@@ -55,8 +55,9 @@ def eeg_filter_subject(data, subject, word):
         The data for a single participant for a specific word.
     """
     data = data[data['participant']==subject]
+    print(data.shape)
     data = data[data['label']==float(word)].iloc[:,:18000]#.values
-
+    print(data.shape)
     return data, subject, word
 
 
@@ -162,6 +163,7 @@ def word_RDM(model, label_list):
 def RDM_vis(RDM, subject, word):
     plt.figure()
     plt.matshow(RDM)
+    # plt.text(RDM)
     plt.colorbar()
     plt.title('RDM PS: '+ str(subject) + ' / word: ' + str(word))
     plt.show()

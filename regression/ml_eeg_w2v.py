@@ -199,7 +199,7 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
 
 
 
-    dt = DecisionTreeRegressor()
+    dt = Ridge()
     clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=1)
 
@@ -258,7 +258,7 @@ def monte_carlo_2v2_modified(X, Y):  # Train on correct, test on permuted. Use t
 
 
 
-    dt = DecisionTreeRegressor()
+    dt = Ridge()
     clf = GridSearchCV(dt, param_grid=parameters_dt, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=4)
 
@@ -548,7 +548,7 @@ def random_groups():
 # random_groups()
 
 
-# monte_carlo_2v2()
+monte_carlo_2v2()
 
 # split_ps_model()
 
