@@ -1,6 +1,7 @@
 import sklearn
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pickle
 import gensim
@@ -16,6 +17,7 @@ from scipy.io import loadmat
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
 from sklearn.decomposition import TruncatedSVD, PCA
+from sklearn.manifold import TSNE
 import gensim
 from sklearn.linear_model import Ridge
 from sklearn.kernel_ridge import KernelRidge
@@ -25,6 +27,8 @@ from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
 
 
 labels_mapping_mod_ratings = {0:'baby', 1:'bear', 2:'bird', 3: 'rabbit',
@@ -173,28 +177,28 @@ def monte_carlo_2v2(X,Y):
     # start = time.time()
     print("Monte-Carlo CV DT Normal")
     # Split into training and testing data
-    parameters_ridge = {'alpha': [0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    parameters_dt = {'min_samples_split': [4, 6, 8, 10, 20]}  #
+    # parameters_ridge = {'alpha': [0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
+    parameters_rf = {'n_estimators': [100,150]}#, 'min_samples_split': [2]}#, 5, 10], }  #
 
 
 
-    dt = Ridge()
-    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=1)
+    dt = RandomForestRegressor(n_jobs=10, verbose=2, n_estimators=10)
+    clf = GridSearchCV(dt, param_grid=parameters_rf, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=2, verbose=2)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=5, train_size=0.90)
+    rs = ShuffleSplit(n_splits=8, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
     cosine_scores = []
     shuffle_split_idxs = []
     for train_index, test_index in rs.split(all_data_indices):
-        print("Shuffle Split fold: ", f)
+        # print("Shuffle Split fold: ", f)
         shuffle_split_idxs.append([train_index, test_index])
         X_train, X_test = eeg_features[train_index], eeg_features[test_index]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
@@ -234,7 +238,7 @@ def monte_carlo_2v2(X,Y):
 
 
 # def select_ratings():
-print("Select ratings")
+# print("Select ratings")
 f = open(readys_path, 'rb')  # Load readys_data.
 readys_data = pickle.load(f)
 f.close()
@@ -279,6 +283,11 @@ f.close()
 #
 # test_model(filtered_readys_data, deepcopy(readys_ratings))
 # test_model_permute(filtered_readys_data, deepcopy(readys_ratings))
+
+
+
+
+
 
 
 def simple_mod_cv():
@@ -337,6 +346,14 @@ animate_words = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0]
 
 inanimate_words = [8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0]
 
+
+def binary_classification(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.80)
+    model = KNeighborsClassifier()
+    model.fit(X_train, y_train)
+    print(model.score(X_test, y_test))
+
+
 def filter_data_by_words(df, type):
     """
     Filter words by animate or inanimate.
@@ -354,7 +371,7 @@ def filter_data_by_words(df, type):
 # def train():
 type = 'all'
 df = filter_data_by_words(deepcopy(readys_data), type)  # Contains only animate or inanimate words.
-w2v_labels = []
+
 embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
 embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']
 embeds_with_labels_dict = embeds_with_labels_dict[0]
@@ -366,10 +383,50 @@ label_numbers = df.iloc[:, 18000].values
 # pca = PCA(n_components=50)
 # X = pca.fit_transform(X_scaled)
 
+# X_classify = df.iloc[:, :].values
+
+# word_types = []
+# for label in label_numbers:
+#     if label in animate_words:
+#         word_types.append(0)
+#     else:
+#         word_types.append(1)
+
+
 X = df.iloc[:, :18000].values
 
-pca = PCA(n_components=15)
-x_pca = pca.fit_transform(X)
+# Binary classification correct labels
+# binary_classification(deepcopy(X_scaled), word_types)
+#
+#
+# # Binary classification permuted labels
+# word_types_permuted = deepcopy(word_types)
+# np.random.shuffle(word_types_permuted)
+# binary_classification(deepcopy(X), word_types_permuted)
+
+
+
+
+# tsne = TSNE(n_components=3)
+# x_pca = tsne.fit_transform(X)
+#
+#
+# colors = label_numbers.astype(int).tolist()
+# # handles = [lp(i) for i in np.unique(colors)]
+#
+# legends = label_numbers.astype(int).astype(str).tolist()
+# fig = plt.figure()
+#
+# ax = fig.add_subplot(111, projection='3d')
+# ax.margins(0.5,1,1)
+# for c in range(len(x_pca)):
+#     ax.scatter(x_pca[c, 0], x_pca[c, 1], x_pca[c, 2], s=0.5, label=colors[c])
+#
+#
+# plt.title("T-SNE on EEG all words all subjects")
+#
+# plt.show()
+
 # var_ratios = pca.explained_variance_ratio_
 # cum_var_ratios = np.cumsum(var_ratios)
 # comps = [_ for _ in range(len(cum_var_ratios))]
@@ -379,12 +436,17 @@ x_pca = pca.fit_transform(X)
 # plt.title("Ratio of total variance explained by components animate")
 # plt.show()
 
-
+w2v_labels = []
 for label in label_numbers:
     w2v_labels.append(embeds_with_labels_dict[int(label)])
 #
 #
 w2v_labels = np.array(w2v_labels)
+
+print("RandomForest Monte-Carlo CV score all features 8/5 CV, hyper-parmaters = n_estimators")
+score, shuffle_idxs = monte_carlo_2v2(deepcopy(X), deepcopy(w2v_labels))
+print("Monte Carlo RandomForest score",score)
+
 #
 #
 # # Check if the labels are present in the w2v_labels. -> Result => They are.
@@ -401,10 +463,10 @@ w2v_labels = np.array(w2v_labels)
 #
 # scores = []
 # for i in range(1000):
-score = test_model(deepcopy(X), deepcopy(w2v_labels), embeds_with_labels_dict)
-    # scores.append(score)
-print(score)
-# print(np.mean(scores))
+# score = test_model(deepcopy(X), deepcopy(w2v_labels), embeds_with_labels_dict)
+#     # scores.append(score)
+# print(score)
+# # print(np.mean(scores))
 
 # # Permuting the labels here.
 # y = deepcopy(w2v_labels)
@@ -418,7 +480,7 @@ print(score)
 # print(np.mean(permute_scores))
 
 # y = deepcopy(w2v_labels)
-#
+# #
 # np.random.shuffle(y)
 # permute_score = test_model(deepcopy(X), y)
 # print(permute_score)

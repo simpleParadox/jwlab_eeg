@@ -38,7 +38,7 @@ def test_model_permute(X, y):
 def test_model(X, y, labels_dict=None):
     print("New test?")
     # print("Test model")
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.80)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90)
     # print(X_train.shape)
     # print(y_train.shape)
     model = Ridge()
@@ -172,8 +172,9 @@ def two_vs_two(y_test, preds):
     # print("Preds",preds[0])
     points = 0
     total_points = 0
-    diff_ii_jj = []
-    diff_ij_ji = []
+    diff = []
+    sum_ii_jj = []
+    sum_ij_ji = []
     x_length = [_ for _ in range(preds.shape[0]-1)]
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
@@ -191,15 +192,28 @@ def two_vs_two(y_test, preds):
         # print("dsij: ", dsij)
         # print("dsji: ", dsji)
         # print("Addition", dsii+dsjj)
-        diff_ii_jj.append(dsii-dsjj)
-        diff_ij_ji.append(dsij-dsji)
+        sum_ii_jj.append((dsii + dsjj))
+        sum_ij_ji.append((dsij + dsji))
+        diff.append((dsii + dsjj) - (dsij + dsji))
         if dsii + dsjj <= dsij + dsji:
             points += 1
         total_points += 1
-    plt.plot(x_length, diff_ii_jj, color='b', label='correct')
-    plt.plot(x_length, diff_ij_ji, color='r', label='alternate')
-    plt.legend(loc='upper left')
-    plt.show()
+
+    ## The following piece of code plots graphs for the difference between the sum of the cosine distances.
+    # print("Points -> ", points)
+    # print("Total points -> ", total_points)
+    # plt.rcParams["figure.figsize"] = (20, 10)
+    # plt.scatter(x_length, sum_ii_jj, color='b', label='correct', marker='o')
+    # plt.scatter(x_length, sum_ij_ji, color='r', label='alternate', marker='v')
+    # plt.plot(x_length, diff, color='g', label='Difference')
+    # plt.text(max(x_length),-1.1, "Points below 0 line: "+str(points) + ",\nPoints above 0 line " + str(total_points-points))
+    # plt.xlabel("Test sample")
+    # plt.ylabel("Difference (correct - alternate)")
+    # plt.axhline(y=0)
+    # plt.legend(loc='upper left')
+    # plt.title("Permuted labels")
+    # plt.show()
+    # plt.savefig('G:\jw_lab\jwlab_eeg\\regression\\test.png')
     return points, total_points, points / total_points
 
 
