@@ -32,11 +32,11 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                     
       
 
-    pvalues, tvalues = t_test(results, num_win, num_folds)
+    pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
-    clusters = find_clusters(pvalues, tvalues)
+    clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
 
-    max_t_mass = get_max_t_mass(clusters, tvalues)
+    max_t_mass = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
     
     ## REMOVE FOR NULL FUNCTION
     if len(sliding_window_config[2]) == 1:
@@ -44,7 +44,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     else: 
         print("Graph function is not supported for multiple window sizes")
 
-    return results
+    return max_t_mass
 
 def createGraph(results):
     scoreMean = []
@@ -110,49 +110,84 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
 
 
 def t_test(results, num_win, num_folds):
-    pvalues = []
-    tvalues = []
+    
+    num_win= 120
+
+    pvalues_pos = []
+    pvalues_neg = []
+    tvalues_pos = []
+    tvalues_neg = []
     for i in range(len(results)):
-        for j in range(num_win[i]):
+        for j in range(num_win):
             # change the second argument below for comparison
             istat = stats.ttest_1samp(results[i][j], .5)
-            pvalues += [istat.pvalue] if istat.statistic > 0 else [1]
+            pvalues_pos += [istat.pvalue] if istat.statistic > 0 else [1]
+            pvalues_neg += [istat.pvalue] if istat.statistic < 0 else [1]
             # removed just so that we can get the negative value from the pre window
-            tvalues += [istat.statistic] if istat.statistic > 0 else [0]
-    
-    return pvalues, tvalues
+            tvalues_pos += [istat.statistic] if istat.statistic > 0 else [0]
+            tvalues_neg += [istat.statistic] if istat.statistic < 0 else [0]
+    return pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg
+
 
 # Finding contiguous time cluster
-def find_clusters(pvalues, tvalues):
-    #change to two tailed
-    valid_window = [i for i,v in enumerate(pvalues) if v <= 0.025]
-     ## REMOVE FOR NULL FUNCTION
-    print("Valid windows are: {0}\n".format(valid_window))
-    
+def find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg):
+    valid_window_pos = [i for i,v in enumerate(pvalues_pos) if v <= 0.05] 
+    valid_window_neg = [i for i,v in enumerate(pvalues_neg) if v <= 0.05] 
+    ## REMOVE FOR NULL FUNCTION
+    print("Valid positive windows are: {0}\n".format(valid_window_pos))
+    print("Valid negative windows are: {0}\n".format(valid_window_neg))
+
     # Obtain clusters (3 or more consecutive meaningful time)
-    clusters = [list(group) for group in mit.consecutive_groups(valid_window)]
-    clusters = [group for group in clusters if len(group) >= 3]
-    
-    adj_clusters = []
-    for c in clusters: 
+    clusters_pos = [list(group) for group in mit.consecutive_groups(valid_window_pos)]
+    clusters_pos = [group for group in clusters_pos if len(group) >= 3]
+
+    clusters_neg = [list(group) for group in mit.consecutive_groups(valid_window_neg)]
+    clusters_neg = [group for group in clusters_neg if len(group) >= 3]
+
+    adj_clusters_pos = []
+    for c in clusters_pos: 
         new_list = [((x*10)-200) for x in c]
-        adj_clusters.append(new_list)
+        adj_clusters_pos.append(new_list)
+
+
+    adj_clusters_neg = []
+    for c in clusters_neg: 
+        new_list = [((x*10)-200) for x in c]
+        adj_clusters_neg.append(new_list)
          
     ## REMOVE FOR NULL FUNCTION
-    print("Clusters are: {0}\n".format(adj_clusters))
-    return clusters
+    print("Positive clusters are: {0}\n".format(adj_clusters_pos))
+    print("Negative clusters are: {0}\n".format(adj_clusters_neg))
+    return clusters_pos, clusters_neg
 
-def get_max_t_mass(clusters, tvalues):
-    t_mass = [0]
-    for c in clusters:
-        t_scores = 0
+def get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg):
+    t_mass_pos = [0]
+    for c in clusters_pos:
+        t_scores_pos = 0
         for time in c:
-            t_scores += tvalues[time]
-        t_mass += [t_scores]
-    
-    max_t_mass = max(t_mass)
+            t_scores_pos += tvalues_pos[time]
+        t_mass_pos += [t_scores_pos]
+
+    max_t_mass_pos = max(t_mass_pos)
+    print(max_t_mass_pos)
+
+    t_mass_neg = [0]
+    for c in clusters_neg:
+        t_scores_neg = 0
+        for time in c:
+            t_scores_neg += tvalues_neg[time]
+        t_mass_neg += [t_scores_neg]
+
+    max_t_mass_neg = min(t_mass_neg)
+    print(max_t_mass_neg)
+
+    max_abs_tmass = max(max_t_mass_pos, abs(max_t_mass_neg))
+    print(max_abs_tmass)
+
     
      ## REMOVE FOR NULL FUNCTION
-    print("The max t mass is: {0}\n".format(max_t_mass))
+    print("The max positive t mass is: {0}\n".format(max_t_mass_pos))
+    print("The max negative t mass is: {0}\n".format(max_t_mass_neg))
+    print("The max absolute t mass is: {0}\n".format(max_abs_tmass))
     
-    return max_t_mass
+    return max_abs_tmass
