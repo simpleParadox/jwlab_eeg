@@ -20,7 +20,7 @@ def init(age_group):
 #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]  
 
     elif age_group is 11:
-        participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+        participants = [ "106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
         raise ValueError("Unsupported age group!")
         
@@ -119,6 +119,8 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
                 X, y, p, w = average_trials(df)
             elif averaging == "average_trials_and_participants":
                 X, y, p, w = average_trials_and_participants(df, participants)
+            elif averaging == "no_average_labels":
+                X, y, p, w = no_average_labels(df)
             elif averaging == "permutation":
                 ## change below to change the averaging set size
                 df = permutation_and_average(df, 20)
@@ -206,9 +208,87 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
         
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count], num_win
 
+def prep_matrices_avg(X, age_group):
+    participants = init(age_group)
+    num_participants = len(participants)
+    num_indices = len(X[0][0])
+    fivefold_testsize = int(.20*num_indices)
+    test_indices = np.random.choice(num_indices-1, fivefold_testsize, replace=False)
+    
+    
+    df_test_m = []
+    df_train_m = []
+    for i in range(len(X)):
+        df_test=[]
+        df_train=[]
+        for j in range(len(X[0])):
+            ## will need each window
+            X[i][j] = X[i][j].reset_index()
+
+            # #create new df with these indices and removing from orig
+            df_test.append(X[i][j].iloc[test_indices])
+            df_train.append(X[i][j].drop(X[i][j].index[test_indices]))
+            assert(len(df_train[i][j]) + len(df_test[i][j]) == len(X[i][j]))
+            df_test[j] = df_test[j].drop(columns=['index'], axis=1) 
+            df_train[j] = df_train[j].drop(columns=['index'], axis=1)
+        df_test_m.append(df_test)
+        df_train_m.append(df_train)
+
+
+    X_train=[]
+    y_train=[]
+
+    for i in range(len(X)):
+        # create training matrix:
+        X_train_i=[]
+        y_train_i=[]
+        for j in range(len(X[0])):
+            y_train_i.append(df_train_m[i][j].label.values)
+            X_train_i.append(df_train_m[i][j].drop(columns = ['label', 'participant'], axis = 1))
+        X_train.append(X_train_i)
+        y_train.append(y_train_i)
+
+
+    # create test matrices
+    X_test = [] # test raw trials
+    y_test = [] 
+    X_test_pt = [] # test avg trials and ps
+    y_test_pt = [] 
+
+    for i in range(len(X)):
+        X_test_i=[]
+        y_test_i=[]
+        for j in range(len(X[0])):
+            X_test_pt_temp, y_test_temp_pt, ps, w = average_trials_and_participants(df_test_m[i][j], participants)
+            X_test_i.append(pd.DataFrame(X_test_pt_temp))
+            y_test_i.append(y_test_temp_pt)
+
+
+        X_test_pt.append(X_test_i)
+        y_test_pt.append(y_test_i)
+    
+    #binary classification
+    for i in range(len(X)):
+        for j in range(len(X[0])):
+            y_train[i][j][y_train[i][j] < 8] = 0
+            y_train[i][j][y_train[i][j] >= 8] = 1
+
+            y_test_pt[i][j][y_test_pt[i][j] < 8] = 0
+            y_test_pt[i][j][y_test_pt[i][j] >= 8] = 1
+
+
+
+    return X_train, X_test_pt, y_train, y_test_pt
+    
+    
+    
+    
 # Raw data
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1).values, df.label.values.flatten(), df.participant.values, df.label.values
+
+def no_average_labels(df):
+    return df, df.label.values.flatten(), df.participant.values, df.label.values
 
 # For each participant, average the value for each word. Expected shape[0] is len(participants) x len(word_list)
 def average_trials(df):
