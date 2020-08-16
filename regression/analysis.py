@@ -71,19 +71,78 @@ f.close()
 
 
 
-ps = 0  # [12 months -> 0-12 (indices 0-1007), 9 months -> 13-end (indices 1008-end)]
-word = 15
+ps = 13  # [12 months -> 0-12 (indices 0-1007), 9 months -> 13-end (indices 1008-end)]
+word = 2
 group = 12
 
+ps2 = 14
+
+months_12 = [0,1,2,3,4,5,6,7,8,9,11,12] # PS 10 has almost nothing.
+months_9 = [13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33]
+
+# max_rdm_corr_groups = 1.6268522741479599
+
 # df, ps, word = rsa_helper.eeg_filter_subject(deepcopy(readys_data), ps, word)  # Returns data for a subject for a specific word.
-df, parts, ps, word = rsa_helper.eeg_filter_by_group(readys_data, group,word)  # Filter out data for different months - for single word. For example. 9 month olds - word 0, 12 month olds word 1, etc.
-# df, ps, word = rsa_helper.eeg_filter_subject_all_words(readys_data, ps)  # Filter out all the words averaged together for a single participants
-# print(parts)
-df = df[~np.isnan(df).any(axis=1)]  # removes nan values from the numpy
-rdm = rsa_helper.eeg_rdm_dist_corr(df)
+# df, parts, ps, word = rsa_helper.eeg_filter_by_group(readys_data, group,word)  # Filter out data for different months - for single word. For example. 9 month olds - word 0, 12 month olds word 1, etc.
+df, ps, word = rsa_helper.eeg_filter_subject_all_words(readys_data, 10)  # Filter out all the words averaged together for a single participants
+# df, group, ps, word = rsa_helper.eeg_filter_by_group_all_words(readys_data, group)
+#
 
-rsa_helper.RDM_vis(rdm, ps, word)
 
+labels = [0,1,4,6,7,15]
+## Averaging RDMs
+nan_set = set()
+for i in months_9:
+    df, ps, word = rsa_helper.eeg_filter_subject_all_words(readys_data, i)#, deepcopy(labels))
+    # print(df.shape)
+
+    for j in range(df.shape[0]):
+        if not (sum(df[j]) > 0 or sum(df[j]) < 0):
+            print(ps," ", j)
+            nan_set.add(j)
+
+rdm_list = []
+for i in months_9:
+    df, ps, word = rsa_helper.eeg_filter_subject_all_words(readys_data, i)#, deepcopy(labels))
+    df = np.delete(df, list(nan_set), axis=0)
+    print(df.shape)
+    rdm = rsa_helper.eeg_rdm_dist_corr(df)
+    rdm_list.append(rdm)
+
+rdm_list = np.array(rdm_list)
+t = np.mean(rdm_list, axis=0)
+rsa_helper.RDM_vis(t, 'all 9 months', 'present in both')
+
+# Words not present for 12 month olds
+
+
+
+
+
+#     for j in range(df.shape[0]):
+#         if not sum(df[j]) > 0:
+#             nan_set.add(j)
+#             # df = np.delete(df, j, 0)
+#
+# for i in range(0,16):
+#     df, ps, word = rsa_helper.eeg_filter_subject_all_words(readys_data, ps)
+#     df = np.delete(df, list(nan_set), axis=0)
+#     print(df.shape)
+
+# # print(parts)
+# df = df[~np.isnan(df).any(axis=1)]  # removes nan values from the numpy array.
+# rdm = rsa_helper.eeg_rdm_dist_corr(df)
+#
+#
+# rsa_helper.RDM_vis(rdm, ps, word)
+
+
+
+# ## For two subjects df -> to test, whether the 9 months are just sitting around doing nothing.
+# df1, ps1, word = rsa_helper.eeg_filter_subject_all_words(readys_data, ps)
+# df2, ps2, word = rsa_helper.eeg_filter_subject_all_words(readys_data, ps2)
+# rdm = rsa_helper.alternate_ps_eeg_corr(df1, df2)
+# rsa_helper.RDM_vis(rdm, ps, word, ps1, ps2)
 
 
 # Plotting some graphs

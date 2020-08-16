@@ -5,6 +5,7 @@
 '''
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import os
@@ -44,6 +45,40 @@ def eeg_filter_by_group(data, group, word):
     return eeg_means, participants, 'all' + str(group)+ ' months', word
 
 
+def eeg_filter_by_group_all_words(data, group):
+    """
+    Filter out data for different months - for all words For example. 9 month olds - all, 12 month all words, etc.
+    Args:
+        data: the eeg data
+        group: the age group
+    Return:
+        the dataset that contains the subset of eeg for an age group for a specific word.
+    """
+    eeg_means = []
+    if group == 9:
+        data = data.iloc[1008:]
+        # for word in range(16):
+        #     eeg_means.append(np.nanmean(data[data['label']==float(word)].iloc[:, :18000].values, axis=0))  #.iloc[:, :18000].values
+    elif group == 12:
+        data = data[:1008]
+        # for word in range(16):
+        #     eeg_means.append(np.nanmean(data[data['label']==float(word)].iloc[:, :18000].values, axis=0))#.iloc[:,:18000].values
+
+    for word in range(16):
+        eeg_means.append(np.mean(data[data['label'] == float(word)].iloc[:, :18000].values, axis=0))
+
+
+    # Now average the readings for each subject for that word.
+    # participants = [i for i in range(min(data['participant']), max(data['participant']))]
+    # eeg_means = []
+    # for part in participants:
+    #     eeg_data = data[data['participant']==part].iloc[:, :18000].values
+    #     eeg_means.append(np.mean(eeg_data, axis=0))
+    eeg_means = np.array(eeg_means)
+    return eeg_means, group, 'all' + str(group) + ' months', 'all words'
+
+
+
 def eeg_filter_subject(data, subject, word):
     """
     Returns the data for one subject only for a specific word
@@ -61,16 +96,19 @@ def eeg_filter_subject(data, subject, word):
     return data, subject, word
 
 
-def eeg_filter_subject_all_words(data, ps):
+def eeg_filter_subject_all_words(data, ps, labels_array=None):
     """
     Filter out all the words averaged together for a single participants
     """
     data = data[data['participant'] == ps]
-    labels = [i for i in range(16)]
+    if labels_array == None:
+        labels = [i for i in range(16)]
+    else:
+        labels = labels_array
     ps_data = []
     for word in labels:
         words = data[data['label'] == float(word)].iloc[:, :18000].values
-        ps_data.append(np.nanmean(words, axis=0))
+        ps_data.append(np.mean(words, axis=0))
 
     ps_data = np.array(ps_data)
     return ps_data, ps, 'all words'
@@ -160,10 +198,49 @@ def word_RDM(model, label_list):
     
     return RDM
 
-def RDM_vis(RDM, subject, word):
-    plt.figure()
-    plt.matshow(RDM)
+
+def alternate_ps_eeg_corr(score1, score2, type='pearson'):
+    """
+    calculates an RDM from the fmri voxels using correlation distance for two different subjects.
+    Args:
+        X: the original data
+        evectors: the first q principal components
+    """
+    # number of stimuli
+    num_stimuli = score1.shape[0]
+    # initialize RDM
+    RDM = np.ones((num_stimuli, num_stimuli))
+    # compute correlation distance between vectors
+    for i in range(num_stimuli):
+        for j in range(num_stimuli):
+            if type == 'pearson':
+                RDM[i][j] = 1 - pearsonr(score1[i], score2[j])[0]
+            else:
+                RDM[i][j] = distance.correlation(score1[i], score2[j])
+
+    return RDM
+
+
+def RDM_vis(RDM, subject, word, ps1=None, ps2=None):
+    fig, ax = plt.subplots(figsize=(5, 5))
+
     # plt.text(RDM)
+    cmap = mpl.cm.GnBu
+    # norm = mpl.colors.Normalize(vmin=5, vmax=10)
+
+    # cb1 = mpl.colorbar.ColorbarBase(plt, cmap=cmap,
+    #                                 norm=norm,
+    #                                 orientation='vertical')
+    # plt.matshow(RDM, cmap=cmap, vmin=0, vmax=1.6268522741479599)#np.max(RDM))
+    plt.matshow(RDM, cmap=cmap)
     plt.colorbar()
-    plt.title('RDM PS: '+ str(subject) + ' / word: ' + str(word))
+    # plt.clim(vmin=1)
+    if ps1 == None or ps2 == None:
+        plt.title('RDM PS: '+ str(subject) + ' / word: ' + str(word))
+        plt.xlabel('Axes denote words present for all subjects')
+    else:
+        print("yes")
+        plt.title('RDM PS: ' + str(ps1) + ' vs ' + str(ps2) + '/ word: ' + str(word))
+        plt.xlabel('PS ' + str(ps1))
+        plt.ylabel('PS ' + str(ps2))
     plt.show()

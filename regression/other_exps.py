@@ -43,9 +43,9 @@ from sklearn.model_selection import GridSearchCV
 os_name = platform.system()
 
 if os_name == 'Windows':
-    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
+    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds, get_w2v_embeds_from_dict
 else:
-    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds
+    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds, get_w2v_embeds_from_dict
 
 readys_path = None
 avg_readys_path = None
@@ -113,19 +113,17 @@ def get_w2v_embeds(labels):
     # return all_embeds
 
 
-def monte_carlo_2v2_permuted(X, Y, split_idxs):
+def monte_carlo_2v2_permuted(X, Y, split_idxs=None):
     # start = time.time()
     # random.shuffle(Y)
     print("Monte-Carlo CV DT Permuted")
     # Split into training and testing data
-    parameters_ridge = {'alpha': [0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    parameters_dt = {'min_samples_split': [4, 6, 8, 10, 20]}  #
+    # parameters_ridge = {'alpha': [0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
+    parameters_rf = {'n_estimators': [100, 150]}  # , 'min_samples_split': [2]}#, 5, 10], }  #
 
-
-
-    dt = Ridge()
-    clf = GridSearchCV(dt, param_grid=parameters_ridge, scoring='neg_mean_squared_error',
-                       refit=True, cv=5, n_jobs=1)
+    dt = RandomForestRegressor(n_jobs=10)
+    clf = GridSearchCV(dt, param_grid=parameters_rf, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=2, verbose=2)
 
     eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
     w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
@@ -139,7 +137,7 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
     cosine_scores = []
     # for train_index, test_index in rs.split(all_data_indices):
     for idxs in split_idxs:
-        print("Shuffle Split fold: ", f)
+        # print("Shuffle Split fold: ", f)
         train_idx = idxs[0]
         test_idx = idxs[1]
         # print("train index: ", train_idx)
@@ -149,6 +147,8 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
         # print("Train index before", train_index)
         random.shuffle(train_idx) # For permutation test only.
         random.shuffle(test_idx) # For permutation test only.
+        np.random.shuffle(train_idx)
+        np.random.shuffle(test_idx)
         # print("Train index after: ", train_index)
         y_train, y_test = w2v_embeds_mod[train_idx], w2v_embeds_mod[test_idx]
 
@@ -173,16 +173,16 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs):
     return score_with_alpha['avg']
 
 
-def monte_carlo_2v2(X,Y):
+def monte_carlo_2v2(X,Y, permuted=False):
     # start = time.time()
     print("Monte-Carlo CV DT Normal")
     # Split into training and testing data
     # parameters_ridge = {'alpha': [0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    parameters_rf = {'n_estimators': [100,150]}#, 'min_samples_split': [2]}#, 5, 10], }  #
+    parameters_rf = {'n_estimators': [100, 150]}#, 'min_samples_split': [2]}#, 5, 10], }  #
 
 
 
-    dt = RandomForestRegressor(n_jobs=10, verbose=2, n_estimators=10)
+    dt = RandomForestRegressor(n_jobs=10)
     clf = GridSearchCV(dt, param_grid=parameters_rf, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=2, verbose=2)
 
@@ -191,7 +191,7 @@ def monte_carlo_2v2(X,Y):
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
-    rs = ShuffleSplit(n_splits=8, train_size=0.90)
+    rs = ShuffleSplit(n_splits=1, train_size=0.90)
     all_data_indices = [i for i in range(len(w2v_embeds_mod))]
     f = 1
     score_with_alpha = {}
@@ -203,8 +203,12 @@ def monte_carlo_2v2(X,Y):
         X_train, X_test = eeg_features[train_index], eeg_features[test_index]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
-        # random.shuffle(train_index) # For permutation test only.
-        # random.shuffle(test_index) # For permutation test only.
+        if permuted==True:
+            # print("Permuted")
+            random.shuffle(train_index) # For permutation test only.
+            random.shuffle(test_index) # For permutation test only.
+            np.random.shuffle(train_index)
+            np.random.shuffle(test_index)
         # print("Train index after: ", train_index)
         y_train, y_test = w2v_embeds_mod[train_index], w2v_embeds_mod[test_index]
 
@@ -290,21 +294,21 @@ f.close()
 
 
 
-def simple_mod_cv():
-    wo_score, shfl_idxs = monte_carlo_2v2(filtered_readys_data, deepcopy(readys_ratings))
-    print(wo_score)
-    wi_score = monte_carlo_2v2_permuted(filtered_readys_data, deepcopy(readys_ratings), shfl_idxs)
-    print(wi_score)
+# def simple_mod_cv():
+#     wo_score, shfl_idxs = monte_carlo_2v2(filtered_readys_data, deepcopy(readys_ratings))
+#     print(wo_score)
+#     wi_score = monte_carlo_2v2_permuted(filtered_readys_data, deepcopy(readys_ratings), shfl_idxs)
+#     print(wi_score)
 
 
 # simple_mod_cv()
 
-def simple_cv():
-    idxs = [i for i in range(0, 1000) if i not in [162, 473, 925]]
-    wo_score, shfl_idxs = monte_carlo_2v2(a[idxs], deepcopy(b))
-    print(wo_score)
-    wi_score = monte_carlo_2v2_permuted(a[idxs], deepcopy(b), shfl_idxs)
-    print(wi_score)
+# def simple_cv():
+#     idxs = [i for i in range(0, 1000) if i not in [162, 473, 925]]
+#     wo_score, shfl_idxs = monte_carlo_2v2(a[idxs], deepcopy(b))
+#     print(wo_score)
+#     wi_score = monte_carlo_2v2_permuted(a[idxs], deepcopy(b), shfl_idxs)
+#     print(wi_score)
 
 # simple_cv()
 
@@ -345,6 +349,65 @@ def simple_cv():
 animate_words = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0]
 
 inanimate_words = [8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0]
+
+
+
+def modified_test_model(X_train, X_test, y_train, y_test):
+
+    model = Ridge()
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    # print(model.score(X_test, y_test))
+    # check_and_assign_labels(y_test, preds, labels_dict)
+    a, b, c = two_vs_two(y_test, preds)
+    # print(a)
+    # print(b)
+    # print(c)
+    return c
+
+
+def train_on_raw_test_on_avg(X):
+    """
+    X, Y, are readys_data(without ps) and word labels respectively.
+    """
+    ## First convert the input to numpy array.
+    # X = X.iloc[:, :18000].values  ## Ignoring the participant labels but preserving the word labels.
+
+    # X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=0.8)
+
+    ## Modifying X_train to contain only EEG data.
+    # X_train = X_train[:,:18000]
+    scores = []
+    sf = ShuffleSplit(n_splits=100, train_size=0.80)
+    split_count = 0
+    for train_idx, test_idx in sf.split(X):
+        print("Shuffle split: ", split_count + 1)
+        X_train = X.iloc[train_idx]  ## Contains the word labels.
+        X_test = X.iloc[test_idx]
+
+
+        ## Now averaging the eeg data for the words in the test set.
+        X_test_eeg_means = []
+        for w in range(16):
+             X_test_eeg_means.append(np.nanmean(X_test[X_test['label']==float(w)], axis=0))
+        X_test_eeg_means = np.array(X_test_eeg_means)
+
+        ## Now making the array of word embeddings based on the word labels in X_train and X_test.
+        train_labels = X_train.iloc[:, 18000].values
+        X_train = X_train.drop(['label'],axis=1)  # Use this for X_train
+
+        test_labels = X_test_eeg_means[:,18000]
+        X_test = X_test_eeg_means[:, :18000]  # Use this for X_test
+
+        w2v_train = get_w2v_embeds_from_dict(deepcopy(train_labels))  # Use this for training labels.
+        w2v_test = get_w2v_embeds_from_dict(deepcopy(test_labels))  # Use this for testing labels.
+
+        score = modified_test_model(X_train, X_test, w2v_train, w2v_test)
+        scores.append(score)
+
+        split_count += 1
+
+    print("Scores for train on raw test on average correct labels: ", np.mean(scores))
 
 
 def binary_classification(X, y):
@@ -393,7 +456,11 @@ label_numbers = df.iloc[:, 18000].values
 #         word_types.append(1)
 
 
-X = df.iloc[:, :18000].values
+X = df.iloc[:, :18000].values  ## Contaning only the eeg data.
+
+X_raw_avg = df.iloc[:, :18001]
+
+train_on_raw_test_on_avg(deepcopy(X_raw_avg))
 
 # Binary classification correct labels
 # binary_classification(deepcopy(X_scaled), word_types)
@@ -436,16 +503,24 @@ X = df.iloc[:, :18000].values
 # plt.title("Ratio of total variance explained by components animate")
 # plt.show()
 
-w2v_labels = []
-for label in label_numbers:
-    w2v_labels.append(embeds_with_labels_dict[int(label)])
-#
-#
-w2v_labels = np.array(w2v_labels)
+# w2v_labels = []
+# for label in label_numbers:
+#     w2v_labels.append(embeds_with_labels_dict[int(label)])
+# w2v_labels = np.array(w2v_labels)
 
-print("RandomForest Monte-Carlo CV score all features 8/5 CV, hyper-parmaters = n_estimators")
-score, shuffle_idxs = monte_carlo_2v2(deepcopy(X), deepcopy(w2v_labels))
-print("Monte Carlo RandomForest score",score)
+
+
+# print("RandomForest Monte-Carlo CV score all features 8/5 CV, hyper-paramaters = n_estimators")
+# score, shuffle_idxs = monte_carlo_2v2(deepcopy(X), deepcopy(w2v_labels))
+# print("Monte Carlo RandomForest score",score)
+#
+#
+#
+# print("Testing 2 shuffle splits RandomForest Permuted Monte-Carlo CV score all features 8/5 CV, hyper-parameters = n_estimators")
+# y = deepcopy(w2v_labels)
+# np.random.shuffle(y)
+# permute_score = monte_carlo_2v2_permuted(deepcopy(X), deepcopy(y), shuffle_idxs)  # Permuting the labels and calling the same function.
+# print(permute_score)
 
 #
 #
@@ -464,9 +539,9 @@ print("Monte Carlo RandomForest score",score)
 # scores = []
 # for i in range(1000):
 # score = test_model(deepcopy(X), deepcopy(w2v_labels), embeds_with_labels_dict)
-#     # scores.append(score)
+# #     # scores.append(score)
 # print(score)
-# # print(np.mean(scores))
+# # # print(np.mean(scores))
 
 # # Permuting the labels here.
 # y = deepcopy(w2v_labels)

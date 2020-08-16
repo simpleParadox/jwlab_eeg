@@ -16,6 +16,24 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
+import platform
+os_name = platform.system()
+
+w2v_path = None
+avg_w2v_path = None
+if os_name =='Windows':
+    w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
+    avg_w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds_avg_trial.npz"
+    gen_w2v_all_ps_avg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\gen_w2v_embeds_avg_trial_and_ps.npz"
+    embeds_with_label_path = 'G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz'
+    bof_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\bof_w2v_embeds.npz"
+elif os_name=='Linux':
+    w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
+    avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
+    gen_w2v_all_ps_avg_path = os.getcwd() + "/regression/w2v_embeds/gen_w2v_embeds_avg_trial_and_ps.npz"
+    embeds_with_label_path = os.getcwd() + "/regression/w2v_embeds/embeds_with_label_dict.npz"
+    bof_embeds_path = os.getcwd() + "/regression/w2v_embeds/bof_w2v_embeds.npz"
+
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
 
@@ -175,7 +193,7 @@ def two_vs_two(y_test, preds):
     diff = []
     sum_ii_jj = []
     sum_ij_ji = []
-    x_length = [_ for _ in range(preds.shape[0]-1)]
+    # x_length = [_ for _ in range(preds.shape[0]-1)]
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
         s_j = y_test[i + 1]
@@ -198,6 +216,22 @@ def two_vs_two(y_test, preds):
         if dsii + dsjj <= dsij + dsji:
             points += 1
         total_points += 1
+
+    # diff_mean = np.mean(diff)
+    # diff = np.array(diff)
+    # below_zero_diff = diff[diff < 0]
+    # above_zero_diff = diff[diff > 0]
+    # above_zero_diff_mean = np.mean(above_zero_diff)
+    # below_zero_diff_mean = np.mean(below_zero_diff)
+    # sum_ii_jj_mean = np.mean(sum_ii_jj)
+    # sum_ij_ji_mean = np.mean(sum_ij_ji)
+    #
+    # print("Diff mean ", diff_mean)
+    # print("Below zero mean ", below_zero_diff_mean)
+    # print("Above zero mean ", above_zero_diff_mean)
+    # print("Sum ii jj ", sum_ii_jj_mean)
+    # print("Sum ij ji ", sum_ij_ji_mean)
+
 
     ## The following piece of code plots graphs for the difference between the sum of the cosine distances.
     # print("Points -> ", points)
@@ -288,3 +322,15 @@ def get_w2v_embeds(labels):
     # for label in labels:
     #     all_embeds.append(w2v_label_embeds[int(label)])
     # return all_embeds
+
+def get_w2v_embeds_from_dict(labels):
+    embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
+    embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']
+    embeds_with_labels_dict = embeds_with_labels_dict[0]
+
+    w2v_labels = []
+    for label in labels:
+        w2v_labels.append(embeds_with_labels_dict[int(label)])
+    w2v_labels = np.array(w2v_labels)
+
+    return w2v_labels
