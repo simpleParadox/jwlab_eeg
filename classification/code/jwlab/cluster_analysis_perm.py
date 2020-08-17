@@ -63,7 +63,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     else: 
         print("Graph function is not supported for multiple window sizes")
 
-    return max_t_mass
+    return results
 
 def createGraph(results):
     scoreMean = []
@@ -83,6 +83,7 @@ def createGraph(results):
     plt.plot(x_graph, y_graph, 'k-')
     plt.fill_between(x_graph, y_graph-error, y_graph+error)
     plt.show()
+    #plt.savefig('cluster_graph.png')
 
 def cross_validaton(num_iterations, num_win, num_folds, X, y):
     results = []
