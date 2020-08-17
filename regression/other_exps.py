@@ -29,13 +29,13 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsRegressor
 
-
-labels_mapping_mod_ratings = {0:'baby', 1:'bear', 2:'bird', 3: 'rabbit',
-                      4:'cat', 5 : 'dog', 6: 'duck',
-                      8: 'banana', 9: 'bottle', 10: 'cookie',
-                      11: 'biscuit', 12: 'cup', 13: 'juice',
-                      14: 'milk', 15: 'spoon'}
+labels_mapping_mod_ratings = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'rabbit',
+                              4: 'cat', 5: 'dog', 6: 'duck',
+                              8: 'banana', 9: 'bottle', 10: 'cookie',
+                              11: 'biscuit', 12: 'cup', 13: 'juice',
+                              14: 'milk', 15: 'spoon'}
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
@@ -43,13 +43,17 @@ from sklearn.model_selection import GridSearchCV
 os_name = platform.system()
 
 if os_name == 'Windows':
-    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds, get_w2v_embeds_from_dict
+    from regression.functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, \
+        test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, \
+        get_w2v_embeds, get_w2v_embeds_from_dict
 else:
-    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds, get_w2v_embeds_from_dict
+    from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, \
+        test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds, \
+        get_w2v_embeds_from_dict
 
 readys_path = None
 avg_readys_path = None
-if os_name =='Windows':
+if os_name == 'Windows':
     # readys_path = "Z:\\Jenn\\ml_df_readys.pkl"
     readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\\data\\ml_df_readys.pkl"
     avg_readys_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_data_readys.pkl"
@@ -57,7 +61,7 @@ if os_name =='Windows':
     avg_trials_and_ps_13m_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_13m.pkl"
     avg_trials_and_ps_9and13_path = "G:\\jw_lab\\jwlab_eeg\\regression\data\\avg_trials_and_ps_9and13.pkl"
     bag_of_features = "G:\\jw_lab\\jwlab_eeg\\regression\data\\bagOfFeatures (1).mat"
-elif os_name=='Linux':
+elif os_name == 'Linux':
     readys_path = os.getcwd() + "/regression/data/ml_df_readys.pkl"
     avg_readys_path = os.getcwd() + "/regression/data/avg_trials_data_readys.pkl"
     avg_trials_and_ps_9m_path = os.getcwd() + "/regression/data/avg_trials_and_ps_9m.pkl"
@@ -73,17 +77,16 @@ elif os_name=='Linux':
 # bof_data = loadmat(bag_of_features)
 
 
-
 # eeg_features = readys_data.iloc[:,:18000].values
 w2v_path = None
 avg_w2v_path = None
-if os_name =='Windows':
+if os_name == 'Windows':
     w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
     avg_w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds_avg_trial.npz"
     gen_w2v_all_ps_avg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\gen_w2v_embeds_avg_trial_and_ps.npz"
     embeds_with_label_path = 'G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz'
     bof_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\bof_w2v_embeds.npz"
-elif os_name=='Linux':
+elif os_name == 'Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
     gen_w2v_all_ps_avg_path = os.getcwd() + "/regression/w2v_embeds/gen_w2v_embeds_avg_trial_and_ps.npz"
@@ -92,8 +95,8 @@ elif os_name=='Linux':
 
 
 def get_w2v_embeds(labels):
-
-    model = gensim.models.KeyedVectors.load_word2vec_format('G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
+    model = gensim.models.KeyedVectors.load_word2vec_format(
+        'G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
     all_embeds = []
     present_indices = []
     idx = 0
@@ -125,8 +128,8 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs=None):
     clf = GridSearchCV(dt, param_grid=parameters_rf, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=2, verbose=2)
 
-    eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
-    w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
+    eeg_features = X  # readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
+    w2v_embeds_mod = Y  # w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
@@ -145,8 +148,8 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs=None):
         X_train, X_test = eeg_features[train_idx], eeg_features[test_idx]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
-        random.shuffle(train_idx) # For permutation test only.
-        random.shuffle(test_idx) # For permutation test only.
+        random.shuffle(train_idx)  # For permutation test only.
+        random.shuffle(test_idx)  # For permutation test only.
         np.random.shuffle(train_idx)
         np.random.shuffle(test_idx)
         # print("Train index after: ", train_index)
@@ -173,21 +176,19 @@ def monte_carlo_2v2_permuted(X, Y, split_idxs=None):
     return score_with_alpha['avg']
 
 
-def monte_carlo_2v2(X,Y, permuted=False):
+def monte_carlo_2v2(X, Y, permuted=False):
     # start = time.time()
     print("Monte-Carlo CV DT Normal")
     # Split into training and testing data
     # parameters_ridge = {'alpha': [0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]} #0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
-    parameters_rf = {'n_estimators': [100, 150]}#, 'min_samples_split': [2]}#, 5, 10], }  #
-
-
+    parameters_rf = {'n_estimators': [100, 150]}  # , 'min_samples_split': [2]}#, 5, 10], }  #
 
     dt = RandomForestRegressor(n_jobs=10)
     clf = GridSearchCV(dt, param_grid=parameters_rf, scoring='neg_mean_squared_error',
                        refit=True, cv=5, n_jobs=2, verbose=2)
 
-    eeg_features = X# readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
-    w2v_embeds_mod = Y# w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
+    eeg_features = X  # readys_data.iloc[:, :].values  # :208 for thirteen month olds. 208: for nine month olds.
+    w2v_embeds_mod = Y  # w2v_embeds[:]  # :208 for thirteen month olds. 208: for nine month olds.
 
     # print(eeg_features.shape)
     # print(w2v_embeds_mod.shape)
@@ -203,10 +204,10 @@ def monte_carlo_2v2(X,Y, permuted=False):
         X_train, X_test = eeg_features[train_index], eeg_features[test_index]
         # The following two lines are for the permutation test. Comment them out when not using the permutation test.
         # print("Train index before", train_index)
-        if permuted==True:
+        if permuted == True:
             # print("Permuted")
-            random.shuffle(train_index) # For permutation test only.
-            random.shuffle(test_index) # For permutation test only.
+            random.shuffle(train_index)  # For permutation test only.
+            random.shuffle(test_index)  # For permutation test only.
             np.random.shuffle(train_index)
             np.random.shuffle(test_index)
         # print("Train index after: ", train_index)
@@ -231,7 +232,6 @@ def monte_carlo_2v2(X,Y, permuted=False):
     # stop = time.time()
     # print("Total time: ", stop - start)
     return score_with_alpha['avg'], shuffle_split_idxs
-
 
 
 # a = bof_data['features'][:, :218]
@@ -289,11 +289,6 @@ f.close()
 # test_model_permute(filtered_readys_data, deepcopy(readys_ratings))
 
 
-
-
-
-
-
 # def simple_mod_cv():
 #     wo_score, shfl_idxs = monte_carlo_2v2(filtered_readys_data, deepcopy(readys_ratings))
 #     print(wo_score)
@@ -343,18 +338,15 @@ f.close()
 # print("Average", np.average(scores))
 
 
-
 # Step 1: Filter the data based on animate and inanimate words
 
-animate_words = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0]
+animate_words = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
-inanimate_words = [8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0]
-
+inanimate_words = [8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]
 
 
 def modified_test_model(X_train, X_test, y_train, y_test):
-
-    model = Ridge()
+    model = KNeighborsRegressor()
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
     # print(model.score(X_test, y_test))
@@ -365,8 +357,52 @@ def modified_test_model(X_train, X_test, y_train, y_test):
     # print(c)
     return c
 
+def get_shuffle_splits(X, n_splits):
 
-def train_on_raw_test_on_avg(X):
+    sf = ShuffleSplit(n_splits=n_splits, train_size=.80)
+    shuffle_split_idxs = []
+    for train_idx, test_idx in sf.split(X):
+        shuffle_split_idxs.append([train_idx, test_idx])
+
+    return shuffle_split_idxs
+
+
+def modified_test_cv(X_train, y_train, X_test, y_test, model_type):
+    print("Inside GridSearch CV")
+    parameters_ridge = {'alpha': [0.1, 1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000]}  # 0.01]}#, 0.1, 10, 20, 40, 80, 100, 1000, 10000, 100000, 1000000,
+    parameters_rf = {'n_estimators': [100, 150]}  # , 'min_samples_split': [2]}#, 5, 10], }
+
+    parameters_dt = {'min_samples_split': [2, 5, 10]}
+
+    parameters_knn = {'n_neighbors': [5, 10, 15, 20]}
+    n_jobs = 30
+    model, params = None, None
+    if model_type == 'ridge':
+        model = Ridge(solver='cholesky')
+        params = parameters_ridge
+    elif model_type == 'dt':
+        model = DecisionTreeRegressor()
+        params = parameters_dt
+    elif model_type == 'rf':
+        model = RandomForestRegressor(n_jobs=10)
+        params = parameters_rf
+        n_jobs = 3
+    elif model_type == 'knn':
+        model = KNeighborsRegressor(n_jobs=10)
+        params = parameters_knn
+        n_jobs = 3
+
+    clf = GridSearchCV(model, param_grid=params, scoring='neg_mean_squared_error',
+                       refit=True, cv=5, n_jobs=n_jobs, verbose=2)
+
+    clf.fit(X_train, y_train)
+    preds = clf.predict(X_test)
+    points, total_points, score = two_vs_two(y_test, preds)
+
+    return score
+
+
+def train_on_raw_test_on_avg(X, splits_idxs, permuted=False, model_type='ridge'):
     """
     X, Y, are readys_data(without ps) and word labels respectively.
     """
@@ -377,37 +413,42 @@ def train_on_raw_test_on_avg(X):
 
     ## Modifying X_train to contain only EEG data.
     # X_train = X_train[:,:18000]
+    print("Train on raw, test on avg")
     scores = []
-    sf = ShuffleSplit(n_splits=100, train_size=0.80)
     split_count = 0
-    for train_idx, test_idx in sf.split(X):
+    for train_idx, test_idx in splits_idxs:
         print("Shuffle split: ", split_count + 1)
         X_train = X.iloc[train_idx]  ## Contains the word labels.
         X_test = X.iloc[test_idx]
 
-
         ## Now averaging the eeg data for the words in the test set.
         X_test_eeg_means = []
         for w in range(16):
-             X_test_eeg_means.append(np.nanmean(X_test[X_test['label']==float(w)], axis=0))
+            X_test_eeg_means.append(np.nanmean(X_test[X_test['label'] == float(w)], axis=0))
         X_test_eeg_means = np.array(X_test_eeg_means)
 
         ## Now making the array of word embeddings based on the word labels in X_train and X_test.
         train_labels = X_train.iloc[:, 18000].values
-        X_train = X_train.drop(['label'],axis=1)  # Use this for X_train
+        X_train = X_train.drop(['label'], axis=1)  # Use this for X_train
+        X_train = X_train.iloc[:, :].values
 
-        test_labels = X_test_eeg_means[:,18000]
+        test_labels = X_test_eeg_means[:, 18000]
         X_test = X_test_eeg_means[:, :18000]  # Use this for X_test
+
+        if permuted:
+            np.random.shuffle(X_train)
+            np.random.shuffle(X_test)
 
         w2v_train = get_w2v_embeds_from_dict(deepcopy(train_labels))  # Use this for training labels.
         w2v_test = get_w2v_embeds_from_dict(deepcopy(test_labels))  # Use this for testing labels.
 
-        score = modified_test_model(X_train, X_test, w2v_train, w2v_test)
+        score = modified_test_cv(deepcopy(X_train), deepcopy(w2v_train), deepcopy(X_test), deepcopy(w2v_test), model_type=model_type)
         scores.append(score)
 
         split_count += 1
 
-    print("Scores for train on raw test on average correct labels: ", np.mean(scores))
+    print("Scores for train on raw test on average: ", np.mean(scores))
+    return np.mean(scores)
 
 
 def binary_classification(X, y):
@@ -429,6 +470,7 @@ def filter_data_by_words(df, type):
     else:
         reduced_data = df
     return reduced_data
+
 
 # Step 2: Assign labels to the correct word embeddings and then
 # def train():
@@ -460,7 +502,30 @@ X = df.iloc[:, :18000].values  ## Contaning only the eeg data.
 
 X_raw_avg = df.iloc[:, :18001]
 
-train_on_raw_test_on_avg(deepcopy(X_raw_avg))
+n_splits = 10
+split_indices = get_shuffle_splits(X_raw_avg, n_splits)
+
+
+model_type = 'ridge'
+
+print(f"MCCV Correct labels: model type {model_type} and {n_splits} splits.")
+score = train_on_raw_test_on_avg(deepcopy(X_raw_avg), splits_idxs=split_indices, permuted=False, model_type=model_type)
+print("Score: for correct assignments: ", score)
+
+# print(f"MCCV Permuted eeg data: model type {model_type} and {n_splits} splits.")
+# score = train_on_raw_test_on_avg(deepcopy(X_raw_avg), splits_idxs=split_indices, permuted=True, model_type=model_type)
+# print("Score: for permuted assignments: ", score)
+
+
+
+
+
+
+
+
+
+### EXTRA CODE BELOW:
+
 
 # Binary classification correct labels
 # binary_classification(deepcopy(X_scaled), word_types)
@@ -470,8 +535,6 @@ train_on_raw_test_on_avg(deepcopy(X_raw_avg))
 # word_types_permuted = deepcopy(word_types)
 # np.random.shuffle(word_types_permuted)
 # binary_classification(deepcopy(X), word_types_permuted)
-
-
 
 
 # tsne = TSNE(n_components=3)
@@ -507,7 +570,6 @@ train_on_raw_test_on_avg(deepcopy(X_raw_avg))
 # for label in label_numbers:
 #     w2v_labels.append(embeds_with_labels_dict[int(label)])
 # w2v_labels = np.array(w2v_labels)
-
 
 
 # print("RandomForest Monte-Carlo CV score all features 8/5 CV, hyper-paramaters = n_estimators")
@@ -566,4 +628,3 @@ train_on_raw_test_on_avg(deepcopy(X_raw_avg))
 # # # y = w2v_labels[y_indices]
 #
 # # train()
-
