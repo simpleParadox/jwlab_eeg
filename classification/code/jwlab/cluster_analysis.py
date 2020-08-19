@@ -272,8 +272,11 @@ def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows):
     # set up for new df with labels and ps
     num_participants = len(participants)
     num_indices = len(X[0])
-    fivefold_testsize = int(.20*num_indices)
+    fivefold_testsize = int(.2*num_indices)
     test_indices = np.random.choice(num_indices-1, fivefold_testsize, replace=False)
+    
+#     threefold_testsize = int(.33*num_indices)
+#     test_indices = np.random.choice(num_indices-1, treefold_testsize, replace=False)
 
     df_test = []
     df_train = []
