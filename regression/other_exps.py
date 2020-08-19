@@ -70,9 +70,9 @@ elif os_name == 'Linux':
     bag_of_features = os.getcwd() + "/regression/data/bagOfFeatures (1).mat"
 
 # with open(pkl_path, 'rb') as f:
-# f = open(readys_path, 'rb')
-# readys_data = pickle.load(f)
-# f.close()
+f = open(readys_path, 'rb')
+readys_data = pickle.load(f)
+f.close()
 
 # bof_data = loadmat(bag_of_features)
 
