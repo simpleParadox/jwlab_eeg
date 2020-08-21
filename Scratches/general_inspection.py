@@ -16,7 +16,7 @@ else:
     from functions import average_trials, average_trials_and_participants, labels_mapping, two_vs_two, test_model, \
         test_model_permute, two_vs_two_test, divide_by_labels, random_subgroup, average_grouped_data, get_w2v_embeds, \
         get_w2v_embeds_from_dict
-    from functions import labels_mapping_mod_ratings
+    # from functions import labels_mapping_mod_ratings
 
 
 
@@ -66,6 +66,7 @@ nouns = [temp[0][0].lower() for temp in data['nouns']]
 f = open(readys_path, 'rb')
 readys_data = pickle.load(f)
 f.close()
+readys_data = readys_data.iloc[1008:,:]
 labels = readys_data.iloc[:, 18000].values
 # # First note the indices where the the label is 7 -> word 'mom
 filtered_idxs = []  # Contains indices from readys_data without the label '7'.
@@ -85,10 +86,13 @@ readys_ratings = np.array(readys_ratings)
 
 # Now selecting only the subset of questions from the ratings.
 
-readys_ratings_reduced = readys_ratings[:,filtered_col_idxs]
+readys_ratings_reduced = readys_ratings[:, filtered_col_idxs]
 
 scores = []
-for _ in range(10):
+for _ in range(100):
+    print("Round: ", _+1)
+    np.random.shuffle(filtered_readys_data)
+    np.random.shuffle(readys_ratings_reduced)
     score = test_model(filtered_readys_data, readys_ratings_reduced)
     scores.append(score)
 

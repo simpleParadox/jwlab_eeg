@@ -42,6 +42,19 @@ labels_mapping = {0:'baby', 1:'bear', 2:'bird', 3: 'bunny',
                       8: 'banana', 9: 'bottle', 10: 'cookie',
                       11: 'cracker', 12: 'cup', 13: 'juice',
                       14: 'milk', 15: 'spoon'}
+
+def get_embeds_list():
+    w2v_array = []
+    file = np.load(embeds_with_label_path, allow_pickle=True)
+    data = file['arr_0'][0]
+    for i in range(16):
+        w2v_array.append(data[i].tolist())
+
+    return w2v_array
+
+w2v_array = get_embeds_list()
+
+
 def test_model_permute(X, y):
     # print("Test model permute")
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90)
@@ -54,7 +67,7 @@ def test_model_permute(X, y):
     return c
 
 def test_model(X, y, labels_dict=None):
-    print("New test?")
+    # print("New test?")
     # print("Test model")
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.90)
     # print(X_train.shape)
@@ -186,6 +199,15 @@ def two_vs_two_test(y_test, preds):
         total_points += 1
     return points, total_points, points / total_points
 
+def get_idx_in_list(elem):
+    return w2v_array.index(elem)
+
+def get_word_pairs_by_key_pair(key_pairs):
+    keys = key_pairs.split('_')
+    word1 = labels_mapping[int(keys[0])]
+    word2 = labels_mapping[int(keys[1])]
+    return word1, word2
+
 def two_vs_two(y_test, preds):
     # print("Ytest", y_test[0])
     # print("Preds",preds[0])
@@ -194,7 +216,8 @@ def two_vs_two(y_test, preds):
     diff = []
     sum_ii_jj = []
     sum_ij_ji = []
-    # x_length = [_ for _ in range(preds.shape[0]-1)]
+    x_length = [_ for _ in range(preds.shape[0]-1)]
+    word_pairs = dict()
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
         s_j = y_test[i + 1]
@@ -204,6 +227,7 @@ def two_vs_two(y_test, preds):
         # print('s_i_pred', s_i_pred)
         dsii = cosine(s_i, s_i_pred)
         dsjj = cosine(s_j, s_j_pred)
+
         dsij = cosine(s_i, s_j_pred)
         dsji = cosine(s_j, s_i_pred)
         # print("dsii: ", dsii)
@@ -216,7 +240,19 @@ def two_vs_two(y_test, preds):
         diff.append((dsii + dsjj) - (dsij + dsji))
         if dsii + dsjj <= dsij + dsji:
             points += 1
+            si_idx = get_idx_in_list(s_i.tolist())
+            sj_idx = get_idx_in_list(s_j.tolist())
+            if f"{si_idx}_{sj_idx}" in word_pairs:
+                word_pairs[f'{si_idx}_{sj_idx}'] += 1
+            else:
+                word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
         total_points += 1
+
+    max_value = max(word_pairs.values())
+    for key, val in word_pairs.items():
+        if val == max_value:
+            print(f'{val} {key} {get_word_pairs_by_key_pair(key)}')
 
     # diff_mean = np.mean(diff)
     # diff = np.array(diff)
@@ -232,9 +268,9 @@ def two_vs_two(y_test, preds):
     # print("Above zero mean ", above_zero_diff_mean)
     # print("Sum ii jj ", sum_ii_jj_mean)
     # print("Sum ij ji ", sum_ij_ji_mean)
-
-
-    ## The following piece of code plots graphs for the difference between the sum of the cosine distances.
+    #
+    #
+    # ## The following piece of code plots graphs for the difference between the sum of the cosine distances.
     # print("Points -> ", points)
     # print("Total points -> ", total_points)
     # plt.rcParams["figure.figsize"] = (20, 10)
