@@ -7,7 +7,7 @@ bad_trial_df = pd.read_csv(bad_trials_filepath)
 bad_trial_df.Ps = bad_trial_df.Ps.interpolate(method="pad")
 # drop "looking left" trials because they are not considered as bad trials
 bad_trial_df = bad_trial_df[bad_trial_df['Reason'] != "left"]
-
+bad_trial_df = bad_trial_df.drop_duplicates(subset=["Ps", "Cell", "Observation"])
 
 def get_bad_trials(participants):
     # Appending bad trials either from cell&obs columns (new segs) or tIndex columns (old segs)

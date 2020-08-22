@@ -54,8 +54,23 @@ def generate_window_label(prediction_error):
             count += 100
     return window_label
 
+def plot_error_rate_window_single(prediction_error, ps):
+    count = len(prediction_error)
+    data = [round(item,2) for item in prediction_error]
+    x = np.arange(count)
+    fig, ax = plt.subplots()
+    rects = ax.bar(x, data, label='error rate')
+    ax.set_xticks(x)
+    labels = ["0-100", "0-200", "100-200"]
+    ax.set_xticklabels(labels)
+    ax.set_xlabel('Sliding windows (ms)')
+    ax.set_ylabel('Error rate (%)')
+    ax.set_title('Error rate for each sliding window')
+    autolabel(rects, ax)
+    plt.savefig('{0}_avg_3.png'.format(ps))
 
-def plot_error_rate_window(prediction_error):
+
+def plot_error_rate_window(prediction_error, old):
     count = sum([len(item) for item in prediction_error])
     data = [round(error_rate,2) for item in prediction_error for error_rate in item]
     x = np.arange(count)
@@ -67,4 +82,8 @@ def plot_error_rate_window(prediction_error):
     ax.set_ylabel('Error rate (%)')
     ax.set_title('Error rate for each sliding window')
     autolabel(rects, ax)
-    plt.show()
+    plt.savefig('first_20_{0}.png'.format(old))
+    
+def run_plot(participants, good_trial_count):
+    plot_good_trial_participant(participants, good_trial_count[0])
+    plot_good_trial_word(participants, good_trial_count[1])
