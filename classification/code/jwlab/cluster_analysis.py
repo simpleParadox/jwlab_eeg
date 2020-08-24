@@ -13,7 +13,7 @@ from scipy import stats
 import more_itertools as mit
 from IPython.display import display
 import math
-
+from copy import deepcopy
 
 ################################ Restructure Matrix ################################
 def permutation_and_average(df, avg_trial):
@@ -301,6 +301,9 @@ def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows):
         y_train.append(df_train[i].label.values)
         X_train.append(df_train[i].drop(columns = ['label', 'participant'], axis = 1))
 
+    # ## Creating a copy of the training labels. Added by Rohan.
+    # y_train_labels = deepcopy(y_train)
+
     # create test matrices
     X_test = [] # test raw trials
     y_test = [] 
@@ -322,18 +325,19 @@ def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows):
         y_test_pt.append(y_test_temp_pt)
 
         
-        
-        y_train[i][y_train[i] < 8] = 0
-        y_train[i][y_train[i] >= 8] = 1
-        
-        y_test[i][y_test[i] < 8] = 0
-        y_test[i][y_test[i] >= 8] = 1
-        
-        y_test_t[i][y_test_t[i] < 8] = 0
-        y_test_t[i][y_test_t[i] >= 8] = 1
-        
-        y_test_pt[i][y_test_pt[i] < 8] = 0
-        y_test_pt[i][y_test_pt[i] >= 8] = 1
+
+        ## If you want the raw labels itself, just comment the following 8 lines of code. Commented by Rohan for regression purposes.
+        # y_train[i][y_train[i] < 8] = 0
+        # y_train[i][y_train[i] >= 8] = 1
+        #
+        # y_test[i][y_test[i] < 8] = 0
+        # y_test[i][y_test[i] >= 8] = 1
+        #
+        # y_test_t[i][y_test_t[i] < 8] = 0
+        # y_test_t[i][y_test_t[i] >= 8] = 1
+        #
+        # y_test_pt[i][y_test_pt[i] < 8] = 0
+        # y_test_pt[i][y_test_pt[i] >= 8] = 1
 
 
 

@@ -240,19 +240,23 @@ def two_vs_two(y_test, preds):
         diff.append((dsii + dsjj) - (dsij + dsji))
         if dsii + dsjj <= dsij + dsji:
             points += 1
-            si_idx = get_idx_in_list(s_i.tolist())
-            sj_idx = get_idx_in_list(s_j.tolist())
-            if f"{si_idx}_{sj_idx}" in word_pairs:
-                word_pairs[f'{si_idx}_{sj_idx}'] += 1
-            else:
-                word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
 
         total_points += 1
 
-    max_value = max(word_pairs.values())
-    for key, val in word_pairs.items():
-        if val == max_value:
-            print(f'{val} {key} {get_word_pairs_by_key_pair(key)}')
+    # si_idx = get_idx_in_list(s_i.tolist())
+    # sj_idx = get_idx_in_list(s_j.tolist())
+    # if f"{si_idx}_{sj_idx}" in word_pairs:
+    #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+    # else:
+    #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
+
+
+    # max_value = max(word_pairs.values())
+    # for key, val in word_pairs.items():
+    #     if val == max_value:
+    #         print(f'{val} {key} {get_word_pairs_by_key_pair(key)}')
 
     # diff_mean = np.mean(diff)
     # diff = np.array(diff)
