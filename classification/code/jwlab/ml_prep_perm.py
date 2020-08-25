@@ -14,13 +14,17 @@ from jwlab.constants import word_list, bad_trials_filepath, old_participants, cl
 
 def init(age_group):
     if age_group is 9:
-        participants = ["904", "905", "906", "908", "909","910", "912", "913", "914",  "916", "917", "921", "923", "927", "929", "930", "932"] 
+        participants = ["904", "905", "906"]
+#         participants = ["904", "905", "906", "908", "909","910", "912", "913", "914",  "916", "917", "921", "923", "927", "929", "930", "932"] 
+
 
 #all
 #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]  
 
     elif age_group is 11:
         participants = [ "106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+        
+
     else:
         raise ValueError("Unsupported age group!")
         
@@ -132,9 +136,9 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             if useRandomizedLabel:
                 y = remap_label(y)
                 
-## binary: animacy
-            y[y < 8] = 0
-            y[y >= 8] = 1
+# # binary: animacy
+#             y[y < 8] = 0
+#             y[y >= 8] = 1
 
 #     #mom and baby vs all
 #             y[y == 0] = 0
@@ -333,6 +337,7 @@ def remap_label(y):
     mapdict = {}
     for i in range(16):
         mapdict[i] = labels_temp.index(i)
+    
 
     newArray = copy(y)
 
