@@ -133,8 +133,8 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
                 y = remap_label(y)
                 
 ## binary: animacy
-            y[y < 8] = 0
-            y[y >= 8] = 1
+            # y[y < 8] = 0
+            # y[y >= 8] = 1
 
 #     #mom and baby vs all
 #             y[y == 0] = 0
@@ -267,14 +267,14 @@ def prep_matrices_avg(X, age_group):
         X_test_pt.append(X_test_i)
         y_test_pt.append(y_test_i)
     
-    #binary classification
-    for i in range(len(X)):
-        for j in range(len(X[0])):
-            y_train[i][j][y_train[i][j] < 8] = 0
-            y_train[i][j][y_train[i][j] >= 8] = 1
-
-            y_test_pt[i][j][y_test_pt[i][j] < 8] = 0
-            y_test_pt[i][j][y_test_pt[i][j] >= 8] = 1
+    #binary classification, comment these if you want the labels only. Commented out by Rohan.
+    # for i in range(len(X)):
+    #     for j in range(len(X[0])):
+    #         y_train[i][j][y_train[i][j] < 8] = 0
+    #         y_train[i][j][y_train[i][j] >= 8] = 1
+    #
+    #         y_test_pt[i][j][y_test_pt[i][j] < 8] = 0
+    #         y_test_pt[i][j][y_test_pt[i][j] >= 8] = 1
 
 
 
@@ -337,7 +337,7 @@ def remap_label(y):
     newArray = copy(y)
 
     for k, v in mapdict.items():
-        newArray[y==k] = v
+        newArray[newArray==k] = v
 
     
     return newArray

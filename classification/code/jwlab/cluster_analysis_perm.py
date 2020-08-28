@@ -7,11 +7,13 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.model_selection import RepeatedKFold
 from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg
 from matplotlib import pyplot as plt
+from regression.functions import get_w2v_embeds_from_dict, two_vs_two
+from sklearn.linear_model import Ridge
 
 ################################ Analysis procedure ################################
 
 def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config):
-    
+    print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
     
     results = {}
@@ -28,7 +30,6 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
             
             X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group)
-            
             temp_results = cross_validaton_averaging(X_train, X_test, y_train, y_test)
             if sampling_iterations == 0:
                 print("Warning: This does not do fold validation")
@@ -51,11 +52,11 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                     results[i][j]= temp_results[i][j]
     
 
-    pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
-
-    clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
-
-    max_t_mass = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
+    # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
+    #
+    # clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
+    #
+    # max_t_mass = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
     
     ## REMOVE FOR NULL FUNCTION
     if len(sliding_window_config[2]) == 1:
@@ -82,7 +83,8 @@ def createGraph(results):
     error = stdevplt
     plt.plot(x_graph, y_graph, 'k-')
     plt.fill_between(x_graph, y_graph-error, y_graph+error)
-    plt.show()
+    plt.savefig("overlapping windows test")
+    # plt.show()
     #plt.savefig('cluster_graph.png')
 
 def cross_validaton(num_iterations, num_win, num_folds, X, y):
@@ -137,10 +139,15 @@ def cross_validaton_averaging(X_train, X_test, y_train, y_test):
 
 
             #model = SVC(kernel = 'rbf', C=1e-9, gamma = .0001)
-            model = LinearSVC(C=1e-9, max_iter=1000)
-            model.fit(X_train[i][j], y_train[i][j])
+            # model = LinearSVC(C=1e-9, max_iter=1000)
+            model = Ridge()
+            y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
+            y_test_labels = get_w2v_embeds_from_dict(y_test[i][j])
+            model.fit(X_train[i][j], y_train_labels)
             y_pred = model.predict(X_test[i][j])
-            testScore = accuracy_score(y_test[i][j],y_pred) 
+            points, total_points, testScore = two_vs_two(y_test_labels, y_pred)
+
+
 
 
             if j in temp_results.keys(): 
