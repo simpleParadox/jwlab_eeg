@@ -60,9 +60,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     ## REMOVE FOR NULL FUNCTION
     if ((len(sliding_window_config[2]) == 1) & (useRandomizedLabel== False)):
         createGraph(results)
-    else: 
+    elif len(sliding_window_config[2]) > 1:
         print("Graph function is not supported for multiple window sizes")
-
     return max_abs_tmass, max_pos, max_neg, first_cluster, second_cluster
 
 def createGraph(results):
