@@ -201,7 +201,7 @@ def two_vs_two_test(y_test, preds):
 
 def get_idx_in_list(elem):
     return w2v_array.index(elem)
-
+    
 def get_word_pairs_by_key_pair(key_pairs):
     keys = key_pairs.split('_')
     word1 = labels_mapping[int(keys[0])]
@@ -306,10 +306,10 @@ def two_vs_two(y_test, preds):
     ## Create the 16x16 graph for the different time windows. For each time window, you will have the y_test and preds.
     # First create a matrix of size 16 x 16.
     grid = np.zeros((16, 16))
-    for pair in index_pairs:
-        row, col = pair
-        # print(pair)
-        grid[row, col] += 1
+    # for pair in index_pairs:
+    #     row, col = pair
+    #     # print(pair)
+    #     grid[row, col] += 1
 
     # Next, for each word pair in the 2v2 test, increament that cell by 1.
     # But first, you need to find out the word pair. One way is to store the word
@@ -317,61 +317,7 @@ def two_vs_two(y_test, preds):
     gcf = None#plot_grid(grid)
     return points, total_points, points / total_points, gcf, grid
 
-def extended_2v2(y_test, preds):
-    """
-    There are two additions to this function over the previous two_vs_two test.
-    1. The grid figures will be symmetric now.
-    2. The 16 samples in the test set will now be extended to 16C2=120 samples.
-    """
-    points = 0
-    total_points = 0
-    diff = []
-    sum_ii_jj = []
-    sum_ij_ji = []
-    x_length = [_ for _ in range(preds.shape[0] - 1)]
-    word_pairs = dict()
-    index_pairs = []
-    for i in range(preds.shape[0] - 1):
-        s_i = y_test[i]
-        s_i_pred = preds[i]
-        for j in range(i+1, preds.shape[0]-1):
-            s_j = y_test[j]
-            s_j_pred = preds[j]
 
-            dsii = cosine(s_i, s_i_pred)
-            dsjj = cosine(s_j, s_j_pred)
-            dsij = cosine(s_i, s_j_pred)
-            dsji = cosine(s_j, s_i_pred)
-
-            sum_ii_jj.append((dsii + dsjj))
-            sum_ij_ji.append((dsij + dsji))
-            diff.append((dsii + dsjj) - (dsij + dsji))
-
-            if dsii + dsjj <= dsij + dsji:
-                points += 1
-                si_idx = get_idx_in_list(s_i.tolist())
-                sj_idx = get_idx_in_list(s_j.tolist())
-                index_pairs.append([si_idx, sj_idx])
-                if f"{si_idx}_{sj_idx}" in word_pairs:
-                    word_pairs[f'{si_idx}_{sj_idx}'] += 1   
-                else:
-                    word_pairs[f'{si_idx}_{sj_idx}'] = 1
-
-            total_points += 1
-
-    grid = np.zeros((16, 16))
-    for pair in index_pairs:
-        row, col = pair
-        # print(pair)
-        grid[row, col] += 1
-        grid[col, row] += 1
-
-    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
-    # But first, you need to find out the word pair. One way is to store the word
-    # pairs in an array; in other words, store the index pairs.
-
-    gcf = None  # plot_grid(grid)
-    return points, total_points, points / total_points, gcf, grid
 
 def divide_by_labels(data):
     """

@@ -8,7 +8,8 @@ import pandas as pd
 import numpy as np
 import setup_jwlab
 
-
+import sys
+sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
 from jwlab.cluster_analysis_perm import cluster_analysis_procedure
 from jwlab.ml_prep_perm import prep_ml, slide_df, init, load_ml_data, get_bad_trials, map_participants,average_trials_and_participants
@@ -37,88 +38,88 @@ from matplotlib import pyplot as plt
 # In[ ]:
 
 
-result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [50], 10], [3, 15, 2])
+result = cluster_analysis_procedure(12, False, "permutation", [-200, 1000, [50], 10], [5, 8, 15])
 
 
 # In[25]:
 
 
-import statistics
-negsum = 0
-negsum += stats.ttest_1samp(result[0][15], .5).statistic
-negsum += stats.ttest_1samp(result[0][16], .5).statistic
-negsum += stats.ttest_1samp(result[0][17], .5).statistic
-negsum += stats.ttest_1samp(result[0][18], .5).statistic
-negsum += stats.ttest_1samp(result[0][19], .5).statistic
+# import statistics
+# negsum = 0
+# negsum += stats.ttest_1samp(result[0][15], .5).statistic
+# negsum += stats.ttest_1samp(result[0][16], .5).statistic
+# negsum += stats.ttest_1samp(result[0][17], .5).statistic
+# negsum += stats.ttest_1samp(result[0][18], .5).statistic
+# negsum += stats.ttest_1samp(result[0][19], .5).statistic
 
 
-# In[26]:
+# # In[26]:
 
 
-negsum
+# negsum
 
 
-# In[6]:
+# # In[6]:
 
 
-results = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [1, 1, 20])
+# results = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [1, 1, 20])
 
 
-# In[ ]:
+# # In[ ]:
 
 
-num_win= 120
+# num_win= 120
 
-pvalues_pos = []
-pvalues_neg = []
-tvalues_pos = []
-tvalues_neg = []
-for i in range(len(results)):
-    for j in range(num_win):
-        # change the second argument below for comparison
-        istat = stats.ttest_1samp(results[i][j], .5)
-        pvalues_pos += [istat.pvalue] if istat.statistic > 0 else [1]
-        pvalues_neg += [istat.pvalue] if istat.statistic < 0 else [1]
-        # removed just so that we can get the negative value from the pre window
-        tvalues_pos += [istat.statistic] if istat.statistic > 0 else [0]
-        tvalues_neg += [istat.statistic] if istat.statistic < 0 else [0]
-
-
-# In[ ]:
+# pvalues_pos = []
+# pvalues_neg = []
+# tvalues_pos = []
+# tvalues_neg = []
+# for i in range(len(results)):
+#     for j in range(num_win):
+#         # change the second argument below for comparison
+#         istat = stats.ttest_1samp(results[i][j], .5)
+#         pvalues_pos += [istat.pvalue] if istat.statistic > 0 else [1]
+#         pvalues_neg += [istat.pvalue] if istat.statistic < 0 else [1]
+#         # removed just so that we can get the negative value from the pre window
+#         tvalues_pos += [istat.statistic] if istat.statistic > 0 else [0]
+#         tvalues_neg += [istat.statistic] if istat.statistic < 0 else [0]
 
 
-
-
-
-# In[ ]:
+# # In[ ]:
 
 
 
 
 
-# In[2]:
-
-
-# For null distribution
-# MAKE SURE YOU TURN OFF PRINT FUNCTION
-
-itr = 50 
-arrTmass = []
-
-for i in range(itr):
-    tmass = cluster_analysis_procedure(11, True, "permutation", [-200, 1000, [10], 10], [3, 15, 20])
-    arrTmass.append(round(tmass, 4))
-    print(i)
-print(arrTmass)
-
-
-# In[ ]:
+# # In[ ]:
 
 
 
 
-plt.hist(arrTmass, bins = 20)
-plt.show()
+
+# # In[2]:
+
+
+# # For null distribution
+# # MAKE SURE YOU TURN OFF PRINT FUNCTION
+
+# itr = 50 
+# arrTmass = []
+
+# for i in range(itr):
+#     tmass = cluster_analysis_procedure(11, True, "permutation", [-200, 1000, [10], 10], [3, 15, 20])
+#     arrTmass.append(round(tmass, 4))
+#     print(i)
+# print(arrTmass)
+
+
+# # In[ ]:
+
+
+
+
+# plt.hist(arrTmass, bins = 20)
+# plt.show()
 
 
 # In[ ]:

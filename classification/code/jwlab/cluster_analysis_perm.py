@@ -1,16 +1,19 @@
 import pandas as pd
 import numpy as np
+import random
 from scipy import stats
 import more_itertools as mit
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC, LinearSVC
 from sklearn.model_selection import RepeatedKFold
+import sys
+sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
+
 from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg
 from matplotlib import pyplot as plt
+sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
 from regression.functions import get_w2v_embeds_from_dict, two_vs_two
 from sklearn.linear_model import Ridge
-
-################################ Analysis procedure ################################
 
 def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config):
     print("Cluster analysis procedure")
@@ -19,7 +22,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     results = {}
 
     for i in range(sampling_iterations):
-
+        print("Sampling iteration: ", i)
         if averaging == "permutation":
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000)
 
@@ -29,8 +32,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
             
-            X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group)
-            temp_results = cross_validaton_averaging(X_train, X_test, y_train, y_test)
+            X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel)
+            temp_results = cross_validaton_averaging(X_train, X_test, y_train, y_test, useRandomizedLabel)
             if sampling_iterations == 0:
                 print("Warning: This does not do fold validation")
             
@@ -83,9 +86,22 @@ def createGraph(results):
     error = stdevplt
     plt.plot(x_graph, y_graph, 'k-')
     plt.fill_between(x_graph, y_graph-error, y_graph+error)
-    plt.savefig("overlapping windows test")
-    # plt.show()
-    #plt.savefig('cluster_graph.png')
+    plt.savefig("Averaging=permutation Run 2, trial size=20, cv config 5-8-15, all 12m non-permuted labels")
+
+
+def shuffle_labels(y_train, y_test):
+    train_len = len(y_train)
+    test_len = len(y_test)
+
+    all_labels = np.concatenate((y_train, y_test), axis=0)
+    np.random.shuffle(all_labels)
+    random.shuffle(all_labels)
+
+    y_train_shuffled = all_labels[:train_len]
+    y_test_shuffled = all_labels[test_len:]
+
+    return y_train_shuffled, y_test_shuffled
+
 
 def cross_validaton(num_iterations, num_win, num_folds, X, y):
     results = []
@@ -105,11 +121,14 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
                 X_train, X_test = X_temp[train_index], X_temp[test_index]
                 y_train, y_test = y_temp[train_index], y_temp[test_index]
 
+                y_train_labels = get_w2v_embeds_from_dict(y_train)
+                y_test_labels = get_w2v_embeds_from_dict(y_test)
+
                 #model = SVC(kernel = 'rbf', C=1e-9, gamma = .0001)
-                model = LinearSVC(C=1e-9, max_iter=1000)
-                model.fit(X_train, y_train)
+                model = Ridge()
+                model.fit(X_train, y_train_labels)
                 y_pred = model.predict(X_test)
-                testScore = accuracy_score(y_test,y_pred) 
+                points, total_points, testScore, gcf, grid = two_vs_two(y_test_labels, y_pred)
                 
                
                 if j in temp_results.keys(): 
@@ -130,7 +149,7 @@ def cross_validaton(num_iterations, num_win, num_folds, X, y):
         
     return results
 
-def cross_validaton_averaging(X_train, X_test, y_train, y_test):
+def cross_validaton_averaging(X_train, X_test, y_train, y_test, useRandomizedLabel):
     results = []
     
     for i in range(len(X_train)):
@@ -143,12 +162,16 @@ def cross_validaton_averaging(X_train, X_test, y_train, y_test):
             model = Ridge()
             y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
             y_test_labels = get_w2v_embeds_from_dict(y_test[i][j])
+
+            if useRandomizedLabel:
+                print("Randomized Labels")
+                y_train_labels, y_test_labels = shuffle_labels(y_train_labels, y_test_labels)
+
+
+
             model.fit(X_train[i][j], y_train_labels)
             y_pred = model.predict(X_test[i][j])
-            points, total_points, testScore = two_vs_two(y_test_labels, y_pred)
-
-
-
+            points, total_points, testScore, gcf, grid = two_vs_two(y_test_labels, y_pred)
 
             if j in temp_results.keys(): 
                 temp_results[j] += [testScore]

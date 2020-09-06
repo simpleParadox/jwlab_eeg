@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from numpy import copy
 from jwlab.constants import cleaned_data_filepath
 from jwlab.ml_prep import  average_trials_and_participants, no_average, average_trials, no_average_labels
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
@@ -79,11 +80,14 @@ def slide_df(df, length_per_window):
     return windows_list
 
 def load_ml_data(filepath, participants):
+    # print("First line load ml data")
     # read all participant csvs, concat them into one dataframe
     dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (filepath, s))
            for s in participants]
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
-
+    # print("Load ml data")
+    # print(df)
+    # print(df.shape)
     ys = [np.loadtxt("%s%s_labels.txt" % (filepath, s)).tolist()
           for s in participants]
     #print("loaded", flush=True)
@@ -94,9 +98,10 @@ def prep_cluster_analysis_permutation(filepath, participants, downsample_num=100
     return prep_cluster_analysis_internal_permutation(df, ys, participants, downsample_num=downsample_num, length_per_window=length_per_window, useRandomizedLabel=useRandomizedLabel)
 
 
-def prep_cluster_analysis(filepath, participants, downsample_num=1000, averaging="average_trials_and_participants", length_per_window=10):
+def prep_cluster_analysis(filepath, participants, downsample_num=1000, averaging="average_trials_and_participants", length_per_window=10, useRandomizedLabel=False):
     df, ys = load_ml_data(filepath, participants)
-    return prep_cluster_analysis_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging, length_per_window=length_per_window)
+    print("Randomized Labels?", useRandomizedLabel)
+    return prep_cluster_analysis_internal(df, ys, participants, downsample_num=downsample_num, averaging=averaging, length_per_window=length_per_window, useRandomizedLabel=useRandomizedLabel)
 
 
 def prep_cluster_analysis_internal_permutation(df, ys, participants, downsample_num=1000, length_per_window=10, useRandomizedLabel=False):
@@ -179,7 +184,24 @@ def prep_cluster_analysis_internal_permutation(df, ys, participants, downsample_
         
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count]
 
-def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10):
+def remap_label(y):
+    print("Remap label")
+    labels_temp = list(range(0, 16))
+    random.shuffle(labels_temp)
+
+    mapdict = {}
+    for i in range(16):
+        mapdict[i] = labels_temp.index(i)
+
+    newArray = copy(y)
+
+    for k, v in mapdict.items():
+        newArray[y == k] = v
+
+    # np.random.shuffle(newArray)
+    return newArray
+
+def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, averaging="average_trials_and_participants", length_per_window=10, useRandomizedLabel=False):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     # df = df[df.Time >= 0] #removed
 
@@ -209,6 +231,12 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
 
     Y = np.concatenate(ys)
 
+    if useRandomizedLabel:
+        random.shuffle(Y)
+        np.random.shuffle(Y)
+        # Y = remap_label(Y)
+        print("Labels shuffled.")
+
     windows_list = slide_df(df, length_per_window)
 
     X_list = [0] * int(1200 / length_per_window) # changed to post length
@@ -226,6 +254,8 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
         #X = resample(X, downsample_num, axis=0)
         (i, j, k) = X.shape
         X = np.reshape(X, (k, j * length_per_window))
+        # print(X.shape)
+
       
         
 
@@ -268,11 +298,11 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count]
 
 
-def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows):
+def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows, test_size=0.2):
     # set up for new df with labels and ps
     num_participants = len(participants)
     num_indices = len(X[0])
-    fivefold_testsize = int(.2*num_indices)
+    fivefold_testsize = int(test_size*num_indices)
     test_indices = np.random.choice(num_indices-1, fivefold_testsize, replace=False)
     
 #     threefold_testsize = int(.33*num_indices)

@@ -12,10 +12,9 @@
 
 import pandas as pd
 import numpy as np
+import os
+import platform
 import setup_jwlab
-from jwlab.constants import cleaned_data_filepath
-from jwlab.cluster_analysis import prep_cluster_analysis, prep_raw_pred_avg
-from jwlab.ml_prep import  average_trials_and_participants, average_trials
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_validate
 from scipy import stats
@@ -25,27 +24,35 @@ from sklearn.metrics import accuracy_score,recall_score,precision_score,f1_score
 from sklearn import preprocessing
 from scipy.stats import kurtosis, skew
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 from sklearn.preprocessing import StandardScaler
 import more_itertools as mit
+
+
+
+import sys
+sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
+from jwlab.constants import cleaned_data_filepath
+from jwlab.cluster_analysis import prep_cluster_analysis, prep_raw_pred_avg
+from jwlab.ml_prep import  average_trials_and_participants, average_trials
+
+sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
 from regression.functions import get_w2v_embeds_from_dict, two_vs_two
 
+if platform.system() == "Windows":
+    grid_store_path = "G:\jw_lab\jwlab_eeg\classification\grid_images16x16\\"
+else:
+    grid_store_path = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/grid_images16x16/"
 
-# In[ ]:
 
 
-length_per_window = 10 #just change this, do not alter the prep files
+length_per_window = 50 #just change this, do not alter the prep files
 num_sliding_windows = int(1200/ length_per_window)
 
 
-# In[ ]:
-
-
 # all 9m 
-participants = ["904"]#, "905", "906", "908", "909",  "910","912","913", "914", "916", "917", "919",\
+# participants = ["904", "905", "906", "908", "909",  "910","912","913", "914", "916", "917", "919",\
 #                 "920", "921",  "923","924", "927", "928", "929", "930", "932"]
-
-
-# In[ ]:
 
 
 # # #subset 9m
@@ -53,67 +60,29 @@ participants = ["904"]#, "905", "906", "908", "909",  "910","912","913", "914", 
 # # removed: 919, 920, 924, 928
 #
 #
-# # In[ ]:
 #
 #
-# participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119",  "120", "121", "122", "124"]
+participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119",  "120", "121", "122", "124"]
 # # missing 105,
 #
 #
-# # In[ ]:
 #
 #
 # participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "121", "122", "120", "124",               "904", "905", "906", "908", "910", "909", "912","913", "914", "916", "917", "919",                "920",  "923","921", "924", "927", "928", "929", "930", "932"]
 
 
-# # Trial count code
-
-# In[ ]:
 
 
-# #get trial counts
-# X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, participants, downsample_num=1200, averaging="no_averaging", length_per_window=length_per_window)
-#
-#
-# for i in participants:
-#     ps =[i]
-#     X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, ps, downsample_num=1000, averaging="no_averaging", length_per_window=length_per_window)
-#     y[0]
-#     np.amax(y[0])
-#     unique, counts = np.unique(y[0], return_counts=True)
-#
-#     print(i)
-#     print(dict(zip(unique, counts)))
-#
-#
-# # In[ ]:
-#
-#
-# print(cleaned_data_filepath)
-# X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, participants, downsample_num=1200, averaging="no_averaging", length_per_window=length_per_window)
-#
-#
-# # In[ ]:
-#
-#
-# # X[0]
-#
-#
-# # ## Train raw test avg
-#
-# # In[ ]:
-
-
-num_iter = 10
+num_iter = 50
 
 results = {}
 
+all_grids = {}
+permuted = True
+for i in range(num_iter):
 
+    X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, participants, downsample_num=1000, averaging="no_average_labels", length_per_window=length_per_window, useRandomizedLabel=permuted)  # Set useRandomizedLabel=True for permutation test.
 
-for i in range(num_iter): 
-
-    X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, participants, downsample_num=1000, averaging="no_average_labels", length_per_window=length_per_window)
-    
     X_train, y_train, X_test, y_test, X_test_t, y_test_t, X_test_pt, y_test_pt = prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows)
 #     print("y_train", y_train)
 #     print("y_test", y_test)
@@ -127,40 +96,58 @@ for i in range(num_iter):
 #     print(y_train_labels)
 #     print(y_test_labels)
 #     break
-    
+
     model = Ridge()
     #model = SVC(gamma=.001, kernel = 'rbf', C = 100)
 
 
     for j in range(num_sliding_windows):
-        
+
         y_train_labels = get_w2v_embeds_from_dict(y_train[j])
         y_test_labels = get_w2v_embeds_from_dict(y_test[j])
-        y_test_t_labels = get_w2v_embeds_from_dict(y_test_t[j])
+        # y_test_t_labels = get_w2v_embeds_from_dict(y_test_t[j])
         y_test_pt_labels = get_w2v_embeds_from_dict(y_test_pt[j])
-        
+
         model.fit(X_train[j], y_train_labels)
 
         ## validation, predict raw
-        y_pred = model.predict(X_test[j])
-        points, total_points, testScore = two_vs_two(y_test_labels, y_pred)
+        # y_pred = model.predict(X_test[j])
+        # points, total_points, testScore, gcf, grid = two_vs_two(y_test_labels, y_pred)
 #         print(testScore)
 #         break
 
         ## predict averaged across trials
-#         y_pred = model.predict(X_test_t[j])
-#         testScore = two_vs_two(y_test_t[j],y_pred)
+        # y_pred = model.predict(X_test_t[j])
+        # points, total_points, testScore = two_vs_two(y_test_t_labels, y_pred)
 
 #         ## predict averaged across trials and ps
-#         y_pred = model.predict(X_test_pt[j])
-#         testScore = two_vs_two(y_test_pt[j],y_pred)
+        y_pred = model.predict(X_test_pt[j])
+        points, total_points, testScore, gcf, grid = two_vs_two(y_test_pt_labels, y_pred)
 
 
-        if j in results.keys(): 
+        if j in results.keys():
             results[j].append(testScore)
         else:
             results[j]=[]
             results[j].append(testScore)
+
+        # if j in all_grids.keys():
+        #     all_grids[j].append(grid)
+        # else:
+        #     all_grids[j] = []
+        #     all_grids[j].append(grid)
+
+
+# if not os.path.exists(grid_store_path):
+#     os.makedirs(grid_store_path)
+
+# cmap = mpl.cm.RdBu
+# ## Store figures now.
+# for k in range(num_sliding_windows):
+#     plt.matshow(np.sum(all_grids[k], axis=0), cmap=cmap)
+#     plt.colorbar()
+#     plt.savefig(grid_store_path + f'9m Non-overlapping permuted-{permuted} window-{k*length_per_window-200}-{(k+1)*length_per_window-200}  test raw')
+
 
 
 scoreMean = []
@@ -184,24 +171,137 @@ sem = np.array(sem)
 error = sem
 plt.plot(x_graph, y_graph, 'k-')
 plt.fill_between(x_graph, y_graph-error, y_graph+error)
-plt.savefig()
+plt.savefig('Run 6 50ms window all 12m test 50 iterations predict average_trials_ps permuted labels')
+
+########################################################################################################
+
+
+######################################################################################################################
+# Train on 9 months, test on 12 months
+
+# def change_ps():
+#     # Change particpants to 12 month olds.
+#     participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+#     return participants
+
+
+# num_iter = 50
+
+# results = {}
+
+# permuted = False
+
+# for i in range(num_iter):
+
+#     X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, participants, downsample_num=1000,
+#                                                    averaging="no_average_labels", length_per_window=length_per_window,
+#                                                    useRandomizedLabel=permuted)  # Set useRandomizedLabel=True for permutation test.
+
+#     X_train, y_train, X_test, y_test, X_test_t, y_test_t, X_test_pt, y_test_pt = prep_raw_pred_avg(X, participants,
+#                                                                                                    length_per_window,
+#                                                                                                    num_sliding_windows)
+
+#     X_train_mod = X_train + X_test
+#     y_train_mod = y_train + y_test
+
+#     ps = change_ps()
+
+#     X_ps, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, ps, downsample_num=1000,
+#                                                    averaging="no_average_labels", length_per_window=length_per_window,
+#                                                    useRandomizedLabel=permuted)  # Set useRandomizedLabel=True for permutation test.
+
+#     X_train_ps, y_train_ps, X_test_ps, y_test_ps, X_test_t_ps, y_test_t_ps, X_test_pt_ps, y_test_pt_ps = prep_raw_pred_avg(X_ps, ps,
+#                                                                                                    length_per_window,
+#                                                                                                    num_sliding_windows)
+
+
+
+
+
+#     #     print("y_train", y_train)
+#     #     print("y_test", y_test)
+#     #     print("y_test_t", y_test_t)
+#     #     print("y_test_pt", y_test_pt)
+#     ## Now get a list of word embeddings from the labels.
+#     #     y_train_labels = get_w2v_embeds_from_dict(y_train[0])
+#     #     y_test_labels = get_w2v_embeds_from_dict(y_train[1])
+#     #     y_test_t_labels = get_w2v_embeds_from_dict(y_test_t)
+#     #     y_test_pt_labels = get_w2v_embeds_from_dict(y_test_pt)
+#     #     print(y_train_labels)
+#     #     print(y_test_labels)
+#     #     break
+
+#     model = Ridge()
+#     # model = SVC(gamma=.001, kernel = 'rbf', C = 100)
+
+#     for j in range(num_sliding_windows):
+
+#         y_train_mod_labels = get_w2v_embeds_from_dict(y_train_mod[j])
+#         # y_test_labels = get_w2v_embeds_from_dict(y_test[j])
+#         # y_test_t_labels = get_w2v_embeds_from_dict(y_test_t[j])
+#         y_test_pt_labels_mod = get_w2v_embeds_from_dict(y_test_pt_ps[j])
+
+#         model.fit(X_train_mod[j], y_train_mod_labels)
+
+#         ## validation, predict raw
+#         # y_pred = model.predict(X_test[j])
+#         # points, total_points, testScore = two_vs_two(y_test_labels, y_pred)
+#         #         print(testScore)
+#         #         break
+
+#         ## predict averaged across trials
+#         # y_pred = model.predict(X_test_t[j])
+#         # points, total_points, testScore = two_vs_two(y_test_t_labels,y_pred)
+
+#         ### predict averaged across trials and ps
+#         y_pred = model.predict(X_test_pt_ps[j])
+#         points, total_points, testScore = two_vs_two(y_test_pt_labels_mod, y_pred)
+
+#         if j in results.keys():
+#             results[j].append(testScore)
+#         else:
+#             results[j] = []
+#             results[j].append(testScore)
+#     print(i)
+
+# scoreMean = []
+# sem = []
+
+# for i in range(num_sliding_windows):
+#     scoreMean.append(np.mean(results[i]))
+#     sem.append(round(stats.sem(results[i]), 2))
+#     # stdev.append(np.std(results[i]))
+
+# print(np.mean(scoreMean))
+# print(scoreMean)
+# print(sem)
+
+# # plot results:
+
+# x_graph = np.arange(-200, 1000, length_per_window)
+# y_graph = scoreMean
+# sem = np.array(sem)
+# error = sem
+# plt.plot(x_graph, y_graph, 'k-')
+# plt.fill_between(x_graph, y_graph - error, y_graph + error)
+# plt.savefig(f"Run 2 Non-overlapping  permuted {permuted} train on 9, test on 12 (avg_trials_ps), {num_iter} iters window size {length_per_window}ms")
 
 '''
 # ### Get t-mass
 
-# In[ ]:
+#  
 
 
 stats.ttest_1samp(results[i], .5)
 
 
-# In[ ]:
+#  
 
 
 clusters
 
 
-# In[ ]:
+#  
 
 
 pvalues = []
@@ -238,7 +338,7 @@ print("The max t mass is: {0}\n".format(max_t_mass))
 
 # ## Null distribution
 
-# In[ ]:
+#  
 
 
 
@@ -318,7 +418,7 @@ print("The max t mass is: {0}\n".format(max_t_mass))
 # ## Cross validation
 # For raw data
 
-# In[ ]:
+#  
 
 
 # Randomized order of cross val, for raw data matrix
@@ -353,7 +453,7 @@ for i in range(num_sliding_windows):
     assert len(results[i]) == num_iterations * num_folds
 
 
-# In[ ]:
+#  
 
 
 X[0].shape
@@ -363,7 +463,7 @@ X.shape
 # ## Cross validation
 # For averaged data
 
-# In[ ]:
+#  
 
 
 # Cross validation with RepeatedKFold for averaged matrices
@@ -410,19 +510,19 @@ for i in range(num_sliding_windows):
     assert len(results[i]) == num_iterations * num_folds
 
 
-# In[ ]:
+#  
 
 
 
 
 
-# In[ ]:
+#  
 
 
 
 
 
-# In[ ]:
+#  
 
 
 scoreMean = []
@@ -437,7 +537,7 @@ print(scoreMean)
 print(stdev)
 
 
-# In[ ]:
+#  
 
 
 # T-test
@@ -448,7 +548,7 @@ for i in range(num_sliding_windows):
     pvalues += [istat.pvalue] if istat.statistic > 0 else [1]
 
 
-# In[ ]:
+#  
 
 
 # Finding contiguous time cluster
@@ -458,13 +558,13 @@ print(valid_window)
 
 # # Feature Extraction
 
-# In[ ]:
+#  
 
 
 # X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, participants, downsample_num=1200, averaging="no_averaging", length_per_window=length_per_window)
 
 
-# In[ ]:
+#  
 
 
 #X, y, good_trial_count = prep_cluster_analysis(cleaned_data_filepath, participants, downsample_num=1000, averaging="average_trials", length_per_window=length_per_window)
@@ -476,7 +576,7 @@ for k in range(len(X)):
     X[k] = pd.DataFrame(data=X[k][0:,0:])
 
 
-# In[ ]:
+#  
 
 
 #Normalization 
@@ -525,7 +625,7 @@ for j in range(num_sliding_windows):
 
 
 
-# In[ ]:
+#  
 
 
 # # Standarization: 
@@ -564,7 +664,7 @@ for j in range(num_sliding_windows):
 
 # # Cross val on extracted features
 
-# In[ ]:
+#  
 
 
 
@@ -595,13 +695,13 @@ for i in range(num_sliding_windows):
     assert len(results[i]) == num_iterations * num_folds
 
 
-# In[ ]:
+#  
 
 
 
 
 
-# In[ ]:
+#  
 
 
 scoreMean = []
@@ -612,25 +712,25 @@ for i in range(num_sliding_windows):
     stdev.append(np.std(results[i]))
 
 
-# In[ ]:
+#  
 
 
 scoreMean
 
 
-# In[ ]:
+#  
 
 
 max(scoreMean)
 
 
-# In[ ]:
+#  
 
 
 stdev
 
 
-# In[ ]:
+#  
 
 
 # T-test
@@ -641,7 +741,7 @@ for i in range(num_sliding_windows):
     pvalues += [istat.pvalue] if istat.statistic > 0 else [1]
 
 
-# In[ ]:
+#  
 
 
 # Finding contiguous time cluster
@@ -649,7 +749,7 @@ valid_window = [i for i,v in enumerate(pvalues) if v <= 0.025]
 print(valid_window)
 
 
-# In[ ]:
+#  
 
 
 #plot results:
@@ -663,13 +763,13 @@ plt.fill_between(x_graph, y_graph-error, y_graph+error)
 plt.show()
 
 
-# In[ ]:
+#  
 
 
 
 
 
-# In[ ]:
+#  
 '''
 
 

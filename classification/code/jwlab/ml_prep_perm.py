@@ -10,21 +10,24 @@ from jwlab.participants_map import map_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath
 
+
 ################################ prep data ################################
 
 def init(age_group):
     if age_group is 9:
-        participants = ["904", "905", "906", "908", "909","910", "912", "913", "914",  "916", "917", "921", "923", "927", "929", "930", "932"] 
+        participants = ["904", "905", "906", "908", "909", "910", "912", "913", "914", "916", "917", "921", "923",
+                        "927", "929", "930", "932"]
 
-#all
-#         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]  
+    # all
+    #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]
 
-    elif age_group is 11:
-        participants = [ "106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+    elif age_group is 12:
+        participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
         raise ValueError("Unsupported age group!")
-        
+
     return participants
+
 
 def load_ml_data(participants):
     # read all participant csvs, concat them into one dataframe
@@ -34,19 +37,22 @@ def load_ml_data(participants):
 
     ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
           for s in participants]
-    
+
     # print("loaded", flush=True)
     return df, ys
+
 
 def prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
     participants = init(age_group)
     df, ys = load_ml_data(participants)
-    return prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=downsample_num)
+    return prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config,
+                            downsample_num=downsample_num)
+
 
 def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     # df = df[df.Time >= 0]
-    
+
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
     ys = map_participants(ys, participants)
@@ -59,36 +65,40 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             # ys_curr[each_ps]: for the total trial sub-list of each participant of ys_curr...
             # ybad[each_ps][bad_trial]: for each trial index in the bad trial sub-list of each participant of ybad...
             # minus 1 since in ys_curr trials are zero-indexed while in bad_trial it's one-indexed (because they are directly read from csv)
-            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+            ys[each_ps][ybad[each_ps][bad_trial] - 1] = -1
 
         # count the total number of trials for each participant
         trial_count += [len(ys[each_ps])]
         bad_trial_count += [len(ybad[each_ps])]
 
-    # good trial each participant 
+    # good trial each participant
     good_trial_participant_count = np.around(np.true_divide(
         np.subtract(trial_count, bad_trial_count), trial_count), decimals=2)
     # good trial each word each participant
     good_trial_word_count = get_left_trial_each_word(participants)
 
     Y = np.concatenate(ys)
-    
 
-        
+    # if useRandomizedLabel:
+    #     # np.random.shuffle(Y)
+    #     # random.shuffle(Y)
+    #     remap_label(Y)  ## Changed from the above two lines to this -> just to test it out. Commenting this out and using the later one.
+    #     print("Labels shuffled.")
+
     #### Sliding window section ####
-    start_time = sliding_window_config[0] 
+    start_time = sliding_window_config[0]
     end_time = sliding_window_config[1]
     window_lengths = sliding_window_config[2]
     step_length = sliding_window_config[3]
-        
+
     windows_list, num_win = slide_df(df, start_time, end_time, window_lengths, step_length)
-    
+
     X_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]
-    y_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]   
-    p_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]   
-    w_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]  
+    y_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]
+    p_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]
+    w_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]
     df_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]
-    
+
     for length_per_window in range(len(windows_list)):
         for each_window in range(len(windows_list[length_per_window])):
             df = windows_list[length_per_window][each_window]
@@ -96,7 +106,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             X = df.values
             X = np.reshape(
                 X, (window_lengths[length_per_window], 60, -1))
-            #X = resample(X, downsample_num, axis=0)
+            # X = resample(X, downsample_num, axis=0)
             (i, j, k) = X.shape
             X = np.reshape(X, (k, j * window_lengths[length_per_window]))
 
@@ -104,14 +114,14 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             df = pd.DataFrame(data=X)
             df['label'] = Y
             df['participant'] = np.concatenate(
-                [[ys.index(y)]*len(y) for y in ys])
+                [[ys.index(y)] * len(y) for y in ys])
 
             # remove bad samples
             df = df[df.label != -1]
 
             # make label zero indexed
             df.label -= 1
-            
+
             # different averaging processes
             if averaging == "no_averaging":
                 X, y, p, w = no_average(df)
@@ -127,100 +137,101 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
                 X, y, p, w = no_average(df)
             else:
                 raise ValueError("Unsupported averaging!")
-                
-                
+
             if useRandomizedLabel:
                 y = remap_label(y)
-                
-## binary: animacy
+            #     random.shuffle(y)
+            #     np.random.shuffle(y)
+
+            ## binary: animacy
             # y[y < 8] = 0
             # y[y >= 8] = 1
 
-#     #mom and baby vs all
-#             y[y == 0] = 0
-#             y[y == 1] = 0
-#             y[y == 2] = 0
-#             y[y == 3] = 0
-#             y[y == 4] = 0
-#             y[y == 5] = 0
-#             y[y == 6] = 0
-#             y[y == 7] = 1
-            
-#             y[y == 8] = 0
-#             y[y == 9] = 0
-#             y[y == 10] = 0
-#             y[y == 11] = 0
-#             y[y == 12] = 0
-#             y[y == 13] = 0
-#             y[y == 14] = 0
-#             y[y == 15] = 0
+            #     #mom and baby vs all
+            #             y[y == 0] = 0
+            #             y[y == 1] = 0
+            #             y[y == 2] = 0
+            #             y[y == 3] = 0
+            #             y[y == 4] = 0
+            #             y[y == 5] = 0
+            #             y[y == 6] = 0
+            #             y[y == 7] = 1
 
-#             #new groups 
-#             #0: people
-#             #1: animals
-#             #2: food
-#             #3: kitchen objects
-            
-#             y[y == 0] = 0
-#             y[y == 1] = 1
-#             y[y == 2] = 1
-#             y[y == 3] = 1
-#             y[y == 4] = 1
-#             y[y == 5] = 1
-#             y[y == 6] = 1
-#             y[y == 7] = 0
-            
-#             y[y == 8] = 2
-#             y[y == 9] = 3
-#             y[y == 10] = 2
-#             y[y == 11] = 2
-#             y[y == 12] = 3
-#             y[y == 13] = 2
-#             y[y == 14] = 2
-#             y[y == 15] = 3
-            
-#             #words starting with b
+            #             y[y == 8] = 0
+            #             y[y == 9] = 0
+            #             y[y == 10] = 0
+            #             y[y == 11] = 0
+            #             y[y == 12] = 0
+            #             y[y == 13] = 0
+            #             y[y == 14] = 0
+            #             y[y == 15] = 0
 
-            
-#             y[y == 0] = 0
-#             y[y == 1] = 0
-#             y[y == 2] = 0
-#             y[y == 3] = 0
-#             y[y == 4] = 1
-#             y[y == 5] = 1
-#             y[y == 6] = 1
-#             y[y == 7] = 1
-            
-#             y[y == 8] = 0
-#             y[y == 9] = 0
-#             y[y == 10] = 1
-#             y[y == 11] = 1
-#             y[y == 12] = 1
-#             y[y == 13] = 1
-#             y[y == 14] = 1
-#             y[y == 15] = 1
+            #             #new groups
+            #             #0: people
+            #             #1: animals
+            #             #2: food
+            #             #3: kitchen objects
+
+            #             y[y == 0] = 0
+            #             y[y == 1] = 1
+            #             y[y == 2] = 1
+            #             y[y == 3] = 1
+            #             y[y == 4] = 1
+            #             y[y == 5] = 1
+            #             y[y == 6] = 1
+            #             y[y == 7] = 0
+
+            #             y[y == 8] = 2
+            #             y[y == 9] = 3
+            #             y[y == 10] = 2
+            #             y[y == 11] = 2
+            #             y[y == 12] = 3
+            #             y[y == 13] = 2
+            #             y[y == 14] = 2
+            #             y[y == 15] = 3
+
+            #             #words starting with b
+
+            #             y[y == 0] = 0
+            #             y[y == 1] = 0
+            #             y[y == 2] = 0
+            #             y[y == 3] = 0
+            #             y[y == 4] = 1
+            #             y[y == 5] = 1
+            #             y[y == 6] = 1
+            #             y[y == 7] = 1
+
+            #             y[y == 8] = 0
+            #             y[y == 9] = 0
+            #             y[y == 10] = 1
+            #             y[y == 11] = 1
+            #             y[y == 12] = 1
+            #             y[y == 13] = 1
+            #             y[y == 14] = 1
+            #             y[y == 15] = 1
 
             X_list[length_per_window][each_window] = X
             y_list[length_per_window][each_window] = y
             p_list[length_per_window][each_window] = p
             w_list[length_per_window][each_window] = w
             df_list[length_per_window][each_window] = df
-        
+
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count], num_win
 
-def prep_matrices_avg(X, age_group):
+
+def prep_matrices_avg(X, age_group, use_randomized_label):
     participants = init(age_group)
     num_participants = len(participants)
     num_indices = len(X[0][0])
-    fivefold_testsize = int(.20*num_indices)
-    test_indices = np.random.choice(num_indices-1, fivefold_testsize, replace=False)
-    
-    
+    fivefold_testsize = int(.20 * num_indices)
+    test_indices = np.random.choice(num_indices - 1, fivefold_testsize, replace=False)
+
+
     df_test_m = []
     df_train_m = []
     for i in range(len(X)):
-        df_test=[]
-        df_train=[]
+        df_test = []
+        df_train = []
         for j in range(len(X[0])):
             ## will need each window
             X[i][j] = X[i][j].reset_index()
@@ -228,46 +239,55 @@ def prep_matrices_avg(X, age_group):
             # #create new df with these indices and removing from orig
             df_test.append(X[i][j].iloc[test_indices])
             df_train.append(X[i][j].drop(X[i][j].index[test_indices]))
-            assert(len(df_train[i][j]) + len(df_test[i][j]) == len(X[i][j]))
-            df_test[j] = df_test[j].drop(columns=['index'], axis=1) 
+            assert (len(df_train[i][j]) + len(df_test[i][j]) == len(X[i][j]))
+            df_test[j] = df_test[j].drop(columns=['index'], axis=1)
             df_train[j] = df_train[j].drop(columns=['index'], axis=1)
         df_test_m.append(df_test)
         df_train_m.append(df_train)
 
-
-    X_train=[]
-    y_train=[]
+    X_train = []
+    y_train = []
 
     for i in range(len(X)):
         # create training matrix:
-        X_train_i=[]
-        y_train_i=[]
+        X_train_i = []
+        y_train_i = []
         for j in range(len(X[0])):
             y_train_i.append(df_train_m[i][j].label.values)
-            X_train_i.append(df_train_m[i][j].drop(columns = ['label', 'participant'], axis = 1))
+            # if use_randomized_label:
+            #     np.random.shuffle(y_train_i)
+            #     random.shuffle(y_train_i)
+            X_train_i.append(df_train_m[i][j].drop(columns=['label', 'participant'], axis=1))
         X_train.append(X_train_i)
         y_train.append(y_train_i)
-
+        # if use_randomized_label:
+        #     np.random.shuffle(y_train)
+        #     random.shuffle(y_train)
 
     # create test matrices
-    X_test = [] # test raw trials
-    y_test = [] 
-    X_test_pt = [] # test avg trials and ps
-    y_test_pt = [] 
+    X_test = []  # test raw trials
+    y_test = []
+    X_test_pt = []  # test avg trials and ps
+    y_test_pt = []
 
     for i in range(len(X)):
-        X_test_i=[]
-        y_test_i=[]
+        X_test_i = []
+        y_test_i = []
         for j in range(len(X[0])):
             X_test_pt_temp, y_test_temp_pt, ps, w = average_trials_and_participants(df_test_m[i][j], participants)
             X_test_i.append(pd.DataFrame(X_test_pt_temp))
+            # if use_randomized_label:
+            #     np.random.shuffle(y_test_temp_pt)
+            #     random.shuffle(y_test_temp_pt)
             y_test_i.append(y_test_temp_pt)
-
 
         X_test_pt.append(X_test_i)
         y_test_pt.append(y_test_i)
-    
-    #binary classification, comment these if you want the labels only. Commented out by Rohan.
+        # if use_randomized_label:
+        #     np.random.shuffle(y_test_pt)
+        #     random.shuffle(y_test_pt)
+
+    # binary classification, comment these if you want the labels only. Commented out by Rohan.
     # for i in range(len(X)):
     #     for j in range(len(X[0])):
     #         y_train[i][j][y_train[i][j] < 8] = 0
@@ -276,19 +296,17 @@ def prep_matrices_avg(X, age_group):
     #         y_test_pt[i][j][y_test_pt[i][j] < 8] = 0
     #         y_test_pt[i][j][y_test_pt[i][j] >= 8] = 1
 
-
-
     return X_train, X_test_pt, y_train, y_test_pt
-    
-    
-    
-    
+
+
 # Raw data
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1).values, df.label.values.flatten(), df.participant.values, df.label.values
 
+
 def no_average_labels(df):
     return df, df.label.values.flatten(), df.participant.values, df.label.values
+
 
 # For each participant, average the value for each word. Expected shape[0] is len(participants) x len(word_list)
 def average_trials(df):
@@ -303,11 +321,13 @@ def average_trials(df):
     for p in range(num_participants):
         for w in range(num_words):
             means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(axis=0
-            ) if df_data[np.logical_and(df.participant == p, df.label == w)].size != 0 else 0
+                                                                                            ) if df_data[np.logical_and(
+                df.participant == p, df.label == w)].size != 0 else 0
             new_data[p * num_words + w, :] = means
             new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
             participants[p * num_words + w] = p
     return new_data, new_y, participants, np.copy(new_y)
+
 
 # Average the value of each word across participants. Expected shape[0] is len(word_list)
 def average_trials_and_participants(df, participants):
@@ -326,7 +346,9 @@ def average_trials_and_participants(df, participants):
     new_y = new_y[new_y != -1]
     return new_data, new_y, np.ones(new_y.shape[0]) * -1, np.copy(new_y)
 
-def remap_label(y): 
+
+def remap_label(y):
+    print("Remap label")
     labels_temp = list(range(0, 16))
     random.shuffle(labels_temp)
 
@@ -337,17 +359,18 @@ def remap_label(y):
     newArray = copy(y)
 
     for k, v in mapdict.items():
-        newArray[newArray==k] = v
+        newArray[y == k] = v
 
-    
+    # np.random.shuffle(newArray)
     return newArray
+
 
 ################################ Sliding Window ################################
 # start time, end time: int, in ms
 # window_lengths: a list, consisting the lengths of the windows we want to try out
 #   For example, if we want to slide the df with lengths 300, 400, We should pass in [300, 400]
 # step_length: the distance between each window
-#   For example, if step_length = 100, window_length = 300, windows are 0-300, 100-400, 200-500, etc. 
+#   For example, if step_length = 100, window_length = 300, windows are 0-300, 100-400, 200-500, etc.
 #                if step_length = 200, window_length = 300, windows are 0-300, 200-500, 400-700, etc.
 # hasPreWindow: boolean, true if want to include the 200ms pre window, false otherwise
 # Return: 2D list, a list containing lists of slided windows for each element in window_lengths
@@ -355,72 +378,73 @@ def remap_label(y):
 def slide_df(df, start_time, end_time, window_lengths, step_length):
     window_list = []
     num_win = []
-    
+
     df = df[(df.Time >= start_time) & (df.Time < end_time)]
 
     for length_each_window in window_lengths:
         temp_df_list = []
-        if start_time == (end_time+step_length-length_each_window):
+        if start_time == (end_time + step_length - length_each_window):
             temp_df = df
             temp_df_list.append(temp_df)
             num_win.append(1)
         else:
-            for i in range(start_time, (end_time+step_length)-length_each_window, step_length):
+            for i in range(start_time, (end_time + step_length) - length_each_window, step_length):
                 temp_df = df[(df.Time < i + length_each_window) & (df.Time >= i)]
                 assert len(temp_df) % length_each_window == 0
                 temp_df_list.append(temp_df)
-            temp_num_win = int((((end_time - start_time)-length_each_window) / step_length) + 1)
+            temp_num_win = int((((end_time - start_time) - length_each_window) / step_length) + 1)
             assert len(temp_df_list) == temp_num_win
             num_win.append(temp_num_win)
         window_list.append(temp_df_list)
-        
+
     assert len(window_list) == len(window_lengths)
     return window_list, num_win
+
 
 ################################ Restructure Matrix ################################
 def permutation_and_average(df, avg_trial):
     grouped = df.groupby(['label'])
     shuffled_dfs = []
     for i in range(len(word_list)):
-        # df_ith has all trials with word i 
+        # df_ith has all trials with word i
         df_ith = grouped.get_group(i)
         # randomize the rows
         df_ith = df_ith.sample(frac=1).reset_index(drop=True)
-        
+
         orig_df_len = len(df_ith)
         expected_df_len = 0
-                
+
         # The leftover trials
         leftover = len(df_ith) % avg_trial
-        halfsize_set = math.ceil(avg_trial/2)
-        
+        halfsize_set = math.ceil(avg_trial / 2)
+
         if orig_df_len < avg_trial:
-            expected_df_len = math.ceil(orig_df_len/avg_trial)
+            expected_df_len = math.ceil(orig_df_len / avg_trial)
             df_ith = df_ith.set_index(np.arange(len(df_ith)) // len(df_ith)).mean(level=0)
-        
-        # If the number of leftover trials is less than half size of a group, then we put them into the last group  
+
+        # If the number of leftover trials is less than half size of a group, then we put them into the last group
         elif leftover < halfsize_set:
             # Expected df_len after averaging should be floor(orig_df_len/avg_trial)
             expected_df_len = orig_df_len // avg_trial
 
-            last_group_df = df_ith.tail(leftover+avg_trial)
+            last_group_df = df_ith.tail(leftover + avg_trial)
             last_group_mean = last_group_df.mean(axis=0)
 
-            # All other rows except for ones in the last group 
-            df_ith_temp = df_ith.head(-(leftover+avg_trial))
+            # All other rows except for ones in the last group
+            df_ith_temp = df_ith.head(-(leftover + avg_trial))
             df_ith = df_ith_temp.set_index(np.arange(len(df_ith_temp)) // avg_trial).mean(level=0)
 
             # Append everything else with the last group
             df_ith = df_ith.append(last_group_mean, ignore_index=True)
-        else: # Else if the number of leftover trials is more than half of a group, they form a group themselves
+        else:  # Else if the number of leftover trials is more than half of a group, they form a group themselves
             # Expected df_len after averaging should be ceil(orig_df_len/avg_trial)
-            expected_df_len = math.ceil(orig_df_len/avg_trial)
+            expected_df_len = math.ceil(orig_df_len / avg_trial)
 
             df_ith = df_ith.set_index(np.arange(len(df_ith)) // avg_trial).mean(level=0)
-            
+
         assert len(df_ith) == expected_df_len
         shuffled_dfs += [df_ith]
-        
+
     # Append shuffled dataframes of each word together
     result = pd.concat(shuffled_dfs)
     return result

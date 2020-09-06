@@ -15,6 +15,8 @@ db_filepath = ''
 df_filepath = ''
 df_filepath_sktime = ''
 
+import sys
+sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.profile import user
 print(user)
 if (user == "karl"):
@@ -49,5 +51,14 @@ elif (user == 'rohan'):
     cleaned_data_filepath = "Z:\\Jenn\\Data\\Imported data\\cleaned\\"
     bad_trials_filepath = "Z:\\Jenn\\Datatracker\\ML_badtrials-Table 1.csv"
     db_filepath = "Z:\\Jenn\\Data\\Imported data\\db\\"
-    df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
-    df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
+    # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
+    # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
+
+elif (user == 'rohancc'):
+    # print("user rohan compute canada")
+    # ---- File path for Rohan on Compute Canada.
+    cleaned_data_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/cleaned/"
+    bad_trials_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/ML_badtrials-Table 1.csv"
+    db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db/"
+    # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
+    # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
