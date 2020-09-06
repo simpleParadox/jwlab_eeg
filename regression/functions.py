@@ -369,6 +369,7 @@ def extended_2v2(y_test, preds):
     # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
     # But first, you need to find out the word pair. One way is to store the word
     # pairs in an array; in other words, store the index pairs.
+
     gcf = None  # plot_grid(grid)
     return points, total_points, points / total_points, gcf, grid
 
