@@ -62,7 +62,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         createGraph(results)
     elif len(sliding_window_config[2]) > 1:
         print("Graph function is not supported for multiple window sizes")
-    return max_abs_tmass, max_pos, max_neg, first_cluster, second_cluster
+    return max_abs_tmass, max_pos, max_neg, first_cluster, second_cluster, results
 
 def createGraph(results):
     scoreMean = []
@@ -178,7 +178,7 @@ def find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg, useRandomi
     valid_window_pos = [i for i,v in enumerate(pvalues_pos) if v <= 0.05] 
     valid_window_neg = [i for i,v in enumerate(pvalues_neg) if v <= 0.05] 
     if useRandomizedLabel == False: 
-        ## REMOVE FOR NULL FUNCTION
+        
         print("Valid positive windows are: {0}\n".format(valid_window_pos))
         print("Valid negative windows are: {0}\n".format(valid_window_neg))
 
@@ -200,7 +200,7 @@ def find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg, useRandomi
         new_list = [((x*10)-200) for x in c]
         adj_clusters_neg.append(new_list)
          
-#     ## REMOVE FOR NULL FUNCTION
+     
     if useRandomizedLabel == False: 
         print("Positive clusters are: {0}\n".format(adj_clusters_pos))
         print("Negative clusters are: {0}\n".format(adj_clusters_neg))
@@ -215,7 +215,7 @@ def get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg, useRand
             t_scores_pos += tvalues_pos[time]
         t_mass_pos += [t_scores_pos]
 
-#     ## REMOVE FOR NULL FUNCTION
+  
     if useRandomizedLabel == False:    
         print("Positive tmass values are: {0}\n".format(t_mass_pos))
     max_t_mass_pos = max(t_mass_pos)
@@ -228,7 +228,7 @@ def get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg, useRand
             t_scores_neg += tvalues_neg[time]
         t_mass_neg += [t_scores_neg]
 
-#     ## REMOVE FOR NULL FUNCTION
+
     if useRandomizedLabel == False: 
         print("Negative tmass values are: {0}\n".format(t_mass_neg))
     max_t_mass_neg = min(t_mass_neg)
@@ -247,7 +247,7 @@ def get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg, useRand
     second_cluster = top_scores[1]
 
     
-#      ## REMOVE FOR NULL FUNCTION
+
     if useRandomizedLabel == False: 
         print("The max positive t mass is: {0}\n".format(max_t_mass_pos))
         print("The max negative t mass is: {0}\n".format(max_t_mass_neg))

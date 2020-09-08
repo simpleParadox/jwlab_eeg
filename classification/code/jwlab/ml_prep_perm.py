@@ -15,11 +15,12 @@ from jwlab.constants import word_list, bad_trials_filepath, old_participants, cl
 def init(age_group):
     if age_group is 9:
 
-        participants = ["904", "905", "906", "908", "909","910", "912", "913", "914",  "916", "917", "921", "923", "927", "929", "930", "932"] 
+#         #subset
+#         participants = ["904", "905", "906", "908", "909","910", "912", "913", "914",  "916", "917", "921", "923", "927", "929", "930", "932"] 
 
 
 #all
-#         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]  
+        participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]  
 
     elif age_group is 11:
         participants = [ "106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
@@ -129,6 +130,10 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
                 ## change below to change the averaging set size
                 df = permutation_and_average(df, 20)
                 X, y, p, w = no_average(df)
+            elif averaging == "permutation_with_labels":
+                ## change below to change the averaging set size
+                df = permutation_and_average(df, 20)
+                X, y, p, w = no_average_labels(df)
             else:
                 raise ValueError("Unsupported averaging!")
                 
@@ -279,8 +284,6 @@ def prep_matrices_avg(X, age_group):
 
             y_test_pt[i][j][y_test_pt[i][j] < 8] = 0
             y_test_pt[i][j][y_test_pt[i][j] >= 8] = 1
-
-
 
     return X_train, X_test_pt, y_train, y_test_pt
     
