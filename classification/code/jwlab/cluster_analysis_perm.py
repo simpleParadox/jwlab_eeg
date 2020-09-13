@@ -5,7 +5,7 @@ import more_itertools as mit
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC, LinearSVC
 from sklearn.model_selection import RepeatedKFold
-from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg
+from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg,prep_ml_prior
 from matplotlib import pyplot as plt
 
 ################################ Analysis procedure ################################
@@ -22,6 +22,12 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000)
 
             temp_results = cross_validaton(cross_val_iterations, num_win, num_folds, X, y)
+            
+        elif averaging == "permutation_prior":
+            X, y, good_trial_count, num_win = prep_ml_prior(age_group, useRandomizedLabel, "permutation", sliding_window_config, downsample_num=1000)
+
+            temp_results = cross_validaton(cross_val_iterations, num_win, num_folds, X, y)
+            
             
         elif averaging == "average_trials_and_participants":
             

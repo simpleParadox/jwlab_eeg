@@ -40,21 +40,28 @@ def load_ml_data(participants):
     ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
           for s in participants]
     
+    pys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
+          for s in participants]
+    
     # print("loaded", flush=True)
-    return df, ys
+    return df, ys, pys
 
 def prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
     participants = init(age_group)
-    df, ys = load_ml_data(participants)
-    return prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=downsample_num)
+    df, ys, pys = load_ml_data(participants)
+    for i in range(len(pys)):
+        pys[i].insert(0, -1)
+        pys[i].pop()
+    return prep_ml_internal(df, ys, pys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=downsample_num)
 
-def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
+def prep_ml_internal(df, ys, pys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     # df = df[df.Time >= 0]
     
     # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
     ybad = get_bad_trials(participants)
     ys = map_participants(ys, participants)
+    pys = map_participants(pys, participants)
 
     # set the value of bad trials in ys_curr to -1 (to exclude from learning)
     trial_count = []
@@ -77,6 +84,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     good_trial_word_count = get_left_trial_each_word(participants)
 
     Y = np.concatenate(ys)
+    pys = np.concatenate(pys)
     
 
         
@@ -432,3 +440,179 @@ def permutation_and_average(df, avg_trial):
     # Append shuffled dataframes of each word together
     result = pd.concat(shuffled_dfs)
     return result
+
+################################ Prior Window ################################
+def prep_ml_prior(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
+    participants = init(age_group)
+    df, ys, pys = load_ml_data(participants)
+    return prep_ml_internal(df, ys, pys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=downsample_num)
+
+def prep_ml_internal_prior(df, ys, pys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
+    # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
+    # df = df[df.Time >= 0]
+    
+    # map first participants (cel from 1-4 map to 1-16), then concatenate all ys, and ensure the sizes are correct
+    ybad = get_bad_trials(participants)
+    ys = map_participants(ys, participants)
+    pys = map_participants(ys, participants)
+
+    # set the value of bad trials in ys_curr to -1 (to exclude from learning)
+    trial_count = []
+    bad_trial_count = []
+    for each_ps in range(len(ys)):
+        for bad_trial in range(len(ybad[each_ps])):
+            # ys_curr[each_ps]: for the total trial sub-list of each participant of ys_curr...
+            # ybad[each_ps][bad_trial]: for each trial index in the bad trial sub-list of each participant of ybad...
+            # minus 1 since in ys_curr trials are zero-indexed while in bad_trial it's one-indexed (because they are directly read from csv)
+            ys[each_ps][ybad[each_ps][bad_trial]-1] = -1
+
+        # count the total number of trials for each participant
+        trial_count += [len(ys[each_ps])]
+        bad_trial_count += [len(ybad[each_ps])]
+
+    # good trial each participant 
+    good_trial_participant_count = np.around(np.true_divide(
+        np.subtract(trial_count, bad_trial_count), trial_count), decimals=2)
+    # good trial each word each participant
+    good_trial_word_count = get_left_trial_each_word(participants)
+
+    Y = np.concatenate(ys)
+    
+
+        
+    #### Sliding window section ####
+    start_time = sliding_window_config[0] 
+    end_time = sliding_window_config[1]
+    window_lengths = sliding_window_config[2]
+    step_length = sliding_window_config[3]
+        
+    windows_list, num_win = slide_df(df, start_time, end_time, window_lengths, step_length)
+    
+    X_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]
+    y_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]   
+    p_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]   
+    w_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]  
+    df_list = [[0 for j in range(num_win[i])] for i in range(len(window_lengths))]
+    
+    for length_per_window in range(len(windows_list)):
+        for each_window in range(len(windows_list[length_per_window])):
+            df = windows_list[length_per_window][each_window]
+            df = df.drop(columns=["Time", "E65"], axis=1)
+            X = df.values
+            X = np.reshape(
+                X, (window_lengths[length_per_window], 60, -1))
+            #X = resample(X, downsample_num, axis=0)
+            (i, j, k) = X.shape
+            X = np.reshape(X, (k, j * window_lengths[length_per_window]))
+
+            # make new dataframe where each row is now a sample, and add the label and particpant column for averaging
+            df = pd.DataFrame(data=X)
+            df['label'] = Y
+            df['participant'] = np.concatenate(
+                [[ys.index(y)]*len(y) for y in ys])
+
+            # remove bad samples
+            df = df[df.label != -1]
+
+            # make label zero indexed
+            df.label -= 1
+            
+            # different averaging processes
+            if averaging == "no_averaging":
+                X, y, p, w = no_average(df)
+            elif averaging == "average_trials":
+                X, y, p, w = average_trials(df)
+            elif averaging == "average_trials_and_participants":
+                X, y, p, w = average_trials_and_participants(df, participants)
+            elif averaging == "no_average_labels":
+                X, y, p, w = no_average_labels(df)
+            elif averaging == "permutation":
+                ## change below to change the averaging set size
+                df = permutation_and_average(df, 20)
+                X, y, p, w = no_average(df)
+            elif averaging == "permutation_with_labels":
+                ## change below to change the averaging set size
+                df = permutation_and_average(df, 20)
+                X, y, p, w = no_average_labels(df)
+            else:
+                raise ValueError("Unsupported averaging!")
+                
+                
+            if useRandomizedLabel:
+                y = remap_label(y)
+                
+# binary: animacy
+            y[y < 8] = 0
+            y[y >= 8] = 1
+
+#     #mom and baby vs all
+#             y[y == 0] = 0
+#             y[y == 1] = 0
+#             y[y == 2] = 0
+#             y[y == 3] = 0
+#             y[y == 4] = 0
+#             y[y == 5] = 0
+#             y[y == 6] = 0
+#             y[y == 7] = 1
+            
+#             y[y == 8] = 0
+#             y[y == 9] = 0
+#             y[y == 10] = 0
+#             y[y == 11] = 0
+#             y[y == 12] = 0
+#             y[y == 13] = 0
+#             y[y == 14] = 0
+#             y[y == 15] = 0
+
+#             #new groups 
+#             #0: people
+#             #1: animals
+#             #2: food
+#             #3: kitchen objects
+            
+#             y[y == 0] = 0
+#             y[y == 1] = 1
+#             y[y == 2] = 1
+#             y[y == 3] = 1
+#             y[y == 4] = 1
+#             y[y == 5] = 1
+#             y[y == 6] = 1
+#             y[y == 7] = 0
+            
+#             y[y == 8] = 2
+#             y[y == 9] = 3
+#             y[y == 10] = 2
+#             y[y == 11] = 2
+#             y[y == 12] = 3
+#             y[y == 13] = 2
+#             y[y == 14] = 2
+#             y[y == 15] = 3
+            
+#             #words starting with b
+
+            
+#             y[y == 0] = 0
+#             y[y == 1] = 0
+#             y[y == 2] = 0
+#             y[y == 3] = 0
+#             y[y == 4] = 1
+#             y[y == 5] = 1
+#             y[y == 6] = 1
+#             y[y == 7] = 1
+            
+#             y[y == 8] = 0
+#             y[y == 9] = 0
+#             y[y == 10] = 1
+#             y[y == 11] = 1
+#             y[y == 12] = 1
+#             y[y == 13] = 1
+#             y[y == 14] = 1
+#             y[y == 15] = 1
+
+            X_list[length_per_window][each_window] = X
+            y_list[length_per_window][each_window] = y
+            p_list[length_per_window][each_window] = p
+            w_list[length_per_window][each_window] = w
+            df_list[length_per_window][each_window] = df
+        
+    return X_list, y_list, [good_trial_participant_count, good_trial_word_count], num_win
