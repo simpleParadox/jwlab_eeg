@@ -38,7 +38,7 @@ from matplotlib import pyplot as plt
 # In[ ]:
 
 
-result = cluster_analysis_procedure(12, False, "permutation", [-200, 1000, [50], 10], [5, 8, 15])
+result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [50], 10], [5, 4, 50])
 
 
 # In[25]:

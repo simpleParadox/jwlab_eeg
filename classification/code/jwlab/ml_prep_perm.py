@@ -12,6 +12,8 @@ from jwlab.constants import word_list, bad_trials_filepath, old_participants, cl
 
 
 ################################ prep data ################################
+from sklearn.preprocessing import StandardScaler
+
 
 def init(age_group):
     if age_group is 9:
@@ -33,7 +35,12 @@ def load_ml_data(participants):
     # read all participant csvs, concat them into one dataframe
     dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s))
            for s in participants]
+
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
+    scaler = StandardScaler()
+    scaled_df = scaler.fit_transform(df.iloc[:,:-1].values)
+    new_df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns[:-1])
+    df = pd.concat([new_df, df['Time']], axis=1)
 
     ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
           for s in participants]
@@ -90,6 +97,11 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     end_time = sliding_window_config[1]
     window_lengths = sliding_window_config[2]
     step_length = sliding_window_config[3]
+
+    # scaler = StandardScaler()
+    # scaled_df = scaler.fit_transform(df.values)
+    # df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns)
+    # df = df.reset_index(drop=True)
 
     windows_list, num_win = slide_df(df, start_time, end_time, window_lengths, step_length)
 

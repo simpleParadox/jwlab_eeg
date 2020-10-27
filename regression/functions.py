@@ -17,17 +17,18 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import os
 import platform
+
 os_name = platform.system()
 
 w2v_path = None
 avg_w2v_path = None
-if os_name =='Windows':
+if os_name == 'Windows':
     w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds.npz"
     avg_w2v_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\all_w2v_embeds_avg_trial.npz"
     gen_w2v_all_ps_avg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\gen_w2v_embeds_avg_trial_and_ps.npz"
     embeds_with_label_path = 'G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz'
     bof_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\bof_w2v_embeds.npz"
-elif os_name=='Linux':
+elif os_name == 'Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
     gen_w2v_all_ps_avg_path = os.getcwd() + "/regression/w2v_embeds/gen_w2v_embeds_avg_trial_and_ps.npz"
@@ -37,11 +38,12 @@ elif os_name=='Linux':
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
 
-labels_mapping = {0:'baby', 1:'bear', 2:'bird', 3: 'bunny',
-                      4:'cat', 5 : 'dog', 6: 'duck', 7: 'mom',
-                      8: 'banana', 9: 'bottle', 10: 'cookie',
-                      11: 'cracker', 12: 'cup', 13: 'juice',
-                      14: 'milk', 15: 'spoon'}
+labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
+                  4: 'cat', 5: 'dog', 6: 'duck', 7: 'mom',
+                  8: 'banana', 9: 'bottle', 10: 'cookie',
+                  11: 'cracker', 12: 'cup', 13: 'juice',
+                  14: 'milk', 15: 'spoon'}
+
 
 def get_embeds_list():
     w2v_array = []
@@ -51,6 +53,7 @@ def get_embeds_list():
         w2v_array.append(data[i].tolist())
 
     return w2v_array
+
 
 w2v_array = get_embeds_list()
 
@@ -62,9 +65,10 @@ def test_model_permute(X, y):
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
     # print(model.score(X_test, y_test))
-    a,b,c = two_vs_two(y_test, preds)
+    a, b, c = two_vs_two(y_test, preds)
     # print(c)
     return c
+
 
 def test_model(X, y, labels_dict=None):
     # print("New test?")
@@ -77,12 +81,13 @@ def test_model(X, y, labels_dict=None):
     preds = model.predict(X_test)
     # print(model.score(X_test, y_test))
     # check_and_assign_labels(y_test, preds, labels_dict)
-    a,b,c = two_vs_two(y_test, preds)
+    a, b, c = two_vs_two(y_test, preds)
 
     # print(a)
     # print(b)
     # print(c)
     return c
+
 
 def check_and_assign_labels(ytest, preds, labels_dict):
     """
@@ -113,7 +118,10 @@ def average_trials(df):
 
     for p in range(num_participants):
         for w in range(num_words):
-            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(axis=0) if df_data[np.logical_and(df.participant == p, df.label == w)].size != 0 else 0
+            means = df_data[np.logical_and(df.participant == p, df.label == w)].values.mean(axis=0) if df_data[
+                                                                                                           np.logical_and(
+                                                                                                               df.participant == p,
+                                                                                                               df.label == w)].size != 0 else 0
             print("Means: ", means)
             new_data[p * num_words + w, :] = means
             new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
@@ -121,8 +129,8 @@ def average_trials(df):
 
     return new_data, new_y, participants, np.copy(new_y)
 
-def average_trials_mod(df):
 
+def average_trials_mod(df):
     all_avg_df = pickle.load(open('G:\\jw_lab\\jwlab_eeg\\regression\\data\\avg_trials_with_lab_and_ps.pkl', 'rb'))
     # Do some preprocessing here.
     t_df = all_avg_df[:208].copy()
@@ -146,13 +154,17 @@ def average_trials_mod(df):
 
     for p in range(num_participants):
         for w in range(num_words):
-            means = df_data[np.logical_and(n_df.participant == p, n_df.label == w)].values.mean(axis=0) if df_data[np.logical_and(n_df.participant == p, n_df.label == w)].size != 0 else 0
+            means = df_data[np.logical_and(n_df.participant == p, n_df.label == w)].values.mean(axis=0) if df_data[
+                                                                                                               np.logical_and(
+                                                                                                                   n_df.participant == p,
+                                                                                                                   n_df.label == w)].size != 0 else 0
             # print("Means: ", means)
             new_data[p * num_words + w, :] = means
             new_y[p * num_words + w] = -1 if np.isnan(means).any() else w
             participants[p * num_words + w] = p
 
     return new_data, new_y, participants, np.copy(new_y)
+
 
 def average_trials_and_participants(df, participants):
     num_words = len(word_list)
@@ -199,9 +211,11 @@ def two_vs_two_test(y_test, preds):
         total_points += 1
     return points, total_points, points / total_points
 
+
 def get_idx_in_list(elem):
     return w2v_array.index(elem)
-    
+
+
 def get_word_pairs_by_key_pair(key_pairs):
     keys = key_pairs.split('_')
     word1 = labels_mapping[int(keys[0])]
@@ -214,6 +228,7 @@ def plot_grid(grid):
     plt.colorbar()
     return plt.gcf()
 
+
 def two_vs_two(y_test, preds):
     # print("Ytest", y_test[0])
     # print("Preds",preds[0])
@@ -222,7 +237,7 @@ def two_vs_two(y_test, preds):
     diff = []
     sum_ii_jj = []
     sum_ij_ji = []
-    x_length = [_ for _ in range(preds.shape[0]-1)]
+    x_length = [_ for _ in range(preds.shape[0] - 1)]
     word_pairs = dict()
     index_pairs = []
     for i in range(preds.shape[0] - 1):
@@ -264,8 +279,6 @@ def two_vs_two(y_test, preds):
     # else:
     #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
 
-
-
     # max_value = max(word_pairs.values())
     # for key, val in word_pairs.items():
     #     if val == max_value:
@@ -306,17 +319,131 @@ def two_vs_two(y_test, preds):
     ## Create the 16x16 graph for the different time windows. For each time window, you will have the y_test and preds.
     # First create a matrix of size 16 x 16.
     grid = np.zeros((16, 16))
-    # for pair in index_pairs:
-    #     row, col = pair
-    #     # print(pair)
-    #     grid[row, col] += 1
+    for pair in index_pairs:
+        row, col = pair
+        # print(pair)
+        grid[row, col] += 1
 
     # Next, for each word pair in the 2v2 test, increament that cell by 1.
     # But first, you need to find out the word pair. One way is to store the word
     # pairs in an array; in other words, store the index pairs.
-    gcf = None#plot_grid(grid)
+    gcf = None  # plot_grid(grid)
     return points, total_points, points / total_points, gcf, grid
 
+
+def extended_2v2(y_test, preds):
+    """
+    There are two additions to this function over the previous two_vs_two test.
+    1. The grid figures will be symmetric now.
+    2. The 16 samples in the test set will now be extended to 16C2=120 samples.
+    """
+    points = 0
+    total_points = 0
+    diff = []
+    sum_ii_jj = []
+    sum_ij_ji = []
+    x_length = [_ for _ in range(preds.shape[0] - 1)]
+    word_pairs = dict()
+    index_pairs = []
+    for i in range(preds.shape[0] - 1):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        for j in range(i + 1, preds.shape[0]):
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            sum_ii_jj.append((dsii + dsjj))
+            sum_ij_ji.append((dsij + dsji))
+            diff.append((dsii + dsjj) - (dsij + dsji))
+
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+                si_idx = get_idx_in_list(s_i.tolist())
+                sj_idx = get_idx_in_list(s_j.tolist())
+                index_pairs.append([si_idx, sj_idx])
+                if f"{si_idx}_{sj_idx}" in word_pairs:
+                    word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                else:
+                    word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
+            total_points += 1
+
+    grid = np.zeros((16, 16))
+    for pair in index_pairs:
+        row, col = pair
+        # print(pair)
+        grid[row, col] += 1
+        grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    return points, total_points, points / total_points, gcf, grid
+
+
+def extended_2v2_perm(y_test, preds):
+    """
+    There are two additions to this function over the previous two_vs_two test.
+    1. The grid figures will be symmetric now.
+    2. The 16 samples in the test set will now be extended to 16C2=120 samples.
+    """
+    points = 0
+    total_points = 0
+    diff = []
+    sum_ii_jj = []
+    sum_ij_ji = []
+    x_length = [_ for _ in range(preds.shape[0] - 1)]
+    word_pairs = dict()
+    index_pairs = []
+    for i in range(preds.shape[0] - 1):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        for j in range(i + 1, preds.shape[0]):
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            si_idx = get_idx_in_list(s_i.tolist())
+            sj_idx = get_idx_in_list(s_j.tolist())
+            if si_idx != sj_idx:  # if the pairs of words in the 2v2 test are different.
+                dsii = cosine(s_i, s_i_pred)
+                dsjj = cosine(s_j, s_j_pred)
+                dsij = cosine(s_i, s_j_pred)
+                dsji = cosine(s_j, s_i_pred)
+
+                sum_ii_jj.append((dsii + dsjj))
+                sum_ij_ji.append((dsij + dsji))
+                diff.append((dsii + dsjj) - (dsij + dsji))
+
+                if dsii + dsjj <= dsij + dsji:
+                    points += 1
+                    index_pairs.append([si_idx, sj_idx])
+                    if f"{si_idx}_{sj_idx}" in word_pairs:
+                        word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                    else:
+                        word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
+                total_points += 1
+
+    grid = np.zeros((16, 16))
+    for pair in index_pairs:
+        row, col = pair
+        # print(pair)
+        grid[row, col] += 1
+        grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    return points, total_points, points / total_points, gcf, grid
 
 
 def divide_by_labels(data):
@@ -352,6 +479,7 @@ def random_subgroup(data, labels, factor):
         all_grouped_labels.append(grouped_labels)
     return all_grouped_data, all_grouped_labels
 
+
 def average_grouped_data(data, labels):
     meaned_data = []
     meaned_labels = []
@@ -379,8 +507,10 @@ def average_grouped_data(data, labels):
 
     return data_res, labels_res, meaned_labels
 
+
 def get_w2v_embeds(labels):
-    model = gensim.models.KeyedVectors.load_word2vec_format('G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
+    model = gensim.models.KeyedVectors.load_word2vec_format(
+        'G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin.gz', binary=True)
     w2v_label_embeds = {}
     for key in labels_mapping:
         w2v_label_embeds[key] = model[labels_mapping[key]]
@@ -390,6 +520,7 @@ def get_w2v_embeds(labels):
     # for label in labels:
     #     all_embeds.append(w2v_label_embeds[int(label)])
     # return all_embeds
+
 
 def get_w2v_embeds_from_dict(labels):
     embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
