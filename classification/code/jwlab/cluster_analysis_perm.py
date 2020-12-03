@@ -5,11 +5,14 @@ from scipy import stats
 import more_itertools as mit
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC, LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import RidgeClassifier
 from sklearn.model_selection import RepeatedKFold
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import ShuffleSplit
 from sklearn.preprocessing import StandardScaler
 import sys
+from sklearn.metrics import accuracy_score
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
 
@@ -17,7 +20,8 @@ from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg
 from matplotlib import pyplot as plt
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
-from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_2v2, extended_2v2_perm
+from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_2v2_phonemes, extended_2v2_perm, \
+    get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, remove_data, get_sim_agg_second_embeds, extended_2v2
 from sklearn.linear_model import Ridge
 
 
@@ -42,24 +46,48 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # temp_results = cross_validaton_averaging(X_train, X_test, y_train, y_test, useRandomizedLabel)
 
         elif averaging == "average_trials_and_participants":
+            flag = 0
 
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
                                                       sliding_window_config, downsample_num=1000)
 
             X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel)
-            temp_results = cross_validaton_nested(X_train, y_train, X_test, y_test)
+            temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
+            tgm_results.append(temp_diag_tgm)
+
             if sampling_iterations == 0:
                 print("Warning: This does not do fold validation")
         elif averaging == "tgm":
+            start_index = 0
+            end_index = 116
             flag = 1
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
                                                       sliding_window_config, downsample_num=1000)
 
             X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel)
-            temp_results = cross_validaton_tgm(X_train, y_train, X_test, y_test)
+            temp_results = cross_validaton_tgm(X_train, y_train, X_test, y_test, start_index, end_index)
             tgm_results.append(temp_results)  # The temp_results is expected to be a square matrix.
+        elif averaging == 'across':
+            # Training on one group and testing on another group.
+            age_group_1 = 9
+            age_group_2 = 12
+            X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels",
+                                                      sliding_window_config, downsample_num=1000)
 
-            continue
+            X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels",
+                                                              sliding_window_config, downsample_num=1000)
+
+            X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel, True,0)
+
+            # Now the other group
+
+            X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, False)
+            temp_results, temp_diag_tgm = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2)
+            tgm_results.append(temp_results)
+
+
+
+
 
         else:
             print("Warning: This will only use the requested averaging matrix to perform a cross val")
@@ -68,27 +96,25 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
             temp_results = cross_validaton(cross_val_iterations, num_win, num_folds, X, y)
 
-        if flag == 0:
-            for i in range(len(temp_results)):
-                if i not in results.keys():
-                    results[i] = {}
-                for j in range(len(temp_results[i])):
-                    if j in results[i].keys():
-                        results[i][j] += temp_results[i][j]
-                    else:
-                        results[i][j] = temp_results[i][j]
-        else:
-            # Averaging was of type 'tgm'.
-            # Calculate average of all the matrices.
-            final_tgm = np.mean(tgm_results, axis=0)
-            # Save the tgm in a csv file.
-            step_size = sliding_window_config[3]
-            ind = np.arange(-200, 1000, step_size).tolist()
-            cols = np.arange(-200, 1000, step_size).tolist()
-            df = pd.DataFrame(data=final_tgm, index=ind, columns=cols)
-            df.to_csv(f"{age_group}m tgm overlap {sliding_window_config[2]}ms 10ms.csv")
-
-
+    if flag == 0:
+        for i in range(len(temp_results)):
+            if i not in results.keys():
+                results[i] = {}
+            for j in range(len(temp_results[i])):
+                if j in results[i].keys():
+                    results[i][j] += temp_results[i][j]
+                else:
+                    results[i][j] = temp_results[i][j]
+    else:
+        # Averaging was of type 'tgm'.
+        # Calculate average of all the matrices.
+        final_tgm = np.mean(tgm_results, axis=0)
+        # Save the tgm in a csv file.
+        step_size = sliding_window_config[3]
+        ind = np.arange(-200, 1000, step_size).tolist()
+        cols = np.arange(-200, 1000, step_size).tolist()
+        df = pd.DataFrame(data=final_tgm, index=ind, columns=cols)
+        df.to_csv(f"11-11-2020 {age_group}m tgm 50ms 10ms {start_index}-{end_index} global scaled permuted 50 iters.csv")
 
     if flag == 0:
 
@@ -104,7 +130,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         else:
             print("Graph function is not supported for multiple window sizes")
 
-        return results
+    return results
 
 
 def createGraph(results):
@@ -124,7 +150,7 @@ def createGraph(results):
     plt.plot(x_graph, y_graph, 'k-')
     plt.ylim(0.3, 0.80)
     plt.fill_between(x_graph, y_graph - error, y_graph + error)
-    plt.savefig("23-10-2020 avg_trials_and_ps nested cv 12m false 50ms 10ms non-permuted global scaled")
+    plt.savefig("09-11-2020 avg_trials_and_ps nested cv 9m 50ms 10ms scaled one-hot")
 
 
 def shuffle_labels(y_train, y_test):
@@ -245,6 +271,9 @@ def cross_validaton_averaging(X_train, X_test, y_train, y_test, useRandomizedLab
 
 def cross_validaton_nested(X_train, y_train, X_test, y_test):
     results = []
+    tgm_matrix_temp = np.zeros((120, 120))
+    # scoring = 'accuracy'
+    scoring = 'neg_mean_squared_error'
 
     ## Define the hyperparameters.
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
@@ -253,23 +282,48 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
         temp_results = {}
         for j in range(len(X_train[i])):
 
+            # this is for predicting the second phoneme only (sim_agg.csv).
+            # First remove the data for which the second phoneme is not present.
+            # NOTE: The remove data function is not being used because phoneme alternatives are now being used.
+            # X_train[i][j], y_train[i][j] = remove_data(X_train[i][j], y_train[i][j])
+            # X_test[i][j], y_test[i][j] = remove_data(X_test[i][j], y_test[i][j])
+
             # model = SVC(kernel = 'rbf', C=1e-9, gamma = .0001)
             # model = LinearSVC(C=1e-9, max_iter=1000)
 
-            y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
-            y_test_labels = get_w2v_embeds_from_dict(y_test[i][j])
+            # y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
+            # y_test_labels = get_w2v_embeds_from_dict(y_test[i][j])
 
+            # One-hot vectors here.
+            # y_train_labels = get_phoneme_classes(y_train[i][j])
+            # y_test_labels = get_phoneme_classes(y_test[i][j])
+
+            # Get first sim_agg embeddings here.
+            y_train_labels = get_sim_agg_first_embeds(y_train[i][j])
+            y_test_labels = get_sim_agg_first_embeds(y_test[i][j])
+            which_phoneme = 1
+
+            # Get second sim_agg embeddings here
+            # y_train_labels = get_sim_agg_second_embeds(y_train[i][j])
+            # y_test_labels = get_sim_agg_second_embeds(y_test[i][j])
+            # which_phoneme = 2
+
+
+            # model = LogisticRegression(multi_class='multinomial')
             model = Ridge()
-            clf = GridSearchCV(model, ridge_params, scoring='neg_mean_squared_error', n_jobs=6, cv=5)
-            # scaler = StandardScaler()
-            # X_train_scaled = scaler.fit_transform(X_train[i][j])
-            # X_test_scaled = scaler.transform(X_test[i][j])
-            # clf.fit(X_train_scaled, y_train_labels)
+
+            clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=12, cv=5)
+
             clf.fit(X_train[i][j], y_train_labels)
 
-            # y_pred = clf.predict(X_test_scaled)
+
             y_pred = clf.predict(X_test[i][j])
-            points, total_points, testScore, gcf, grid = two_vs_two(y_test_labels, y_pred)
+            # points, total_points, testScore, gcf, grid = two_vs_two(y_test_labels, y_pred)
+            points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+
+            # testScore = accuracy_score(y_test_labels, y_pred)
+
+            tgm_matrix_temp[j, j] = testScore
 
             if j in temp_results.keys():
                 temp_results[j] += [testScore]
@@ -278,39 +332,41 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
 
         results.append(temp_results)
 
-    return results
+    return results, tgm_matrix_temp
 
 
-def cross_validaton_tgm(X_train, y_train, X_test, y_test):
+def cross_validaton_tgm(X_train, y_train, X_test, y_test, start, end):
     # results = []
 
-    tgm_matrix_temp = np.zeros((len(X_train[0]), len(X_train[0])))
+    if end == 116:
+        end = len(X_train[0])
+    tgm_matrix_temp = np.zeros((120, 120))
 
     ## Define the hyperparameters.
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
 
     for i in range(len(X_train)):
         temp_results = {}
-        for j in range(len(X_train[i])):
-            row_results = {}
-            for k in range(len(X_train[i])):
+        for j in range(start, end):
 
-                y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
+            y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
+            model = Ridge()
+            clf = GridSearchCV(model, ridge_params, scoring='neg_mean_squared_error', n_jobs=18, cv=5)
+            clf.fit(X_train[i][j], y_train_labels)
+
+            for k in range(len(X_train[i])):
                 y_test_labels = get_w2v_embeds_from_dict(y_test[i][k])
 
-                model = Ridge()
-                clf = GridSearchCV(model, ridge_params, scoring='neg_mean_squared_error', n_jobs=6, cv=5)
                 # scaler = StandardScaler()
                 # X_train_scaled = scaler.fit_transform(X_train[i][j])
                 # X_test_scaled = scaler.transform(X_test[i][j])
                 # clf.fit(X_train_scaled, y_train_labels)
-                clf.fit(X_train[i][j], y_train_labels)
 
                 # y_pred = clf.predict(X_test_scaled)
                 y_pred = clf.predict(X_test[i][k])
                 points, total_points, testScore, gcf, grid = two_vs_two(y_test_labels, y_pred)
 
-                tgm_matrix_temp[j,k] = testScore
+                tgm_matrix_temp[j, k] = testScore
             #     if k in temp_results.keys():
             #         temp_results[j] += [testScore]
             #     else:
@@ -323,7 +379,6 @@ def cross_validaton_tgm(X_train, y_train, X_test, y_test):
             # results.append(temp_results)
 
     return tgm_matrix_temp
-
 
 
 def t_test(results, num_win, num_folds):

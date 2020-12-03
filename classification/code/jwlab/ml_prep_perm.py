@@ -33,8 +33,10 @@ def init(age_group):
 
 def load_ml_data(participants):
     # read all participant csvs, concat them into one dataframe
-    dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s))
-           for s in participants]
+    if participants[0][0] == '1':
+        dfs = [pd.read_csv("%s%s_cleaned_ml_long.csv" % (cleaned_data_filepath, s)) for s in participants]
+    else:
+        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
 
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
     scaler = StandardScaler()
@@ -231,11 +233,11 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count], num_win
 
 
-def prep_matrices_avg(X, age_group, use_randomized_label):
+def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20):
     participants = init(age_group)
     num_participants = len(participants)
     num_indices = len(X[0][0])
-    fivefold_testsize = int(.20 * num_indices)
+    fivefold_testsize = int(test_size * num_indices)
     test_indices = np.random.choice(num_indices - 1, fivefold_testsize, replace=False)
 
 
@@ -276,6 +278,9 @@ def prep_matrices_avg(X, age_group, use_randomized_label):
         #     np.random.shuffle(y_train)
         #     random.shuffle(y_train)
 
+
+    if train_only == True:
+        return X_train, None, y_train, None
     # create test matrices
     X_test = []  # test raw trials
     y_test = []

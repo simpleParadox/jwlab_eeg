@@ -28,12 +28,28 @@ if os_name == 'Windows':
     gen_w2v_all_ps_avg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\gen_w2v_embeds_avg_trial_and_ps.npz"
     embeds_with_label_path = 'G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz'
     bof_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\bof_w2v_embeds.npz"
+    ph_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\phoneme_embeds.npz"
+    ph_classes_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\phoneme_classes.npz"
+    ph_first_one_hots_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\first_one_hots.npz"
+    ph_second_one_hots_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\second_one_hots.npz"
+    ph_second_classes_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\second_phoneme_classes.npz"
+    ph_similarity_agg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_data\\similarity_aggregated.csv"
+    sim_agg_first_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\first_sim_agg_embeddings.npz"
+    sim_agg_second_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\second_sim_agg_embeddings.npz"
 elif os_name == 'Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
     gen_w2v_all_ps_avg_path = os.getcwd() + "/regression/w2v_embeds/gen_w2v_embeds_avg_trial_and_ps.npz"
     embeds_with_label_path = os.getcwd() + "/regression/w2v_embeds/embeds_with_label_dict.npz"
     bof_embeds_path = os.getcwd() + "/regression/w2v_embeds/bof_w2v_embeds.npz"
+    ph_embeds_path = os.getcwd() + "/regression/phoneme_embeddings/phoneme_embeds.npz"
+    ph_classes_path = os.getcwd() + "/regression/phoneme_embeddings/phoneme_classes.npz"
+    ph_first_one_hots_path = os.getcwd() + "/regression/phoneme_embeddings/first_one_hots.npz"
+    ph_second_one_hots_path = os.getcwd() + "/regression/phoneme_embeddings/second_one_hots.npz"
+    ph_second_classes_path = os.getcwd() + "/regression/phoneme_embeddings/second_phoneme_classes.npz"
+    ph_similarity_agg_path = os.getcwd() + "/regression/phoneme_data/similarity_aggregated.csv"
+    sim_agg_first_embeds_path = os.getcwd() + "/regression/phoneme_embeddings/first_sim_agg_embeddings.npz"
+    sim_agg_second_embeds_path = os.getcwd() + "/regression/phoneme_embeddings/second_sim_agg_embeddings.npz"
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
@@ -43,6 +59,16 @@ labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
                   8: 'banana', 9: 'bottle', 10: 'cookie',
                   11: 'cracker', 12: 'cup', 13: 'juice',
                   14: 'milk', 15: 'spoon'}
+
+first_phonemes_mapping = {'baby':17, 'bear':17, 'bird':17, 'bunny':17,
+                                 'cat':30, 'dog':19, 'duck':19, 'mom': 33,
+                                 'banana': 17, 'bottle': 17, 'cookie': 30, 'cracker': 30,
+                                 'cup': 30, 'juice': 22, 'milk': 33, 'spoon': 40}
+
+stimuli_to_second_ipa_mapping = {'baby': 23, 'bear': 25, 'bird': 24, 'bunny': 15,
+                                 'cat': 16, 'dog': 15, 'duck': 15, 'mom': 24,
+                                 'banana': 24, 'bottle': 15, 'cookie': 37, 'cracker': 39,
+                                 'cup': 15, 'juice': 44, 'milk': 25, 'spoon': 38}
 
 
 def get_embeds_list():
@@ -256,19 +282,19 @@ def two_vs_two(y_test, preds):
         # print("dsii abs: ", np.abs(dsii[0][0]))
         # print("dsij: ", dsij)
         # print("dsji: ", dsji)
-        # print("Addition", dsii+dsjj)
-        sum_ii_jj.append((dsii + dsjj))
-        sum_ij_ji.append((dsij + dsji))
-        diff.append((dsii + dsjj) - (dsij + dsji))
+        # # print("Addition", dsii+dsjj)
+        # sum_ii_jj.append((dsii + dsjj))
+        # sum_ij_ji.append((dsij + dsji))
+        # diff.append((dsii + dsjj) - (dsij + dsji))
         if dsii + dsjj <= dsij + dsji:
             points += 1
-            si_idx = get_idx_in_list(s_i.tolist())
-            sj_idx = get_idx_in_list(s_j.tolist())
-            index_pairs.append([si_idx, sj_idx])
-            if f"{si_idx}_{sj_idx}" in word_pairs:
-                word_pairs[f'{si_idx}_{sj_idx}'] += 1
-            else:
-                word_pairs[f'{si_idx}_{sj_idx}'] = 1
+            # si_idx = get_idx_in_list(s_i.tolist())
+            # sj_idx = get_idx_in_list(s_j.tolist())
+            # index_pairs.append([si_idx, sj_idx])
+            # if f"{si_idx}_{sj_idx}" in word_pairs:
+            #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+            # else:
+            #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
 
         total_points += 1
 
@@ -319,10 +345,10 @@ def two_vs_two(y_test, preds):
     ## Create the 16x16 graph for the different time windows. For each time window, you will have the y_test and preds.
     # First create a matrix of size 16 x 16.
     grid = np.zeros((16, 16))
-    for pair in index_pairs:
-        row, col = pair
-        # print(pair)
-        grid[row, col] += 1
+    # for pair in index_pairs:
+    #     row, col = pair
+    #     # print(pair)
+    #     grid[row, col] += 1
 
     # Next, for each word pair in the 2v2 test, increament that cell by 1.
     # But first, you need to find out the word pair. One way is to store the word
@@ -331,24 +357,25 @@ def two_vs_two(y_test, preds):
     return points, total_points, points / total_points, gcf, grid
 
 
+
 def extended_2v2(y_test, preds):
     """
     There are two additions to this function over the previous two_vs_two test.
     1. The grid figures will be symmetric now.
-    2. The 16 samples in the test set will now be extended to 16C2=120 samples.
+    2. The 16 samples in the test set will now be extended to 16C2=120 samples - without repetition.
     """
     points = 0
     total_points = 0
-    diff = []
-    sum_ii_jj = []
-    sum_ij_ji = []
-    x_length = [_ for _ in range(preds.shape[0] - 1)]
-    word_pairs = dict()
-    index_pairs = []
+    # diff = []
+    # sum_ii_jj = []
+    # sum_ij_ji = []
+    # x_length = [_ for _ in range(preds.shape[0] - 1)]
+    # word_pairs = dict()
+    # index_pairs = []
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
         s_i_pred = preds[i]
-        for j in range(i + 1, preds.shape[0]):
+        for j in range(i+1, preds.shape[0]):
             s_j = y_test[j]
             s_j_pred = preds[j]
 
@@ -357,28 +384,102 @@ def extended_2v2(y_test, preds):
             dsij = cosine(s_i, s_j_pred)
             dsji = cosine(s_j, s_i_pred)
 
-            sum_ii_jj.append((dsii + dsjj))
-            sum_ij_ji.append((dsij + dsji))
-            diff.append((dsii + dsjj) - (dsij + dsji))
+            # sum_ii_jj.append((dsii + dsjj))
+            # sum_ij_ji.append((dsij + dsji))
+            # diff.append((dsii + dsjj) - (dsij + dsji))
 
             if dsii + dsjj <= dsij + dsji:
                 points += 1
-                si_idx = get_idx_in_list(s_i.tolist())
-                sj_idx = get_idx_in_list(s_j.tolist())
-                index_pairs.append([si_idx, sj_idx])
-                if f"{si_idx}_{sj_idx}" in word_pairs:
-                    word_pairs[f'{si_idx}_{sj_idx}'] += 1
-                else:
-                    word_pairs[f'{si_idx}_{sj_idx}'] = 1
+                # si_idx = get_idx_in_list(s_i.tolist())
+                # sj_idx = get_idx_in_list(s_j.tolist())
+                # index_pairs.append([si_idx, sj_idx])
+                # if f"{si_idx}_{sj_idx}" in word_pairs:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                # else:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
 
             total_points += 1
 
     grid = np.zeros((16, 16))
-    for pair in index_pairs:
-        row, col = pair
-        # print(pair)
-        grid[row, col] += 1
-        grid[col, row] += 1
+    # for pair in index_pairs:
+        # row, col = pair
+        # # print(pair)
+        # grid[row, col] += 1
+        # grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    return points, total_points, points / total_points, gcf, grid
+
+
+def get_phoneme_idxs(word, first_or_second):
+    key = labels_mapping[word]
+    if first_or_second == 1:
+        phoneme = first_phonemes_mapping[key]
+    else:
+        phoneme = stimuli_to_second_ipa_mapping[key]
+    return phoneme
+
+
+def extended_2v2_phonemes(y_test, preds, words, first_or_second = 1):
+    """
+    This test is a version of the two_vs_two test where the embeddings for the same phonemes are not compared.
+    There are two additions to this function over the previous two_vs_two test.
+    1. The grid figures will be symmetric now.
+    2. The 16 samples in the test set will now be extended to 16C2=120 samples.
+    """
+    points = 0
+    total_points = 0
+    # diff = []
+    # sum_ii_jj = []
+    # sum_ij_ji = []
+    # word_pairs = dict()
+    # index_pairs = []
+    for i in range(len(words) - 1):
+        ph1 = get_phoneme_idxs(words[i], first_or_second)
+        for j in range(i+1, len(words)):
+            ph2 = get_phoneme_idxs(words[j], first_or_second)
+            if ph1 == ph2:
+                continue
+            s_i = y_test[i]
+            s_j = y_test[j]
+            s_i_pred = preds[i]
+            s_j_pred = preds[j]
+
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+            # print("dsii: ", dsii)
+            # print("dsii abs: ", np.abs(dsii[0][0]))
+            # print("dsij: ", dsij)
+            # print("dsji: ", dsji)
+            # # print("Addition", dsii+dsjj)
+            # sum_ii_jj.append((dsii + dsjj))
+            # sum_ij_ji.append((dsij + dsji))
+            # diff.append((dsii + dsjj) - (dsij + dsji))
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+                # si_idx = get_idx_in_list(s_i.tolist())
+                # sj_idx = get_idx_in_list(s_j.tolist())
+                # index_pairs.append([si_idx, sj_idx])
+                # if f"{si_idx}_{sj_idx}" in word_pairs:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                # else:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
+            total_points += 1
+
+    grid = np.zeros((16, 16))
+    # for pair in index_pairs:
+    #     row, col = pair
+    #     # print(pair)
+    #     grid[row, col] += 1
+    #     grid[col, row] += 1
 
     # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
     # But first, you need to find out the word pair. One way is to store the word
@@ -533,3 +634,75 @@ def get_w2v_embeds_from_dict(labels):
     w2v_labels = np.array(w2v_labels)
 
     return w2v_labels
+
+
+def get_phoneme_onehots(labels):
+    ph_embeds_npz = load(ph_first_one_hots_path)
+    ph_embeds_loaded = ph_embeds_npz['arr_0']
+
+    ph_labels = []
+    for label in labels:
+        ph_labels.append(ph_embeds_loaded[int(label)])
+    ph_labels = np.array(ph_labels)
+
+    return ph_labels
+
+
+def get_phoneme_classes(labels):
+    ph_classes_npz = load(ph_second_classes_path)  # Change path to second classes.
+    ph_classes_loaded = ph_classes_npz['arr_0']
+
+    ph_classes = []
+    for label in labels:
+        ph_classes.append(ph_classes_loaded[int(label)])
+    ph_classes = np.array(ph_classes)
+
+    return ph_classes
+
+
+# def two_vs_two_one_hot(y_test, preds):
+
+
+# def convert_to_one_hots(outputs):
+#     preds = np.copy(outputs)
+#     # Go over each of the preds and then set the value at position of max real value to 1 and others to zero.
+#     for p in preds:
+
+
+def get_sim_agg_first_embeds(labels):
+    ph_sim_npz = load(sim_agg_first_embeds_path, allow_pickle=True)
+    ph_sim_embeds_loaded = ph_sim_npz['arr_0'][0]
+
+    ph_sim_embeddings = []
+    for label in labels:
+        ph_sim_embeddings.append(ph_sim_embeds_loaded[int(label)])
+
+    ph_sim_embeddings = np.array(ph_sim_embeddings)
+    return ph_sim_embeddings
+
+
+def get_sim_agg_second_embeds(labels):
+    ph_sim_npz = load(sim_agg_second_embeds_path, allow_pickle=True)
+    ph_sim_embeds_loaded = ph_sim_npz['arr_0'][0]
+
+    ph_sim_embeddings = []
+    for label in labels:
+        ph_sim_embeddings.append(ph_sim_embeds_loaded[int(label)])
+
+    ph_sim_embeddings = np.array(ph_sim_embeddings)
+    return ph_sim_embeddings
+
+
+# Don't use this function anymore.
+def remove_data(X, y):
+    missing_second_phonemes = [3, 6, 10, 12]
+    rmv_idxs_list = []
+    for k in range(len(y)):
+        if y[k] in missing_second_phonemes:
+            rmv_idxs_list.append(k)
+
+    # Now remove the corresponding data from X and y.
+    X_temp = X.drop(X.index[rmv_idxs_list], axis=0)
+    y_temp = np.delete(y, rmv_idxs_list, axis=0)
+
+    return X_temp, y_temp
