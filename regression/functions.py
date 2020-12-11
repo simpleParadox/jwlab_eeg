@@ -415,6 +415,118 @@ def extended_2v2(y_test, preds):
     return points, total_points, points / total_points, gcf, grid
 
 
+# Added 05-12-2020
+def w2v_across_animacy_2v2(y_test, preds):
+    """
+    The function compares the first 8 words(animate) with the last 8 words(inanimate).
+    Note: There are a total of 16 words in the test set. All the word pairs are used.
+    """
+    # Get mid point.
+    mid_idx = len(y_test) // 2
+    points = 0
+    total_points = 0
+    for i in range(mid_idx):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        for j in range(mid_idx, len(y_test)):
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            # sum_ii_jj.append((dsii + dsjj))
+            # sum_ij_ji.append((dsij + dsji))
+            # diff.append((dsii + dsjj) - (dsij + dsji))
+
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+                # si_idx = get_idx_in_list(s_i.tolist())
+                # sj_idx = get_idx_in_list(s_j.tolist())
+                # index_pairs.append([si_idx, sj_idx])
+                # if f"{si_idx}_{sj_idx}" in word_pairs:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                # else:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
+            total_points += 1
+
+    grid = np.zeros((16, 16))
+    # for pair in index_pairs:
+    # row, col = pair
+    # # print(pair)
+    # grid[row, col] += 1
+    # grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    return points, total_points, points / total_points, gcf, grid
+
+
+def w2v_within_animacy_2v2(y_test, preds):
+    """
+    In this function we will compare only word pairs for within groups.
+    """
+    points = 0
+    total_points = 0
+    mid_idx = len(y_test) // 2
+
+    # First for the animate words.
+    for i in range(mid_idx):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        for j in range(i + 1, mid_idx):
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+
+            total_points += 1
+
+    # Now for the inanimate words.
+    for i in range(mid_idx, len(y_test)):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        for j in range(i + 1, len(y_test)):
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+
+            total_points += 1
+
+    grid = np.zeros((16, 16))
+    # for pair in index_pairs:
+    # row, col = pair
+    # # print(pair)
+    # grid[row, col] += 1
+    # grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    return points, total_points, points / total_points, gcf, grid
+
+
 def get_phoneme_idxs(word, first_or_second):
     key = labels_mapping[word]
     if first_or_second == 1:
