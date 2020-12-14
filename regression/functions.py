@@ -600,6 +600,133 @@ def extended_2v2_phonemes(y_test, preds, words, first_or_second = 1):
     gcf = None  # plot_grid(grid)
     return points, total_points, points / total_points, gcf, grid
 
+def ph_within_animacy_2v2(y_test, preds, words, first_or_second = 1):
+    """
+    This test is a version of the two_vs_two test where the embeddings for the same phonemes are not compared.
+    There are two additions to this function over the previous two_vs_two test.
+    1. The grid figures will be symmetric now.
+    2. The 16 samples in the test set will now be extended to 16C2=120 samples.
+    """
+    points = 0
+    total_points = 0
+    mid_idx = len(y_test) // 2
+
+    # First for the animate words.
+    for i in range(mid_idx):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        ph1 = get_phoneme_idxs(words[i], first_or_second)
+        for j in range(i + 1, mid_idx):
+            ph2 = get_phoneme_idxs(words[j], first_or_second)
+            if ph1 == ph2:
+                continue
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+
+            total_points += 1
+
+    # Now for the inanimate words.
+    for i in range(mid_idx, len(y_test)):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        ph1 = get_phoneme_idxs(words[i], first_or_second)
+        for j in range(i + 1, len(y_test)):
+            ph2 = get_phoneme_idxs(words[j], first_or_second)
+            if ph1 == ph2:
+                continue
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+
+            total_points += 1
+
+    grid = np.zeros((16, 16))
+    # for pair in index_pairs:
+    # row, col = pair
+    # # print(pair)
+    # grid[row, col] += 1
+    # grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    return points, total_points, points / total_points, gcf, grid
+
+
+
+def ph_across_animacy_2v2(y_test, preds, words, first_or_second = 1):
+    """
+    This test is a version of the two_vs_two test where the embeddings for the same phonemes are not compared.
+    There are two additions to this function over the previous two_vs_two test.
+    1. The grid figures will be symmetric now.
+    2. The 16 samples in the test set will now be extended to 16C2=120 samples.
+    """
+    # Get mid point.
+    mid_idx = len(y_test) // 2
+    points = 0
+    total_points = 0
+    for i in range(mid_idx):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        ph1 = get_phoneme_idxs(words[i], first_or_second)
+        for j in range(mid_idx, len(y_test)):
+            ph2 = get_phoneme_idxs(words[j], first_or_second)
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+            if ph1 == ph2:
+                continue
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            # sum_ii_jj.append((dsii + dsjj))
+            # sum_ij_ji.append((dsij + dsji))
+            # diff.append((dsii + dsjj) - (dsij + dsji))
+
+            if dsii + dsjj <= dsij + dsji:
+                points += 1
+                # si_idx = get_idx_in_list(s_i.tolist())
+                # sj_idx = get_idx_in_list(s_j.tolist())
+                # index_pairs.append([si_idx, sj_idx])
+                # if f"{si_idx}_{sj_idx}" in word_pairs:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                # else:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+
+            total_points += 1
+
+    grid = np.zeros((16, 16))
+    # for pair in index_pairs:
+    # row, col = pair
+    # # print(pair)
+    # grid[row, col] += 1
+    # grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    return points, total_points, points / total_points, gcf, grid
+
 
 def extended_2v2_perm(y_test, preds):
     """
@@ -771,16 +898,6 @@ def get_phoneme_classes(labels):
 
     return ph_classes
 
-
-# def two_vs_two_one_hot(y_test, preds):
-
-
-# def convert_to_one_hots(outputs):
-#     preds = np.copy(outputs)
-#     # Go over each of the preds and then set the value at position of max real value to 1 and others to zero.
-#     for p in preds:
-
-
 def get_sim_agg_first_embeds(labels):
     ph_sim_npz = load(sim_agg_first_embeds_path, allow_pickle=True)
     ph_sim_embeds_loaded = ph_sim_npz['arr_0'][0]
@@ -805,16 +922,16 @@ def get_sim_agg_second_embeds(labels):
     return ph_sim_embeddings
 
 
-# Don't use this function anymore.
-def remove_data(X, y):
-    missing_second_phonemes = [3, 6, 10, 12]
-    rmv_idxs_list = []
-    for k in range(len(y)):
-        if y[k] in missing_second_phonemes:
-            rmv_idxs_list.append(k)
-
-    # Now remove the corresponding data from X and y.
-    X_temp = X.drop(X.index[rmv_idxs_list], axis=0)
-    y_temp = np.delete(y, rmv_idxs_list, axis=0)
-
-    return X_temp, y_temp
+# # Don't use this function anymore.
+# def remove_data(X, y):
+#     missing_second_phonemes = [3, 6, 10, 12]
+#     rmv_idxs_list = []
+#     for k in range(len(y)):
+#         if y[k] in missing_second_phonemes:
+#             rmv_idxs_list.append(k)
+#
+#     # Now remove the corresponding data from X and y.
+#     X_temp = X.drop(X.index[rmv_idxs_list], axis=0)
+#     y_temp = np.delete(y, rmv_idxs_list, axis=0)
+#
+#     return X_temp, y_temp
