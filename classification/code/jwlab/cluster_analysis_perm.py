@@ -13,6 +13,7 @@ from sklearn.model_selection import ShuffleSplit
 from sklearn.preprocessing import StandardScaler
 import sys
 from sklearn.metrics import accuracy_score
+from sklearn.decomposition import TruncatedSVD
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
 
@@ -59,10 +60,10 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
             X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel)
 
-            temp_results, temp_diag_tgm = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test)
+            # temp_results, temp_diag_tgm = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test)
 
             # For phonemes and w2v embeddings.
-            # temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
+            temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
 
 
             tgm_results.append(temp_diag_tgm)
@@ -96,7 +97,6 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, False)
             temp_results, temp_diag_tgm = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2)
             tgm_results.append(temp_results)
-
 
 
 
@@ -394,43 +394,59 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             # model = SVC(kernel = 'rbf', C=1e-9, gamma = .0001)
             # model = LinearSVC(C=1e-9, max_iter=1000)
 
-            y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
-            y_test_labels = get_w2v_embeds_from_dict(y_test[i][j])
+            y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+            y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
 
             # One-hot vectors here.
             # y_train_labels = get_phoneme_classes(y_train[i][j])
             # y_test_labels = get_phoneme_classes(y_test[i][j])
 
             # Get first sim_agg embeddings here.
-            y_train_labels = get_sim_agg_first_embeds(y_train[i][j])
-            y_test_labels = get_sim_agg_first_embeds(y_test[i][j])
+            y_train_labels_ph = get_sim_agg_first_embeds(y_train[i][j])
+            y_test_labels_ph = get_sim_agg_first_embeds(y_test[i][j])
             which_phoneme = 1
 
             # Get second sim_agg embeddings here
-            # y_train_labels = get_sim_agg_second_embeds(y_train[i][j])
-            # y_test_labels = get_sim_agg_second_embeds(y_test[i][j])
+            # y_train_labels_ph = get_sim_agg_second_embeds(y_train[i][j])
+            # y_test_labels_ph = get_sim_agg_second_embeds(y_test[i][j])
             # which_phoneme = 2
 
 
             # model = LogisticRegression(multi_class='multinomial')
 
+            # If concat == True -> Concat the w2v and phoneme embeddings.
+
+            y_train_concat_w2v_ph = np.concatenate((y_train_labels_w2v, y_train_labels_ph), axis=1)
+            y_test_concat_w2v_ph = np.concatenate((y_test_labels_w2v, y_test_labels_ph), axis=1)
+
+
             model = Ridge()
 
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=12, cv=5)
 
-            clf.fit(X_train[i][j], y_train_labels)
+            # clf.fit(X_train[i][j], y_train_concat_w2v_ph)
+            # y_pred = clf.predict(X_test[i][j])
+
+
+            # For predicting EEG from concatenation of w2v vectors and phoneme embeddings.
+            svd = TruncatedSVD(n_components=1000)  # Using 1000 components for now.
+            X_train_reduced = svd.fit_transform(X_train[i][j])
+            X_test_reduced = svd.transform(X_test[i][j])
+            clf.fit(y_train_concat_w2v_ph, X_train_reduced)
+            x_pred = clf.predict(y_test_concat_w2v_ph)
+            points, total_points, testScore, gcf, grid = extended_2v2(X_test_reduced, x_pred)
 
 
 
-            y_pred = clf.predict(X_test[i][j])
-            # points, total_points, testScore, gcf, grid = extended_2v2(y_test_labels, y_pred)
+
+            # points, total_points, testScore, gcf, grid = extended_2v2(y_test_concat_w2v_ph, y_pred)
             # points, total_points, testScore, gcf, grid = w2v_across_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid= w2v_within_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
 
             # Across and within for phonemes
             # points, total_points, testScore, gcf, grid = ph_across_animacy_2v2(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
-            points, total_points, testScore, gcf, grid = ph_within_animacy_2v2(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+            # points, total_points, testScore, gcf, grid = ph_within_animacy_2v2(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
 
 
             # testScore = accuracy_score(y_test_labels, y_pred)
