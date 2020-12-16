@@ -21,7 +21,8 @@ from matplotlib import pyplot as plt
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
 from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_2v2_phonemes, extended_2v2_perm, \
-    get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, remove_data, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2
+    get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
+    ph_within_animacy_2v2, ph_across_animacy_2v2
 from sklearn.linear_model import Ridge
 
 
@@ -51,8 +52,19 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
                                                       sliding_window_config, downsample_num=1000)
 
+            # For residual stuff.
+            # X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=True, test_size=0)
+            # temp_results, temp_diag_tgm = cv_residual_w2v_ph_eeg(X, age_group)
+
+
             X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel)
-            temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
+
+            temp_results, temp_diag_tgm = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test)
+
+            # For phonemes and w2v embeddings.
+            # temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
+
+
             tgm_results.append(temp_diag_tgm)
 
             if sampling_iterations == 0:
@@ -269,6 +281,96 @@ def cross_validaton_averaging(X_train, X_test, y_train, y_test, useRandomizedLab
     return results
 
 
+def calculate_residual(true_vecs, pred_vecs):
+    # Note: The arugments contain many arrays.
+    return true_vecs - pred_vecs
+
+
+
+def cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test):
+
+    # First calculate the residuals. Train on ph, test on w2v, then get w2v residuals.
+    results = []
+    tgm_matrix_temp = np.zeros((120, 120))
+    # scoring = 'accuracy'
+    scoring = 'neg_mean_squared_error'
+
+    ## Define the hyperparameters.
+    ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+    #
+    for i in range(len(X_train)):
+        temp_results = {}
+        for j in range(len(X_train[i])):
+
+            # this is for predicting the second phoneme only (sim_agg.csv).
+            # First remove the data for which the second phoneme is not present.
+            # NOTE: The remove data function is not being used because phoneme alternatives are now being used.
+            # X_train[i][j], y_train[i][j] = remove_data(X_train[i][j], y_train[i][j])
+            # X_test[i][j], y_test[i][j] = remove_data(X_test[i][j], y_test[i][j])
+
+            # model = SVC(kernel = 'rbf', C=1e-9, gamma = .0001)
+            # model = LinearSVC(C=1e-9, max_iter=1000)
+
+            y_train_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+            y_test_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+
+            # One-hot vectors here.
+            # y_train_labels = get_phoneme_classes(y_train[i][j])
+            # y_test_labels = get_phoneme_classes(y_test[i][j])
+
+            # Get first sim_agg embeddings here.
+            x_train_ph = get_sim_agg_first_embeds(y_train[i][j])
+            x_test_ph = get_sim_agg_first_embeds(y_test[i][j])
+            which_phoneme = 1
+
+            # Get second sim_agg embeddings here
+            # y_train_labels = get_sim_agg_second_embeds(y_train[i][j])
+            # y_test_labels = get_sim_agg_second_embeds(y_test[i][j])
+            # which_phoneme = 2
+
+            model = Ridge()
+
+            clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=12, cv=5)
+
+            clf.fit(x_train_ph, y_train_w2v)
+
+            y_pred_w2v_test = clf.predict(x_test_ph)  # Get the prediction w2v embeddings.
+
+            y_pred_w2v_train = clf.predict(x_train_ph)
+
+            # Now we calculate residual for training and test data.
+            w2v_train_res = calculate_residual(y_train_w2v, y_pred_w2v_train)
+            w2v_test_res = calculate_residual(y_test_w2v, y_pred_w2v_test)
+
+            # Now we train on EEG to predict the residuals from Word2Vec embeddings which were predicted from the phoneme embeddings.
+            model_res = Ridge()
+
+            clf_res = GridSearchCV(model_res, ridge_params, scoring=scoring, n_jobs=12, cv=5)
+
+            clf_res.fit(X_train[i][j], w2v_train_res)
+
+            y_pred_w2v_res = clf_res.predict(X_test[i][j])
+
+
+
+            points, total_points, testScore, gcf, grid = extended_2v2(w2v_test_res, y_pred_w2v_res)
+            # points, total_points, testScore, gcf, grid = w2v_across_animacy_2v2(y_test_labels, y_pred)
+            # points, total_points, testScore, gcf, grid= w2v_within_animacy_2v2(y_test_labels, y_pred)
+            # points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+
+            # testScore = accuracy_score(y_test_labels, y_pred)
+
+            tgm_matrix_temp[j, j] = testScore
+
+            if j in temp_results.keys():
+                temp_results[j] += [testScore]
+            else:
+                temp_results[j] = [testScore]
+
+        results.append(temp_results)
+
+    return results, tgm_matrix_temp
+
 def cross_validaton_nested(X_train, y_train, X_test, y_test):
     results = []
     tgm_matrix_temp = np.zeros((120, 120))
@@ -301,13 +403,13 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
 
             # Get first sim_agg embeddings here.
             y_train_labels = get_sim_agg_first_embeds(y_train[i][j])
-            # y_test_labels = get_sim_agg_first_embeds(y_test[i][j])
-            # which_phoneme = 1
+            y_test_labels = get_sim_agg_first_embeds(y_test[i][j])
+            which_phoneme = 1
 
             # Get second sim_agg embeddings here
             # y_train_labels = get_sim_agg_second_embeds(y_train[i][j])
-            y_test_labels = get_sim_agg_second_embeds(y_test[i][j])
-            which_phoneme = 2
+            # y_test_labels = get_sim_agg_second_embeds(y_test[i][j])
+            # which_phoneme = 2
 
 
             # model = LogisticRegression(multi_class='multinomial')
@@ -321,9 +423,15 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
 
 
             y_pred = clf.predict(X_test[i][j])
-            # points, total_points, testScore, gcf, grid = two_vs_two(y_test_labels, y_pred)
+            # points, total_points, testScore, gcf, grid = extended_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid = w2v_across_animacy_2v2(y_test_labels, y_pred)
-            points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+            # points, total_points, testScore, gcf, grid= w2v_within_animacy_2v2(y_test_labels, y_pred)
+            # points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+
+            # Across and within for phonemes
+            # points, total_points, testScore, gcf, grid = ph_across_animacy_2v2(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+            points, total_points, testScore, gcf, grid = ph_within_animacy_2v2(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+
 
             # testScore = accuracy_score(y_test_labels, y_pred)
 
