@@ -402,6 +402,89 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             # y_test_labels = get_phoneme_classes(y_test[i][j])
 
             # Get first sim_agg embeddings here.
+            # y_train_labels_ph = get_sim_agg_first_embeds(y_train[i][j])
+            # y_test_labels_ph = get_sim_agg_first_embeds(y_test[i][j])
+            # which_phoneme = 1
+
+            # Get second sim_agg embeddings here
+            # y_train_labels_ph = get_sim_agg_second_embeds(y_train[i][j])
+            # y_test_labels_ph = get_sim_agg_second_embeds(y_test[i][j])
+            # which_phoneme = 2
+
+
+            # model = LogisticRegression(multi_class='multinomial')
+
+            # If concat == True -> Concat the w2v and phoneme embeddings.
+
+            # y_train_concat_w2v_ph = np.concatenate((y_train_labels_w2v, y_train_labels_ph), axis=1)
+            # y_test_concat_w2v_ph = np.concatenate((y_test_labels_w2v, y_test_labels_ph), axis=1)
+
+
+            model = Ridge()
+
+            clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=12, cv=5)
+
+            clf.fit(X_train[i][j], y_train_labels_w2v)
+            y_pred = clf.predict(X_test[i][j])
+
+
+
+            points, total_points, testScore, gcf, grid = extended_2v2(y_test_labels_w2v, y_pred)
+            # points, total_points, testScore, gcf, grid = w2v_across_animacy_2v2(y_test_labels, y_pred)
+            # points, total_points, testScore, gcf, grid= w2v_within_animacy_2v2(y_test_labels, y_pred)
+            # points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+
+            # Across and within for phonemes
+            # points, total_points, testScore, gcf, grid = ph_across_animacy_2v2(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+            # points, total_points, testScore, gcf, grid = ph_within_animacy_2v2(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
+
+
+            # testScore = accuracy_score(y_test_labels, y_pred)
+
+            tgm_matrix_temp[j, j] = testScore
+
+            if j in temp_results.keys():
+                temp_results[j] += [testScore]
+            else:
+                temp_results[j] = [testScore]
+
+        results.append(temp_results)
+
+    return results, tgm_matrix_temp
+
+
+
+def cross_validaton_nested_concat(X_train, y_train, X_test, y_test):
+    results = []
+    tgm_matrix_temp = np.zeros((120, 120))
+    # scoring = 'accuracy'
+    scoring = 'neg_mean_squared_error'
+
+    ## Define the hyperparameters.
+    ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+    #
+    for i in range(len(X_train)):
+        temp_results = {}
+        for j in range(len(X_train[i])):
+
+
+            # this is for predicting the second phoneme only (sim_agg.csv).
+            # First remove the data for which the second phoneme is not present.
+            # NOTE: The remove data function is not being used because phoneme alternatives are now being used.
+            # X_train[i][j], y_train[i][j] = remove_data(X_train[i][j], y_train[i][j])
+            # X_test[i][j], y_test[i][j] = remove_data(X_test[i][j], y_test[i][j])
+
+            # model = SVC(kernel = 'rbf', C=1e-9, gamma = .0001)
+            # model = LinearSVC(C=1e-9, max_iter=1000)
+
+            y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+            y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+
+            # One-hot vectors here.
+            # y_train_labels = get_phoneme_classes(y_train[i][j])
+            # y_test_labels = get_phoneme_classes(y_test[i][j])
+
+            # Get first sim_agg embeddings here.
             y_train_labels_ph = get_sim_agg_first_embeds(y_train[i][j])
             y_test_labels_ph = get_sim_agg_first_embeds(y_test[i][j])
             which_phoneme = 1
@@ -461,7 +544,6 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
         results.append(temp_results)
 
     return results, tgm_matrix_temp
-
 
 def cross_validaton_tgm(X_train, y_train, X_test, y_test, start, end):
     # results = []
