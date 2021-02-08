@@ -14,7 +14,10 @@ from sklearn.preprocessing import StandardScaler
 import sys
 from sklearn.metrics import accuracy_score
 from sklearn.decomposition import TruncatedSVD
-
+# import trex as tx
+# pattern = tx.compile(['baby', 'bat', 'bad'])
+# hits = pattern.findall('The baby was scared by the bad bat.')
+# hits = ['baby', 'bat', 'bad']
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
 
 from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg
@@ -23,7 +26,7 @@ from matplotlib import pyplot as plt
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
 from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_2v2_phonemes, extended_2v2_perm, \
     get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
-    ph_within_animacy_2v2, ph_across_animacy_2v2
+    ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, get_cbt_childes_w2v_embeds
 from sklearn.linear_model import Ridge
 
 
@@ -63,6 +66,9 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # temp_results, temp_diag_tgm = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test)
 
             # For phonemes and w2v embeddings.
+            # temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
+            #
+            # For concatenation of w2v and phonemes.
             temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
 
 
@@ -286,6 +292,9 @@ def calculate_residual(true_vecs, pred_vecs):
     return true_vecs - pred_vecs
 
 
+def nested_cv_predict_audio(X_train, X_test, y_train, y_test):
+    pass
+
 
 def cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test):
 
@@ -412,24 +421,28 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             # which_phoneme = 2
 
 
+            # Get fourier transform of audio amplitudes here.
+            # y_train_labels_audio = get_audio_amplitude(y_train[i][j])
+            # y_test_labels_audio = get_audio_amplitude(y_test[i][j])
+
+            # get stft of audio applitudes here.
+            y_train_labels_audio_stft = get_stft_of_amp(y_train[i][j])
+            y_test_labels_audio_stft = get_stft_of_amp(y_test[i][j])
+
+
+
             # model = LogisticRegression(multi_class='multinomial')
-
-            # If concat == True -> Concat the w2v and phoneme embeddings.
-
-            # y_train_concat_w2v_ph = np.concatenate((y_train_labels_w2v, y_train_labels_ph), axis=1)
-            # y_test_concat_w2v_ph = np.concatenate((y_test_labels_w2v, y_test_labels_ph), axis=1)
-
 
             model = Ridge()
 
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=12, cv=5)
 
-            clf.fit(X_train[i][j], y_train_labels_w2v)
+            clf.fit(X_train[i][j], y_train_labels_audio_stft)
             y_pred = clf.predict(X_test[i][j])
 
 
 
-            points, total_points, testScore, gcf, grid = extended_2v2(y_test_labels_w2v, y_pred)
+            points, total_points, testScore, gcf, grid = extended_2v2(y_test_labels_audio_stft, y_pred)
             # points, total_points, testScore, gcf, grid = w2v_across_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid= w2v_within_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
@@ -545,6 +558,7 @@ def cross_validaton_nested_concat(X_train, y_train, X_test, y_test):
 
     return results, tgm_matrix_temp
 
+
 def cross_validaton_tgm(X_train, y_train, X_test, y_test, start, end):
     # results = []
 
@@ -618,7 +632,7 @@ def find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg):
     print("Valid positive windows are: {0}\n".format(valid_window_pos))
     print("Valid negative windows are: {0}\n".format(valid_window_neg))
 
-    # Obtain clusters (3 or more consecutive meaningful time)
+    # Obtain clusters (2 or more consecutive meaningful time) -> Initally it was 3 clusters.
     clusters_pos = [list(group) for group in mit.consecutive_groups(valid_window_pos)]
     clusters_pos = [group for group in clusters_pos if len(group) >= 2]
 

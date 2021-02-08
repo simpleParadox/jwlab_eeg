@@ -112,6 +112,9 @@ def create_ph_classes():
 
 
 
+
+
+
 sim_agg_embeddings = from_sim_agg_first_phoneme()
 np.savez_compressed("G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\first_sim_agg_embeddings.npz", sim_agg_embeddings)
 

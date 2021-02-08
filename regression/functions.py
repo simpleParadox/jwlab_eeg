@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics.pairwise import cosine_distances
 from scipy.spatial.distance import cosine
+from scipy.fft import fft
+from scipy.signal import stft
 from copy import deepcopy
 import pandas as pd
 import pickle
@@ -36,6 +38,9 @@ if os_name == 'Windows':
     ph_similarity_agg_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_data\\similarity_aggregated.csv"
     sim_agg_first_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\first_sim_agg_embeddings.npz"
     sim_agg_second_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\second_sim_agg_embeddings.npz"
+    audio_amp_path = "G:\\jw_lab\\jwlab_eeg\\regression\\stims_audio_data\\stim_audio_amplitude.npz"
+    child_only_w2v_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\child_only_w2v_embeds.npz"
+    w2v_cbt_childes_treebank_embeds_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\w2v_cbt_childes_treebank_embeds.npz"
 elif os_name == 'Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
@@ -50,6 +55,9 @@ elif os_name == 'Linux':
     ph_similarity_agg_path = os.getcwd() + "/regression/phoneme_data/similarity_aggregated.csv"
     sim_agg_first_embeds_path = os.getcwd() + "/regression/phoneme_embeddings/first_sim_agg_embeddings.npz"
     sim_agg_second_embeds_path = os.getcwd() + "/regression/phoneme_embeddings/second_sim_agg_embeddings.npz"
+    audio_amp_path = os.getcwd() + "/regression/stims_audio_data/stim_audio_amplitude.npz"
+    child_only_w2v_path = os.getcwd() + "/regression/w2v_embeds/child_only_w2v_embeds.npz"
+    w2v_cbt_childes_treebank_embeds_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_treebank_embeds.npz"
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
@@ -875,6 +883,18 @@ def get_w2v_embeds_from_dict(labels):
     return w2v_labels
 
 
+def get_child_only_w2v_embeds(labels):
+    child_only_w2v_loaded = load(child_only_w2v_path, allow_pickle=True)
+    child_only_w2v = child_only_w2v_loaded['arr_0']
+
+    child_w2v_embeds = []
+    for label in labels:
+        child_w2v_embeds.append(child_only_w2v[int(label)])
+    child_w2v_embeds = np.array(child_w2v_embeds)
+
+    return child_w2v_embeds
+
+
 def get_phoneme_onehots(labels):
     ph_embeds_npz = load(ph_first_one_hots_path)
     ph_embeds_loaded = ph_embeds_npz['arr_0']
@@ -920,6 +940,58 @@ def get_sim_agg_second_embeds(labels):
 
     ph_sim_embeddings = np.array(ph_sim_embeddings)
     return ph_sim_embeddings
+
+
+def get_audio_amplitude(labels):
+    # Returns the fourier transform of the waveform and its first 15000 components.
+    audio_npz = load(audio_amp_path, allow_pickle=True)
+    audio_npz_loaded = audio_npz['arr_0']
+
+    audio_amps = []
+    for label in labels:
+        stim_amp = audio_npz_loaded[int(label)]
+        audio_fft = fft(stim_amp)
+        audio_fft_real = np.real(audio_fft)
+        audio_amps.append(audio_fft_real[:15000])
+
+    audio_amps = np.array(audio_amps)
+    return audio_amps
+
+def get_stft_of_amp(labels):
+    # Returns the short time fourier transform of the waveform and its first 15000 components.
+    audio_npz = load(audio_amp_path, allow_pickle=True)
+    audio_npz_loaded = audio_npz['arr_0']
+    sample_rate = 44100 # Sample bitrate used for audio.
+
+    audio_amps_stft = []
+    for label in labels:
+        stim_amp = audio_npz_loaded[int(label)]
+        f, t, Zxx = stft(stim_amp, sample_rate, nperseg=256)
+        t1 = t >= 0.4
+        t2 = t <= 1.25
+        t_slice = np.where(t1 * t2)  # Returns the indices of the array satisfying the conditions.
+
+        f1 = f <= 10000.0
+        f_slice = np.where(f1)
+
+        Zxx_slice = Zxx[:, t_slice[0]][f_slice[0]]
+        Zxx_flat = Zxx_slice.flatten()
+        audio_amps_stft.append(Zxx_flat)
+
+    audio_amps_stft = np.array(audio_amps_stft )
+    return audio_amps_stft
+
+
+def get_cbt_childes_w2v_embeds(labels):
+    child_only_w2v_loaded = load(w2v_cbt_childes_treebank_embeds_path, allow_pickle=True)
+    child_only_w2v = child_only_w2v_loaded['arr_0']
+
+    child_w2v_embeds = []
+    for label in labels:
+        child_w2v_embeds.append(child_only_w2v[int(label)])
+    child_w2v_embeds = np.array(child_w2v_embeds)
+
+    return child_w2v_embeds
 
 
 # # Don't use this function anymore.
