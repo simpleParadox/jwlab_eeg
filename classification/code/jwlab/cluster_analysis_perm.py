@@ -68,8 +68,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # For phonemes and w2v embeddings.
             # temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
             #
-            # For concatenation of w2v and phonemes.
-            temp_results, temp_diag_tgm = cross_validaton_nested(X_train, y_train, X_test, y_test)
+            # For concatenation of w2v and phonemes, concats etc.
+            temp_results, temp_diag_tgm = cross_validaton_nested_concat(X_train, y_train, X_test, y_test)
 
 
             tgm_results.append(temp_diag_tgm)
