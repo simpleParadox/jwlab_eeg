@@ -235,7 +235,7 @@ def prep_cluster_analysis_internal(df, ys, participants, downsample_num=1200, av
         random.shuffle(Y)
         np.random.shuffle(Y)
         # Y = remap_label(Y)
-        print("Labels shuffled.")
+        # print("Labels shuffled.")
 
     windows_list = slide_df(df, length_per_window)
 

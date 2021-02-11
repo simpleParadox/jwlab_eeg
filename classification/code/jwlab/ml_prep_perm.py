@@ -3,6 +3,7 @@ import random
 from numpy import copy
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 from scipy.signal import resample
 from IPython.display import display
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
@@ -34,6 +35,12 @@ def load_ml_data(participants):
     dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s))
            for s in participants]
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
+
+    # Scaling here
+    scaler = StandardScaler()
+    scaled_df = scaler.fit_transform(df.iloc[:,:-1].values)
+    new_df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns[:-1])
+    df = pd.concat([new_df, df['Time']], axis=1)
 
     ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
           for s in participants]
@@ -79,11 +86,11 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
 
     Y = np.concatenate(ys)
 
-    # if useRandomizedLabel:
-    #     # np.random.shuffle(Y)
-    #     # random.shuffle(Y)
-    #     remap_label(Y)  ## Changed from the above two lines to this -> just to test it out. Commenting this out and using the later one.
-    #     print("Labels shuffled.")
+    if useRandomizedLabel:
+        np.random.shuffle(Y)
+        random.shuffle(Y)
+        # remap_label(Y)  ## Changed from the above two lines to this -> just to test it out. Commenting this out and using the later one.
+        # print("Labels shuffled.")
 
     #### Sliding window section ####
     start_time = sliding_window_config[0]
@@ -133,15 +140,20 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
                 X, y, p, w = no_average_labels(df)
             elif averaging == "permutation":
                 ## change below to change the averaging set size
+                df = permutation_and_average(df, 5)
+                # X, y, p, w = no_average(df)  # Changing this to no_average_labels in the next line.
+                X, y, p, w = no_average_labels(df)  # using this to averaging the test data.
+            elif averaging == "permutation_with_labels":
+                ## change below to change the averaging set size
                 df = permutation_and_average(df, 20)
-                X, y, p, w = no_average(df)
+                X, y, p, w = no_average_labels(df)
             else:
                 raise ValueError("Unsupported averaging!")
 
-            if useRandomizedLabel:
-                y = remap_label(y)
-            #     random.shuffle(y)
-            #     np.random.shuffle(y)
+            # if useRandomizedLabel:
+            #     y = remap_label(y)
+            # #     random.shuffle(y)
+            # #     np.random.shuffle(y)
 
             ## binary: animacy
             # y[y < 8] = 0
@@ -219,11 +231,11 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count], num_win
 
 
-def prep_matrices_avg(X, age_group, use_randomized_label):
+def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20):
     participants = init(age_group)
     num_participants = len(participants)
     num_indices = len(X[0][0])
-    fivefold_testsize = int(.20 * num_indices)
+    fivefold_testsize = int(test_size * num_indices)
     test_indices = np.random.choice(num_indices - 1, fivefold_testsize, replace=False)
 
 
@@ -234,7 +246,10 @@ def prep_matrices_avg(X, age_group, use_randomized_label):
         df_train = []
         for j in range(len(X[0])):
             ## will need each window
-            X[i][j] = X[i][j].reset_index()
+            try:
+                X[i][j] = X[i][j].reset_index()
+            except ValueError:
+                print("reset_index already done")
 
             # #create new df with these indices and removing from orig
             df_test.append(X[i][j].iloc[test_indices])
@@ -264,6 +279,9 @@ def prep_matrices_avg(X, age_group, use_randomized_label):
         #     np.random.shuffle(y_train)
         #     random.shuffle(y_train)
 
+
+    if train_only == True:
+        return X_train, None, y_train, None
     # create test matrices
     X_test = []  # test raw trials
     y_test = []
@@ -299,6 +317,7 @@ def prep_matrices_avg(X, age_group, use_randomized_label):
     return X_train, X_test_pt, y_train, y_test_pt
 
 
+
 # Raw data
 def no_average(df):
     return df.drop(columns=['label', 'participant'], axis=1).values, df.label.values.flatten(), df.participant.values, df.label.values
@@ -310,7 +329,7 @@ def no_average_labels(df):
 
 # For each participant, average the value for each word. Expected shape[0] is len(participants) x len(word_list)
 def average_trials(df):
-    num_participants = df.participant.max() + 1
+    num_participants = int(df.participant.max() + 1)
     num_words = len(word_list)
 
     new_data = np.zeros((num_participants * num_words, len(df.columns) - 2))
