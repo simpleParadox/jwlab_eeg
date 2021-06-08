@@ -26,6 +26,13 @@ stimuli_to_second_ipa_mapping = {'baby':23, 'bear':25, 'bird':24, 'bunny':24,
                                  'banana': 24, 'bottle': 15, 'cookie': 37, 'cracker': 39,
                                  'cup': 24, 'juice': 44, 'milk': 25, 'spoon': 38}
 
+# The following dictionary contains the list of all phonemes for the stimuli words. Note that the sizes might be different.
+all_phonemes_list = {'baby':[17, 23, 25, 23, 28], 'bear':[17, 25, 24, 10], 'bird':[17, 25, 19], 'bunny':[17, 15, 34, 28],
+                                 'cat':[30, 16, 41], 'dog':[19, 15, 11], 'duck':[19, 24, 30], 'mom': [33, 15, 33],
+                                 'banana': [17, 24, 34, 16, 34, 24], 'bottle': [17, 15, 41, 24, 32], 'cookie': [30, 44, 30, 28],
+                                 'cracker': [30, 10, 16, 30, 24, 10],'cup': [30, 24, 38], 'juice': [22, 44, 40],
+                                 'milk': [33, 24, 32, 30], 'spoon': [40, 38, 44, 34]}
+
 # Milk, dog have canadian pronunciation so used that' - mɛlk
 # NOTE: 'mom', 'bunny', 'duck' has ʌ as a ipa character and is not present in the .csv file.
 # 'cookie' has ʊ character which is not present. Replaced with ɔ.
@@ -112,11 +119,37 @@ def create_ph_classes():
 
 
 
+def get_all_concat_embeds():
+    # This function concats all the embeddings for the word stimuli and then zero-pads them to make them the same size.
+    max_length = 6 * 36
+    all_stim_ph_concat_list = []
+    for stim, ph_list in all_phonemes_list.items():
+        # NOTE: ph_list is a list of all the phonemes of the word.
+        concat_ph_list = []
+        for ph in ph_list:
+            ph_embed = ipa_sim_agg_csv.iloc[ph, 1:].values
+            concat_ph_list.append(ph_embed)
+        flat_list = [item for sublist in concat_ph_list for item in sublist]
+
+        # Now zero-pad the flat_list.
+        flat_list = np.array(flat_list)
+        fl_len = len(flat_list)
+        padded_flat_list = np.pad(flat_list, (0, max_length - fl_len), mode='constant', constant_values=(0))
+
+        # Append the array to the final list of all stimuli.
+        all_stim_ph_concat_list.append(padded_flat_list)
+
+    return all_stim_ph_concat_list
+
+
+all_ph_concat_padded_list = get_all_concat_embeds()
+np.savez_compressed("G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\all_ph_concat_padded.npz", all_ph_concat_padded_list)
 
 
 
-sim_agg_embeddings = from_sim_agg_first_phoneme()
-np.savez_compressed("G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\first_sim_agg_embeddings.npz", sim_agg_embeddings)
+
+# sim_agg_embeddings = from_sim_agg_first_phoneme()
+# np.savez_compressed("G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\first_sim_agg_embeddings.npz", sim_agg_embeddings)
 
 
 # second_sim_agg_embeddings = from_sig_agg_second_phoneme()

@@ -24,7 +24,7 @@ def init(age_group):
     #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]
 
     elif age_group is 12:
-        participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+        participants = ["106", "107"]#, "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
         raise ValueError("Unsupported age group!")
 
@@ -34,7 +34,7 @@ def init(age_group):
 def load_ml_data(participants):
     # read all participant csvs, concat them into one dataframe
     if participants[0][0] == '1':
-        dfs = [pd.read_csv("%s%s_cleaned_ml_long.csv" % (cleaned_data_filepath, s)) for s in participants]
+        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
     else:
         dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
 
@@ -248,7 +248,10 @@ def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_s
         df_train = []
         for j in range(len(X[0])):
             ## will need each window
-            X[i][j] = X[i][j].reset_index()
+            try:
+                X[i][j] = X[i][j].reset_index()
+            except ValueError:
+                print("reset_index already done")
 
             # #create new df with these indices and removing from orig
             df_test.append(X[i][j].iloc[test_indices])

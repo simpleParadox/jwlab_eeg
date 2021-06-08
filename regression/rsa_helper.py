@@ -15,6 +15,50 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import euclidean_distances
 from scipy.spatial import distance
 from scipy.stats import pearsonr
+from scipy.stats import spearmanr
+
+
+# def make_rdm(embeds):
+#     coef = np.corrcoef(embeds)
+#     return coef
+
+
+def make_rdm(embeds, type='cosine'):
+    """
+    Makes the general RDM for the input array.
+    Args:
+        embeds = The list of word embeddings. (Should be of size 16 for now).
+        type = Distance metric to be used.
+    """
+    # number of stimuli
+    num_stimuli = embeds.shape[0]
+    # initialize RDM
+    RDM = np.ones((num_stimuli, num_stimuli))
+    # compute correlation distance between vectors
+    # idxs = np.triu_indices(RDM.shape[0],1)
+    for i in range(num_stimuli):
+        for j in range(num_stimuli):
+            if type == 'pearson':
+                RDM[i][j] = 1 - pearsonr(embeds[i], embeds[j])[0]
+            elif type == 'cosine':
+                RDM[i][j] = distance.cosine(embeds[i], embeds[j])
+
+    return RDM
+
+def corr_between_rdms(rdm1, rdm2, type='spearman'):
+    # We will only calculate the correlation between the upper triangle of the matrices.
+    num_stimuli = rdm1.shape[0]
+    # initialize RDM
+    RDM_corr = np.ones((num_stimuli, num_stimuli))
+    # compute correlation distance between vectors
+    # idxs = np.triu_indices(RDM_corr.shape[0], 1)
+    rdm_corr = p_val = None
+    if type == 'spearman':
+        rdm_corr, p_val = spearmanr(rdm1[np.triu_indices(rdm1.shape[0], k=1)], rdm2[np.triu_indices(rdm2.shape[0], k=1)])
+    elif type == 'pearson':
+        rdm_corr, p_val = pearsonr(rdm1[np.triu_indices(rdm1.shape[0], k=1)], rdm2[np.triu_indices(rdm2.shape[0], k=1)])
+
+    return rdm_corr, p_val
 
 def eeg_filter_by_group(data, group, word):
     """

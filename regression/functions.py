@@ -21,7 +21,6 @@ import os
 import platform
 
 os_name = platform.system()
-
 w2v_path = None
 avg_w2v_path = None
 if os_name == 'Windows':
@@ -40,7 +39,12 @@ if os_name == 'Windows':
     sim_agg_second_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\second_sim_agg_embeddings.npz"
     audio_amp_path = "G:\\jw_lab\\jwlab_eeg\\regression\\stims_audio_data\\stim_audio_amplitude.npz"
     child_only_w2v_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\child_only_w2v_embeds.npz"
-    w2v_cbt_childes_treebank_embeds_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\w2v_cbt_childes_treebank_embeds.npz"
+    w2v_cbt_full_childes_treebank_embeds_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\w2v_cbt_childes_skipgram_embeds.npz"
+    all_ph_concat_padded_list = "G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\all_ph_concat_padded.npz"
+    glove_300d_wiki_giga_path = "G:\\jw_lab\\jwlab_eeg\\regression\\glove_embeds\\glove_pre_wiki_giga_300d.npz"
+    w2v_cbt_cdes_50d_path_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\w2v_cbt_childes_50d_skipgram_embeds.npz"
+    pre_w2v_svd_16_comps_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\pre_w2v_svd_16_components.npz"
+    pre_w2v_pca_16_comps_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\pre_w2v_pca_16_components.npz"
 elif os_name == 'Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
@@ -57,7 +61,12 @@ elif os_name == 'Linux':
     sim_agg_second_embeds_path = os.getcwd() + "/regression/phoneme_embeddings/second_sim_agg_embeddings.npz"
     audio_amp_path = os.getcwd() + "/regression/stims_audio_data/stim_audio_amplitude.npz"
     child_only_w2v_path = os.getcwd() + "/regression/w2v_embeds/child_only_w2v_embeds.npz"
-    w2v_cbt_childes_treebank_embeds_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_treebank_embeds.npz"
+    w2v_cbt_full_childes_treebank_embeds_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_skipgram_embeds.npz"
+    all_ph_concat_padded_list = os.getcwd() + "/regression/phoneme_embeddings/all_ph_concat_padded.npz"
+    glove_300d_wiki_giga_path = os.getcwd() + "/regression/glove_embeds/glove_pre_wiki_giga_300d.npz"
+    w2v_cbt_cdes_50d_path_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_50d_skipgram_embeds.npz"
+    pre_w2v_svd_16_comps_path = os.getcwd() + "/regression/w2v_embeds/pre_w2v_svd_16_components.npz"
+    pre_w2v_pca_16_comps_path = os.getcwd() + "/regression/w2v_embeds/pre_w2v_pca_16_components.npz"
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
@@ -370,7 +379,7 @@ def extended_2v2(y_test, preds):
     """
     There are two additions to this function over the previous two_vs_two test.
     1. The grid figures will be symmetric now.
-    2. The 16 samples in the test set will now be extended to 16C2=120 samples - without repetition.
+    2. Each pair of words is compared only once.
     """
     points = 0
     total_points = 0
@@ -378,12 +387,15 @@ def extended_2v2(y_test, preds):
     # sum_ii_jj = []
     # sum_ij_ji = []
     # x_length = [_ for _ in range(preds.shape[0] - 1)]
-    # word_pairs = dict()
+    word_pairs = {}
+    for k in range(0, 16):
+        word_pairs[k] = []
     # index_pairs = []
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
         s_i_pred = preds[i]
         for j in range(i+1, preds.shape[0]):
+            temp_score = 0
             s_j = y_test[j]
             s_j_pred = preds[j]
 
@@ -398,6 +410,7 @@ def extended_2v2(y_test, preds):
 
             if dsii + dsjj <= dsij + dsji:
                 points += 1
+                temp_score = 1  # If the 2v2 test does not pass then temp_score = 0.
                 # si_idx = get_idx_in_list(s_i.tolist())
                 # sj_idx = get_idx_in_list(s_j.tolist())
                 # index_pairs.append([si_idx, sj_idx])
@@ -405,12 +418,14 @@ def extended_2v2(y_test, preds):
                 #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
                 # else:
                 #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
-
             total_points += 1
+            word_pairs[i].append(temp_score)
+            word_pairs[j].append(temp_score)
 
     grid = np.zeros((16, 16))
     # for pair in index_pairs:
         # row, col = pair
+
         # # print(pair)
         # grid[row, col] += 1
         # grid[col, row] += 1
@@ -420,7 +435,7 @@ def extended_2v2(y_test, preds):
     # pairs in an array; in other words, store the index pairs.
 
     gcf = None  # plot_grid(grid)
-    return points, total_points, points / total_points, gcf, grid
+    return points, total_points, points / total_points, gcf, grid, word_pairs
 
 
 # Added 05-12-2020
@@ -482,7 +497,7 @@ def w2v_within_animacy_2v2(y_test, preds):
     """
     points = 0
     total_points = 0
-    mid_idx = len(y_test) // 2
+    mid_idx = len(y_test) // 2  # For our experiment the value is always 8.
 
     # First for the animate words.
     for i in range(mid_idx):
@@ -736,6 +751,8 @@ def ph_across_animacy_2v2(y_test, preds, words, first_or_second = 1):
     return points, total_points, points / total_points, gcf, grid
 
 
+
+# Probably won't use this function anymore.
 def extended_2v2_perm(y_test, preds):
     """
     There are two additions to this function over the previous two_vs_two test.
@@ -870,6 +887,16 @@ def get_w2v_embeds(labels):
     # return all_embeds
 
 
+def get_glove_embeds(labels):
+    glove_loaded = load(glove_300d_wiki_giga_path, allow_pickle=True)
+    glove_embeds = glove_loaded['arr_0']
+    glove_label_embeds = []
+    for label in labels:
+        glove_label_embeds.append(glove_embeds[int(label)])
+    glove_label_embeds = np.array(glove_label_embeds)
+    return glove_label_embeds
+
+
 def get_w2v_embeds_from_dict(labels):
     embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
     embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']
@@ -881,7 +908,6 @@ def get_w2v_embeds_from_dict(labels):
     w2v_labels = np.array(w2v_labels)
 
     return w2v_labels
-
 
 def get_child_only_w2v_embeds(labels):
     child_only_w2v_loaded = load(child_only_w2v_path, allow_pickle=True)
@@ -952,10 +978,24 @@ def get_audio_amplitude(labels):
         stim_amp = audio_npz_loaded[int(label)]
         audio_fft = fft(stim_amp)
         audio_fft_real = np.real(audio_fft)
-        audio_amps.append(audio_fft_real[:15000])
+        audio_amps.append(audio_fft_real[:10000])
 
     audio_amps = np.array(audio_amps)
     return audio_amps
+# # Don't use this function anymore.
+# def remove_data(X, y):
+#     missing_second_phonemes = [3, 6, 10, 12]
+#     rmv_idxs_list = []
+#     for k in range(len(y)):
+#         if y[k] in missing_second_phonemes:
+#             rmv_idxs_list.append(k)
+#
+#     # Now remove the corresponding data from X and y.
+#     X_temp = X.drop(X.index[rmv_idxs_list], axis=0)
+#     y_temp = np.delete(y, rmv_idxs_list, axis=0)
+#
+#     return X_temp, y_temp
+
 
 def get_stft_of_amp(labels):
     # Returns the short time fourier transform of the waveform and its first 15000 components.
@@ -983,7 +1023,7 @@ def get_stft_of_amp(labels):
 
 
 def get_cbt_childes_w2v_embeds(labels):
-    child_only_w2v_loaded = load(w2v_cbt_childes_treebank_embeds_path, allow_pickle=True)
+    child_only_w2v_loaded = load(w2v_cbt_full_childes_treebank_embeds_path, allow_pickle=True)
     child_only_w2v = child_only_w2v_loaded['arr_0']
 
     child_w2v_embeds = []
@@ -994,16 +1034,125 @@ def get_cbt_childes_w2v_embeds(labels):
     return child_w2v_embeds
 
 
-# # Don't use this function anymore.
-# def remove_data(X, y):
-#     missing_second_phonemes = [3, 6, 10, 12]
-#     rmv_idxs_list = []
-#     for k in range(len(y)):
-#         if y[k] in missing_second_phonemes:
-#             rmv_idxs_list.append(k)
-#
-#     # Now remove the corresponding data from X and y.
-#     X_temp = X.drop(X.index[rmv_idxs_list], axis=0)
-#     y_temp = np.delete(y, rmv_idxs_list, axis=0)
-#
-#     return X_temp, y_temp
+def get_cbt_childes_50d_embeds(labels):
+    child_only_w2v_loaded = load(w2v_cbt_cdes_50d_path_path, allow_pickle=True)
+    child_only_w2v = child_only_w2v_loaded['arr_0']
+
+    child_w2v_embeds = []
+    for label in labels:
+        child_w2v_embeds.append(child_only_w2v[int(label)])
+    child_w2v_embeds = np.array(child_w2v_embeds)
+
+    return child_w2v_embeds
+
+def get_reduced_w2v_embeds(labels, type='svd'):
+    if type == 'svd':
+        child_only_w2v_loaded = load(pre_w2v_svd_16_comps_path, allow_pickle=True)
+    else:
+        child_only_w2v_loaded = load(pre_w2v_pca_16_comps_path, allow_pickle = True)
+    child_only_w2v = child_only_w2v_loaded['arr_0']
+
+    child_w2v_embeds = []
+    for label in labels:
+        child_w2v_embeds.append(child_only_w2v[int(label)])
+    child_w2v_embeds = np.array(child_w2v_embeds)
+
+    return child_w2v_embeds
+
+
+def get_all_ph_concat_embeds(labels):
+    all_ph_padded_npz = load(all_ph_concat_padded_list, allow_pickle=True)
+    all_ph_padded = all_ph_padded_npz['arr_0']
+
+    all_ph_concat_padded_embeds = []
+    for label in labels:
+        all_ph_concat_padded_embeds.append(all_ph_padded[int(label)])
+
+    all_ph_concat_padded_embeds = np.array(all_ph_concat_padded_embeds)
+    return all_ph_concat_padded_embeds
+
+def sep_by_prev_anim(X, y, current_type = 'inanimate', prev_type = 'animate'):
+    row_idxs = []
+    animate_values = [i for i in range(8)]
+    inanimate_values = [i for i in range(8,16)]
+    i = j = 0
+    if current_type =='animate' and  prev_type == 'animate':
+        for k in range(1, len(y[i][j])):
+            if int(y[i][j][k]) in animate_values and int(y[i][j][k-1]) in animate_values:
+                row_idxs.append(k)
+    if current_type == 'animate' and prev_type == 'inanimate':
+        for k in range(1, len(y[i][j])):
+            if int(y[i][j][k]) in animate_values and int(y[i][j][k - 1]) in inanimate_values:
+                row_idxs.append(k)
+
+    if current_type =='inanimate' and  prev_type == 'animate':
+        for k in range(1, len(y[i][j])):
+            if int(y[i][j][k]) in inanimate_values and int(y[i][j][k-1]) in animate_values:
+                row_idxs.append(k)
+    if current_type == 'inanimate' and prev_type == 'inanimate':
+        for k in range(1, len(y[i][j])):
+            if int(y[i][j][k]) in inanimate_values and int(y[i][j][k - 1]) in inanimate_values:
+                row_idxs.append(k)
+
+    # Now filter out the EEG data.
+    filtered_X = [[]]
+    for i in range(len(X)):
+        for j in range(len(X[i])):
+            df = X[i][j].iloc[row_idxs]
+            filtered_X[0].append(df)
+
+    return filtered_X
+
+def prep_filtered_X(X):
+
+    labs = [t for t in range(0,16)]
+    np.random.shuffle(labs)
+    all_l_idxs = []  # Should be of size 16 x window_size. Each list in all_l_idxs corresponds to each 'l' and has row index.
+    for l in labs:
+        for k in range(len(X[0][0])):
+            if int(X[0][0].iloc[k]['label']) == l:
+                all_l_idxs.append(k)
+                break
+
+    df_test_m = []
+    df_train_m = []
+    shuffle_idx = np.random.permutation(X[0][0].index)
+    for i in range(len(X)):
+        df_test = []
+        df_train = []
+        for j in range(len(X[0])):
+            ## will need each window
+
+            X[i][j] = X[i][j].reindex(shuffle_idx)
+            X[i][j] = X[i][j].reset_index()
+            # #create new df with these indices and removing from orig
+            df_test.append(X[i][j].iloc[all_l_idxs])
+            df_train.append(X[i][j].drop(X[i][j].index[all_l_idxs]))
+            assert (len(df_train[i][j]) + len(df_test[i][j]) == len(X[i][j]))
+            df_test[j] = df_test[j].drop(columns=['index'], axis=1)
+            df_train[j] = df_train[j].drop(columns=['index'], axis=1)
+        df_test_m.append(df_test)
+        df_train_m.append(df_train)
+
+    X_train = []
+    y_train = []
+    X_test = []
+    y_test = []
+
+    for i in range(len(X)):
+        # create training matrix:
+        X_train_i = []
+        y_train_i = []
+        y_test_i = []
+        X_test_i = []
+        for j in range(len(X[0])):
+            y_train_i.append(df_train_m[i][j].label.values)
+            y_test_i.append(df_test_m[i][j].label.values)
+            X_test_i.append(df_test_m[i][j].drop(columns=['label', 'participant'], axis=1))
+            X_train_i.append(df_train_m[i][j].drop(columns=['label', 'participant'], axis=1))
+        X_train.append(X_train_i)
+        y_train.append(y_train_i)
+        X_test.append(X_test_i)
+        y_test.append(y_test_i)
+
+    return X_train, X_test, y_train, y_test
