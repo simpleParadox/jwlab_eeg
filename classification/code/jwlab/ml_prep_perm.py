@@ -15,16 +15,26 @@ from jwlab.constants import word_list, bad_trials_filepath, old_participants, cl
 from sklearn.preprocessing import StandardScaler
 
 
+labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
+                  4: 'cat', 5: 'dog', 6: 'duck', 7: 'mom',
+                  8: 'banana', 9: 'bottle', 10: 'cookie',
+                  11: 'cracker', 12: 'cup', 13: 'juice',
+                  14: 'milk', 15: 'spoon'}
+
+
+
 def init(age_group):
     if age_group is 9:
-        participants = ["904", "905", "906", "908", "909", "910", "912", "913", "914", "916", "917", "921", "923",
-                        "927", "929", "930", "932"]
+        # participants = ["904", "905", "906", "908", "909", "910", "912", "913", "914", "916", "917", "921", "923",
+        #                 "927", "929", "930", "932"]
+        participants = [ "904", "905","906", "908", "909", "910", "912", "913", "914", "916", "917", "919", "920", "921",
+                         "923", "924", "927", "929","928", "930", "932"]
 
     # all
     #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]
 
     elif age_group is 12:
-        participants = ["106", "107"]#, "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+        participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
         raise ValueError("Unsupported age group!")
 
@@ -39,6 +49,7 @@ def load_ml_data(participants):
         dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
 
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
+    df = df.drop('E65', axis=1)
     scaler = StandardScaler()
     scaled_df = scaler.fit_transform(df.iloc[:,:-1].values)
     new_df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns[:-1])
@@ -116,7 +127,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     for length_per_window in range(len(windows_list)):
         for each_window in range(len(windows_list[length_per_window])):
             df = windows_list[length_per_window][each_window]
-            df = df.drop(columns=["Time", "E65"], axis=1)
+            df = df.drop(columns=["Time"], axis=1) # E65 was also one of the columns that was removed earlier.
             X = df.values
             X = np.reshape(
                 X, (window_lengths[length_per_window], 60, -1))
@@ -231,6 +242,41 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             df_list[length_per_window][each_window] = df
 
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count], num_win
+
+
+def remove_samples(X):
+
+    """
+    This function is designed to randomly remove 8 samples from the data.
+    """
+
+    labels = X[0][0]['label'].values
+    df_index = X[0][0].index
+    indices = []
+    for lab in labels_mapping.keys():
+        idxs = [df_index[i] for i, x in enumerate(labels) if x == int(lab)]
+        indices.append(idxs)
+
+    # Now randomly choose the elements to be removed.
+    indices_to_drop = []
+    for idx in indices:
+        # idx is a list.
+        no_elements_to_delete = 8 #len(idx) // 4
+        no_elements_to_keep = len(idx) - no_elements_to_delete
+        b = set(random.sample(idx, no_elements_to_delete))  # the `if i in b` on the next line would benefit from b being a set for large lists
+        b = [i for i in idx if i in b]  # you need this to restore the order
+        # Use b to drop the samples from X - for each window.
+        indices_to_drop.append(b) # Length of indices_to_drop should be 16.
+
+    idxs_to_drop = np.array(indices_to_drop)
+    idxs_to_drop = idxs_to_drop.flatten()
+    dfs = []
+    # Now drop the indices from the dataframes.
+    for i in range(len(X)):
+        for j in range(len(X[i])):
+            dfs.append(X[i][j].drop(idxs_to_drop, axis=0))
+
+    return [dfs]
 
 
 def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20):
