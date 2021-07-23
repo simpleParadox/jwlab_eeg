@@ -39,7 +39,7 @@ if os_name == 'Windows':
     sim_agg_second_embeds_path = "G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\second_sim_agg_embeddings.npz"
     audio_amp_path = "G:\\jw_lab\\jwlab_eeg\\regression\\stims_audio_data\\stim_audio_amplitude.npz"
     child_only_w2v_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\child_only_w2v_embeds.npz"
-    w2v_cbt_full_childes_treebank_embeds_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\w2v_cbt_childes_skipgram_embeds.npz"
+    tuned_w2v_cbt_childes_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\\tuned_w2v_cbt_childes_300d.npz"
     all_ph_concat_padded_list = "G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\all_ph_concat_padded.npz"
     glove_300d_wiki_giga_path = "G:\\jw_lab\\jwlab_eeg\\regression\\glove_embeds\\glove_pre_wiki_giga_300d.npz"
     w2v_cbt_cdes_50d_path_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\w2v_cbt_childes_50d_skipgram_embeds.npz"
@@ -61,7 +61,7 @@ elif os_name == 'Linux':
     sim_agg_second_embeds_path = os.getcwd() + "/regression/phoneme_embeddings/second_sim_agg_embeddings.npz"
     audio_amp_path = os.getcwd() + "/regression/stims_audio_data/stim_audio_amplitude.npz"
     child_only_w2v_path = os.getcwd() + "/regression/w2v_embeds/child_only_w2v_embeds.npz"
-    w2v_cbt_full_childes_treebank_embeds_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_skipgram_embeds.npz"
+    tuned_w2v_cbt_childes_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_cbt_childes_300d.npz"
     all_ph_concat_padded_list = os.getcwd() + "/regression/phoneme_embeddings/all_ph_concat_padded.npz"
     glove_300d_wiki_giga_path = os.getcwd() + "/regression/glove_embeds/glove_pre_wiki_giga_300d.npz"
     w2v_cbt_cdes_50d_path_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_50d_skipgram_embeds.npz"
@@ -343,7 +343,7 @@ def two_vs_two(y_test, preds):
     # print("Sum ij ji ", sum_ij_ji_mean)
     #
     #
-    # ## The following piece of code plots graphs for the difference between the sum of the cosine distances.
+    # ## The following piece of code bokeh_plots graphs for the difference between the sum of the cosine distances.
     # print("Points -> ", points)
     # print("Total points -> ", total_points)
     # plt.rcParams["figure.figsize"] = (20, 10)
@@ -1022,8 +1022,8 @@ def get_stft_of_amp(labels):
     return audio_amps_stft
 
 
-def get_cbt_childes_w2v_embeds(labels):
-    child_only_w2v_loaded = load(w2v_cbt_full_childes_treebank_embeds_path, allow_pickle=True)
+def get_tuned_cbt_childes_w2v_embeds(labels):
+    child_only_w2v_loaded = load(tuned_w2v_cbt_childes_path, allow_pickle=True)
     child_only_w2v = child_only_w2v_loaded['arr_0']
 
     child_w2v_embeds = []

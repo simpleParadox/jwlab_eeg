@@ -49,8 +49,8 @@ elif (user == 'rohan'):
     print("user rohan")
     # ---- File path for Rohan on Local machine.
     cleaned_data_filepath = "G:\\jw_lab\\jwlab_eeg\Data\\\Imported\\cleaned2\\"
-    bad_trials_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\ML_badtrials-Table 2.csv"
-    db_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\db2\\"
+    bad_trials_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\ML_badtrials-Table  jenn.csv"
+    db_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\db_jennlocal\\"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 

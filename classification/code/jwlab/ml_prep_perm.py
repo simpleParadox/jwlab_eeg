@@ -34,7 +34,7 @@ def init(age_group):
     #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]
 
     elif age_group is 12:
-        participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+        participants = ["105", "106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
         raise ValueError("Unsupported age group!")
 
@@ -55,7 +55,12 @@ def load_ml_data(participants):
     new_df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns[:-1])
     df = pd.concat([new_df, df['Time']], axis=1)
 
-    ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
+    jenn_local_label_filepath = "G:\jw_lab\jwlab_eeg\Data\Imported\label_jennlocal\\"
+
+    # ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
+    #       for s in participants]
+
+    ys = [np.loadtxt("%s%s_labels.txt" % (jenn_local_label_filepath, s)).tolist()
           for s in participants]
 
     # print("loaded", flush=True)
