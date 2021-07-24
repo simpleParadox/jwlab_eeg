@@ -23,6 +23,8 @@ from scipy.cluster import hierarchy
 # pattern = tx.compile(['baby', 'bat', 'bad'])
 # hits = pattern.findall('The baby was scared by the bad bat.')
 # hits = ['baby', 'bat', 'bad']
+from statsmodels.stats.multitest import multipletests
+
 sys.path.insert(1,
                 '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
 
@@ -106,6 +108,68 @@ def minimal_mouth_X(X):
             X_mod.append(temp)
 
     return [X_mod]
+
+
+
+def average_fold_accs(data):
+    result = {}
+    for key, val in data.items():
+        result[key] = np.mean(val)
+
+    return result
+
+
+def significance(h1, h0):
+    """"
+    This function calculates the p-value of the alternate hypothesis against the
+    null distribution.
+    """
+    """h1 is the alternate hypothesis. This contains the observed values for
+    each window which will then be averaged.
+    h0 is the null hypothesis. h0 will have many values for one single window.
+    The function performs the statistical test with the t-test with the bejamini hochberg correction.
+    """
+    # First we process 'h1' to average all the cross-validation folds accuracies for each window.
+    null_h = h0
+    alt_h = h1[0]
+
+    alt_h_avg = average_fold_accs(alt_h)
+
+    # Now we perform the significance testing between the 'h1_avg' and 'h0'.
+    """
+    The p-value is calculated by finding the number of times the permuted accuracies
+    are above the observed value (true value).
+    The process is done for each window.
+    """
+
+    denom = len(null_h[0])
+    p_values_list = []  # Stores the window based p-values against the null distribution.
+    for window in range(len(alt_h_avg)):
+        obs_score = alt_h_avg[window]
+        permute_scores = null_h[window]
+        count = 0
+        # Now count how many of the permute scores are >= obs_score.
+        for j in range(len(permute_scores)):
+            if permute_scores[j] > obs_score:
+                count += 1
+
+        p_value = count / denom
+        p_values_list.append(p_value)
+
+    # Implementing the Benjamini-Hochberg correction.
+    # First have an index_array just in case.
+    idxs = [i for i in range(len(alt_h_avg))]
+    # Sort the p_values and idxs in ascending order.
+    p_vals_list_asc, p_vals_idx_sort = (list(t) for t in zip(*sorted(zip(p_values_list, idxs))))
+    p_vals_asc_rank = [i for i in range(len(alt_h_avg))]
+
+    reject, pvals_corrected, alph_sidak, alph_bonf = multipletests(p_vals_list_asc, is_sorted=True, method='fdr_bh')
+
+    p_vals_idx_sort = np.array(p_vals_idx_sort)
+
+    return reject, pvals_corrected, p_vals_idx_sort
+
+
 
 
 def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config,
@@ -256,14 +320,14 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     #             animacy_results[i][j] = temp_animacy_results[i][j]
 
     # Uncomment the following 'for' block for the regular EEG -> word embedding.
-    for i in range(len(temp_results)):
-        if i not in results.keys():
-            results[i] = {}
-        for j in range(len(temp_results[i])):
-            if j in results[i].keys():
-                results[i][j] += temp_results[i][j]
-            else:
-                results[i][j] = temp_results[i][j]
+    # for i in range(len(temp_results)):
+    #     if i not in results.keys():
+    #         results[i] = {}
+    #     for j in range(len(temp_results[i])):
+    #         if j in results[i].keys():
+    #             results[i][j] += temp_results[i][j]
+    #         else:
+    #             results[i][j] = temp_results[i][j]
 
     # perm_results = np.array(results)
     # timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -280,11 +344,11 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     # cols = np.arange(-150, 1050, step_size).tolist()
     # df = pd.DataFrame(data=final_tgm, index=ind, columns=cols)
     # df.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results/12m_tgm_res_w2v-100-10_40iters.csv")
-    # # For only permutated labels TGM.
-    # perm_results = np.array(tgm_results)
-    # timestr = time.strftime("%Y%m%d-%H%M%S")
-    # # filename = date + '.npz'
-    # np.savez_compressed(f'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/tgms/9m/{timestr}.npz', perm_results)
+    # For only permutated labels TGM.
+    perm_results = np.array(tgm_results)
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    # filename = date + '.npz'
+    np.savez_compressed(f'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/tgms/9m/{timestr}.npz', perm_results)
 
     # Save the 'null_dist' in the significance_testing directory.
     # np.savez_compressed('/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code/jwlab/significance_testing/null_dist_results_9_10x3.npz', null_dist_results)
@@ -298,23 +362,23 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
     # Uncomment the following three lines for the regualar (EEG->word embedding stuff stats calculation.)
     # For predicting raw w2v from EEG.
-    pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
+    # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
-    adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
+    # adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
 
-    max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
+    # max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
 
     # # # dendrogram(np.mean(w2v_res_list, axis=0))
     # # ## REMOVE FOR NULL FUNCTION
-    if len(sliding_window_config[2]) == 1:
-        print("Results:", results)
-        createGraph(results, t_mass_pos, adj_clusters_pos)
-        # # word_pair_graph(sampl_iter_word_pairs_2v2)
-        # print(animacy_results)
-        # createGraph(animacy_results, tvalues_pos, adj_clusters_pos)
+    # if len(sliding_window_config[2]) == 1:
+    #     print("Results:", results)
+    #     createGraph(results, t_mass_pos, adj_clusters_pos)
+    #     # # word_pair_graph(sampl_iter_word_pairs_2v2)
+    #     # print(animacy_results)
+    #     # createGraph(animacy_results, tvalues_pos, adj_clusters_pos)
 
-    else:
-        print("Graph function is not supported for multiple window sizes")
+    # else:
+    #     print("Graph function is not supported for multiple window sizes")
 
     # rsa(np.mean(w2v_res_list, axis=0), np.mean(cbt_res_list, axis=0))
 
@@ -481,7 +545,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
 
     # Running the following line will fail if h1 and h0 are not initialized.
     # h0 needs to be initialized for many permutation iterations.
-    # reject, pvals_corrected, p_vals_idx_sort = significance(h1, h0)
+    reject, pvals_corrected, p_vals_idx_sort = significance(h1, h0)
     # dot_idxs = p_vals_idx_sort[reject]
     # x_dots = x_graph[dot_idxs]
 
