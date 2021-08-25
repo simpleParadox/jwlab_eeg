@@ -12,18 +12,26 @@ from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath
 
 
+labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
+                  4: 'cat', 5: 'dog', 6: 'duck', 7: 'mom',
+                  8: 'banana', 9: 'bottle', 10: 'cookie',
+                  11: 'cracker', 12: 'cup', 13: 'juice',
+                  14: 'milk', 15: 'spoon'}
+
+
+
 ################################ prep data ################################
 
 def init(age_group):
     if age_group is 9:
-        participants = ["904", "905", "906", "908", "909", "910", "912", "913", "914", "916", "917", "921", "923",
-                        "927", "929", "930", "932"]
+        participants = ["904", "905","906", "908", "909", "910", "912", "913", "914", "916", "917", "919", "920", "921",
+                         "923", "924", "927", "929","928", "930", "932"]
 
     # all
     #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]
 
     elif age_group is 12:
-        participants = ["106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
+        participants = ["105", "106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
         raise ValueError("Unsupported age group!")
 
@@ -35,6 +43,7 @@ def load_ml_data(participants):
     dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s))
            for s in participants]
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
+    df = df.drop('E65', axis=1)
 
     # Scaling here
     scaler = StandardScaler()
@@ -42,7 +51,8 @@ def load_ml_data(participants):
     new_df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns[:-1])
     df = pd.concat([new_df, df['Time']], axis=1)
 
-    ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
+    jenn_local_label_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/label_jennlocal/"
+    ys = [np.loadtxt("%s%s_labels.txt" % (jenn_local_label_filepath, s)).tolist()
           for s in participants]
 
     # print("loaded", flush=True)
@@ -85,6 +95,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     good_trial_word_count = get_left_trial_each_word(participants)
 
     Y = np.concatenate(ys)
+    # print("Y is",Y)
 
     if useRandomizedLabel:
         np.random.shuffle(Y)
@@ -109,7 +120,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     for length_per_window in range(len(windows_list)):
         for each_window in range(len(windows_list[length_per_window])):
             df = windows_list[length_per_window][each_window]
-            df = df.drop(columns=["Time", "E65"], axis=1)
+            df = df.drop(columns=["Time"], axis=1)
             X = df.values
             X = np.reshape(
                 X, (window_lengths[length_per_window], 60, -1))
@@ -128,6 +139,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
 
             # make label zero indexed
             df.label -= 1
+            # print(max(df.label))
 
             # different averaging processes
             if averaging == "no_averaging":
@@ -231,6 +243,37 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     return X_list, y_list, [good_trial_participant_count, good_trial_word_count], num_win
 
 
+
+def remove_samples(X):
+
+    labels = X[0][0]['label'].values
+    df_index = X[0][0].index
+    indices = []
+    for lab in labels_mapping.keys():
+        idxs = [df_index[i] for i, x in enumerate(labels) if x == int(lab)]
+        indices.append(idxs)
+
+    # Now randomly choose the elements to be removed.
+    indices_to_drop = []
+    for idx in indices:
+        # idx is a list.
+        no_elements_to_delete = 8 #len(idx) // 4
+        no_elements_to_keep = len(idx) - no_elements_to_delete
+        b = set(random.sample(idx, no_elements_to_delete))  # the `if i in b` on the next line would benefit from b being a set for large lists
+        b = [i for i in idx if i in b]  # you need this to restore the order
+        # Use b to drop the samples from X - for each window.
+        indices_to_drop.append(b) # Length of indices_to_drop should be 16.
+
+    idxs_to_drop = np.array(indices_to_drop)
+    idxs_to_drop = idxs_to_drop.flatten()
+    # Now drop the indices from the dataframes.
+    dfs = []
+    for i in range(len(X)):
+        for j in range(len(X[i])):
+            dfs.append(X[i][j].drop(idxs_to_drop, axis=0))
+
+    return [dfs]
+
 def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20):
     participants = init(age_group)
     num_participants = len(participants)
@@ -249,7 +292,7 @@ def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_s
             try:
                 X[i][j] = X[i][j].reset_index()
             except ValueError:
-                print("reset_index already done")
+                print("reset_index already done", end=' ')
 
             # #create new df with these indices and removing from orig
             df_test.append(X[i][j].iloc[test_indices])
@@ -347,10 +390,18 @@ def average_trials(df):
             participants[p * num_words + w] = p
     return new_data, new_y, participants, np.copy(new_y)
 
+minimal_mouth_labels_exclude = {4: 'cat', 5: 'dog', 7: 'mom',
+                  8: 'banana', 9: 'bottle', 11: 'cracker'}
 
+# Use this when training only on non-minimal mouth information words. These are the words which will be excluded.
+minimal_mouth_labels_include = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
+                    6: 'duck', 10: 'cookie', 12: 'cup', 13: 'juice',
+                  14: 'milk', 15: 'spoon'}
 # Average the value of each word across participants. Expected shape[0] is len(word_list)
 def average_trials_and_participants(df, participants):
     num_words = len(word_list)
+    
+    # num_words = len(minimal_mouth_labels_exclude)
     data, y, participants_rt, w = average_trials(df)
     new_data = np.zeros((num_words, len(df.columns) - 2))
     new_y = np.zeros(num_words)
@@ -363,6 +414,7 @@ def average_trials_and_participants(df, participants):
         new_y[w] = -1 if np.isnan(mean).any() else w
     new_data = new_data[new_y != -1, :]
     new_y = new_y[new_y != -1]
+    # print("avg_tri_and_ps func compl")
     return new_data, new_y, np.ones(new_y.shape[0]) * -1, np.copy(new_y)
 
 
