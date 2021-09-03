@@ -87,7 +87,13 @@ labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
 
 
 
-
+"""
+Implementing Kernel density estimation of the null_distribution results.
+"""
+from scipy import stats
+def do_kernel_smoothing(vals, n):
+    kernel = stats.gaussian_kde(vals)
+    return kernel.resample(n)
 
 #-------------------------------------------------------------------------------------
 """
@@ -98,7 +104,7 @@ import glob
 import numpy as np
 numpy_vars = {}
 i = 0
-for np_name in glob.glob('G:\jw_lab\jwlab_eeg\Results\\12m res permutation results\*.np[yz]'):
+for np_name in glob.glob('G:\jw_lab\jwlab_eeg\Results\\9m permutation results\*.np[yz]'):
     numpy_vars[i] = np.load(np_name, allow_pickle=True)
     i += 1
 

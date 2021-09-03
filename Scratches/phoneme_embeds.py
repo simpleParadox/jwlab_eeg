@@ -74,6 +74,9 @@ def from_sig_agg_second_phoneme():
     return dict_array
 
 def create_ph_embeds():
+    """
+    Creates a one-hot vector.
+    """
     ph_embeds = np.zeros((len(stims), len(phoneme_set)))
     # First iterate over the phonemes.
     for i, ph_word in enumerate(phonemes):

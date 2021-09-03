@@ -39,7 +39,7 @@ from matplotlib import pyplot as plt
 
 
 # Run the first line for the training on one window and testing on same window.
-result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [0, 500, [100], 100], [5, 4, 2], type='simple')
+result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [0, 500, [100], 100], [5, 4, 2], type='simple', residual=True, child_residual=False)
 
 # The follwing is for the TGMs only.
 # result = cluster_analysis_procedure(9, True, "across", [-200, 1000, [100], 10], [5, 4, 50], type='permutation')

@@ -45,6 +45,8 @@ if os_name == 'Windows':
     w2v_cbt_cdes_50d_path_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\w2v_cbt_childes_50d_skipgram_embeds.npz"
     pre_w2v_svd_16_comps_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\pre_w2v_svd_16_components.npz"
     pre_w2v_pca_16_comps_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\pre_w2v_pca_16_components.npz"
+    residual_pretrained_w2v_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\pretrained_w2v_residuals.npz"
+    residual_tuned_w2v_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\\tuned_w2v_residuals.npz"
 elif os_name == 'Linux':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
@@ -67,6 +69,8 @@ elif os_name == 'Linux':
     w2v_cbt_cdes_50d_path_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_50d_skipgram_embeds.npz"
     pre_w2v_svd_16_comps_path = os.getcwd() + "/regression/w2v_embeds/pre_w2v_svd_16_components.npz"
     pre_w2v_pca_16_comps_path = os.getcwd() + "/regression/w2v_embeds/pre_w2v_pca_16_components.npz"
+    residual_pretrained_w2v_path = os.getcwd() +  "/regression/w2v_embeds/pretrained_w2v_residuals.npz"
+    residual_tuned_w2v_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_residuals.npz"
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
@@ -1034,6 +1038,30 @@ def get_tuned_cbt_childes_w2v_embeds(labels):
     return child_w2v_embeds
 
 
+def get_residual_pretrained_w2v(labels):
+    w2v_pretrained_residual_loaded = np.load(residual_pretrained_w2v_path, allow_pickle=True)
+    w2v_pretrained_residual = w2v_pretrained_residual_loaded['arr_0']
+
+    residual_embeds = []
+    for label in labels:
+        residual_embeds.append(w2v_pretrained_residual[int(label)])
+    residual_embeds = np.array(residual_embeds)
+
+    return residual_embeds
+
+
+def get_residual_tuned_w2v(labels):
+    w2v_tuned_residual_loaded = np.load(residual_tuned_w2v_path, allow_pickle=True)
+    w2v_tuned_residual = w2v_tuned_residual_loaded['arr_0']
+
+    residual_embeds = []
+    for label in labels:
+        residual_embeds.append(w2v_tuned_residual[int(label)])
+    residual_embeds = np.array(residual_embeds)
+
+    return residual_embeds
+
+
 def get_cbt_childes_50d_embeds(labels):
     child_only_w2v_loaded = load(w2v_cbt_cdes_50d_path_path, allow_pickle=True)
     child_only_w2v = child_only_w2v_loaded['arr_0']
@@ -1156,3 +1184,4 @@ def prep_filtered_X(X):
         y_test.append(y_test_i)
 
     return X_train, X_test, y_train, y_test
+
