@@ -11,7 +11,7 @@ import setup_jwlab
 import sys
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
-from jwlab.cluster_analysis_perm import cluster_analysis_procedure
+from jwlab.cluster_analysis_perm_svm import cluster_analysis_procedure
 from jwlab.ml_prep_perm import prep_ml, slide_df, init, load_ml_data, get_bad_trials, map_participants,average_trials_and_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
 
@@ -38,13 +38,10 @@ from matplotlib import pyplot as plt
 # In[ ]:
 
 
-# Run the first line for the training on one window and testing on same window.
-result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [0, 500, [100], 100], [5, 4, 2], type='simple', residual=True, child_residual=False)
-
-# The follwing is for the TGMs only.
-# result = cluster_analysis_procedure(9, True, "across", [-200, 1000, [100], 10], [5, 4, 50], type='permutation')
-
-
+# NOTE: If you set useRandomizedLabel = True and set type='simple', it will runt eh null_distribution. But you have to run it 100 times/jobs.
+result = cluster_analysis_procedure(12, True, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 50], type='simple')
+# result = cluster_analysis_procedure(12, True, "tgm", [-200, 1000, [100], 10], [5, 4, 50], type='simple')
+# result = cluster_analysis_procedure(12, True, "across", [-200, 1000, [100], 10], [5, 4, 50], type='simple')
 # In[25]:
 
 

@@ -313,8 +313,8 @@ def prep_raw_pred_avg(X, participants, length_per_window, num_sliding_windows, t
 
     for i in range(num_sliding_windows):
         ## will need each window
-        X[i] = X[i].reset_index()
-
+        X[i] = X[i].reset_index()   
+        
         # #create new df with these indices and removing from orig
         df_test.append(X[i].iloc[test_indices])
         df_train.append(X[i].drop(X[i].index[test_indices]))

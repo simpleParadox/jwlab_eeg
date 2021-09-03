@@ -48,17 +48,17 @@ elif (user == "jenncc"):
 elif (user == 'rohan'):
     print("user rohan")
     # ---- File path for Rohan on Local machine.
-    cleaned_data_filepath = "Z:\\Jenn\\Data\\Imported data\\cleaned\\"
-    bad_trials_filepath = "Z:\\Jenn\\Datatracker\\ML_badtrials-Table 1.csv"
-    db_filepath = "Z:\\Jenn\\Data\\Imported data\\db\\"
+    cleaned_data_filepath = "G:\\jw_lab\\jwlab_eeg\Data\\\Imported\\cleaned2\\"
+    bad_trials_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\ML_badtrials-Table  jenn.csv"
+    db_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\db_jennlocal\\"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 
 elif (user == 'rohancc'):
     # print("user rohan compute canada")
     # ---- File path for Rohan on Compute Canada.
-    cleaned_data_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/cleaned/"
-    bad_trials_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/ML_badtrials-Table 1.csv"
-    db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db/"
+    cleaned_data_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/cleaned2/"
+    bad_trials_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/ML_badtrials-Table 2.csv"
+    db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db2/"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"

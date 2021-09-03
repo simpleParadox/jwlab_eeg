@@ -138,3 +138,4 @@ regression/GoogleNews-vectors-negative300.bin.gz
 regression/test.ipynb
 regression/w2v_embeds/
 regression/data/
+EventTimings/

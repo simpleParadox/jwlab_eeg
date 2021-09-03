@@ -272,7 +272,6 @@ print("Permuted Scores Average: ", np.mean(permuted_scores))
 # plt.xlim([0,10])
 # plt.show()
 
-## Todo: animate vs animate, animate vs inanimate, inanimate vs inanimate.
 ## First label the words as animate or inanimate.
 ## Predic the word2vec embeddings
 # How about train on one group of labels and predict on others?

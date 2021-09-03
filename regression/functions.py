@@ -42,9 +42,6 @@ if os_name == 'Windows':
     tuned_w2v_cbt_childes_path = "G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\\tuned_w2v_cbt_childes_300d.npz"
     all_ph_concat_padded_list = "G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\all_ph_concat_padded.npz"
     glove_300d_wiki_giga_path = "G:\\jw_lab\\jwlab_eeg\\regression\\glove_embeds\\glove_pre_wiki_giga_300d.npz"
-    glove_200d_wiki_giga_path = "G:\\jw_lab\\jwlab_eeg\\regression\\glove_embeds\\glove_pre_wiki_giga_200d.npz"
-    glove_100d_wiki_giga_path = "G:\\jw_lab\\jwlab_eeg\\regression\\glove_embeds\\glove_pre_wiki_giga_100d.npz"
-    glove_50d_wiki_giga_path = "G:\\jw_lab\\jwlab_eeg\\regression\\glove_embeds\\glove_pre_wiki_giga_50d.npz"
     w2v_cbt_cdes_50d_path_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\w2v_cbt_childes_50d_skipgram_embeds.npz"
     pre_w2v_svd_16_comps_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\pre_w2v_svd_16_components.npz"
     pre_w2v_pca_16_comps_path = "G:\\jw_lab\\jwlab_eeg\\regression\\w2v_embeds\\pre_w2v_pca_16_components.npz"
@@ -69,19 +66,11 @@ elif os_name == 'Linux':
     tuned_w2v_cbt_childes_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_cbt_childes_300d.npz"
     all_ph_concat_padded_list = os.getcwd() + "/regression/phoneme_embeddings/all_ph_concat_padded.npz"
     glove_300d_wiki_giga_path = os.getcwd() + "/regression/glove_embeds/glove_pre_wiki_giga_300d.npz"
-    glove_200d_wiki_giga_path = os.getcwd() + "/regression/glove_embeds/glove_pre_wiki_giga_200d.npz"
-    glove_100d_wiki_giga_path = os.getcwd() + "/regression/glove_embeds/glove_pre_wiki_giga_100d.npz"
-    glove_50d_wiki_giga_path = os.getcwd() + "/regression/glove_embeds/glove_pre_wiki_giga_50d.npz"
     w2v_cbt_cdes_50d_path_path = os.getcwd() + "/regression/w2v_embeds/w2v_cbt_childes_50d_skipgram_embeds.npz"
     pre_w2v_svd_16_comps_path = os.getcwd() + "/regression/w2v_embeds/pre_w2v_svd_16_components.npz"
     pre_w2v_pca_16_comps_path = os.getcwd() + "/regression/w2v_embeds/pre_w2v_pca_16_components.npz"
     residual_pretrained_w2v_path = os.getcwd() +  "/regression/w2v_embeds/pretrained_w2v_residuals.npz"
     residual_tuned_w2v_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_residuals.npz"
-
-    
-
-
-
 
 word_list = ["baby", "BAD_STRING", "bird", "BAD_STRING", "cat", "dog", "duck", "mommy",
              "banana", "bottle", "cookie", "cracker", "BAD_STRING", "juice", "milk", "BAD_STRING"]
@@ -358,7 +347,7 @@ def two_vs_two(y_test, preds):
     # print("Sum ij ji ", sum_ij_ji_mean)
     #
     #
-    # ## The following piece of code plots graphs for the difference between the sum of the cosine distances.
+    # ## The following piece of code bokeh_plots graphs for the difference between the sum of the cosine distances.
     # print("Points -> ", points)
     # print("Total points -> ", total_points)
     # plt.rcParams["figure.figsize"] = (20, 10)
@@ -911,33 +900,6 @@ def get_glove_embeds(labels):
     glove_label_embeds = np.array(glove_label_embeds)
     return glove_label_embeds
 
-def get_glove_embeds_200(labels):
-    glove_loaded = load(glove_200d_wiki_giga_path, allow_pickle=True)
-    glove_embeds = glove_loaded['arr_0']
-    glove_label_embeds = []
-    for label in labels:
-        glove_label_embeds.append(glove_embeds[int(label)])
-    glove_label_embeds = np.array(glove_label_embeds)
-    return glove_label_embeds
-
-
-def get_glove_embeds_100(labels):
-    glove_loaded = load(glove_100d_wiki_giga_path, allow_pickle=True)
-    glove_embeds = glove_loaded['arr_0']
-    glove_label_embeds = []
-    for label in labels:
-        glove_label_embeds.append(glove_embeds[int(label)])
-    glove_label_embeds = np.array(glove_label_embeds)
-    return glove_label_embeds
-
-def get_glove_embeds_50(labels):
-    glove_loaded = load(glove_50d_wiki_giga_path, allow_pickle=True)
-    glove_embeds = glove_loaded['arr_0']
-    glove_label_embeds = []
-    for label in labels:
-        glove_label_embeds.append(glove_embeds[int(label)])
-    glove_label_embeds = np.array(glove_label_embeds)
-    return glove_label_embeds
 
 def get_w2v_embeds_from_dict(labels):
     embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
@@ -1079,12 +1041,12 @@ def get_tuned_cbt_childes_w2v_embeds(labels):
 def get_residual_pretrained_w2v(labels):
     w2v_pretrained_residual_loaded = np.load(residual_pretrained_w2v_path, allow_pickle=True)
     w2v_pretrained_residual = w2v_pretrained_residual_loaded['arr_0']
-    
+
     residual_embeds = []
     for label in labels:
         residual_embeds.append(w2v_pretrained_residual[int(label)])
     residual_embeds = np.array(residual_embeds)
-    
+
     return residual_embeds
 
 
@@ -1111,7 +1073,6 @@ def get_cbt_childes_50d_embeds(labels):
 
     return child_w2v_embeds
 
-
 def get_reduced_w2v_embeds(labels, type='svd'):
     if type == 'svd':
         child_only_w2v_loaded = load(pre_w2v_svd_16_comps_path, allow_pickle=True)
@@ -1125,7 +1086,7 @@ def get_reduced_w2v_embeds(labels, type='svd'):
     child_w2v_embeds = np.array(child_w2v_embeds)
 
     return child_w2v_embeds
-    
+
 
 def get_all_ph_concat_embeds(labels):
     all_ph_padded_npz = load(all_ph_concat_padded_list, allow_pickle=True)
@@ -1137,8 +1098,6 @@ def get_all_ph_concat_embeds(labels):
 
     all_ph_concat_padded_embeds = np.array(all_ph_concat_padded_embeds)
     return all_ph_concat_padded_embeds
-
-
 
 def sep_by_prev_anim(X, y, current_type = 'inanimate', prev_type = 'animate'):
     row_idxs = []
@@ -1172,11 +1131,10 @@ def sep_by_prev_anim(X, y, current_type = 'inanimate', prev_type = 'animate'):
 
     return filtered_X
 
-
 def prep_filtered_X(X):
 
     labs = [t for t in range(0,16)]
-    np.random.shuffle(labs)  # This ensures the shuffles for each iteration.
+    np.random.shuffle(labs)
     all_l_idxs = []  # Should be of size 16 x window_size. Each list in all_l_idxs corresponds to each 'l' and has row index.
     for l in labs:
         for k in range(len(X[0][0])):
@@ -1192,9 +1150,9 @@ def prep_filtered_X(X):
         df_train = []
         for j in range(len(X[0])):
             ## will need each window
+
             X[i][j] = X[i][j].reindex(shuffle_idx)
             X[i][j] = X[i][j].reset_index()
-
             # #create new df with these indices and removing from orig
             df_test.append(X[i][j].iloc[all_l_idxs])
             df_train.append(X[i][j].drop(X[i][j].index[all_l_idxs]))
@@ -1224,5 +1182,6 @@ def prep_filtered_X(X):
         y_train.append(y_train_i)
         X_test.append(X_test_i)
         y_test.append(y_test_i)
-    
+
     return X_train, X_test, y_train, y_test
+
