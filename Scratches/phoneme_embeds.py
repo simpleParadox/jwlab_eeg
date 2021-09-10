@@ -145,6 +145,117 @@ def get_all_concat_embeds():
     return all_stim_ph_concat_list
 
 
+def get_words_ph_list():
+    """
+    Retrieve all words from the API and return only those words with phoneme length less than 7.
+    """
+    # Define packages and urls.
+    import cmudict
+    from arpabetandipaconvertor.arpabet2phoneticalphabet import ARPAbet2PhoneticAlphabetConvertor
+    import pandas as pd
+
+    # Read list of english words and remove their IPA. Store it in a dict.
+    phoneme_dict = dict()
+    for entry in cmudict.entries():
+        word, arpabet = entry
+        word = word.strip()
+        # print(arpabet)
+        arpabet = ' '.join(arpabet)
+        obj = ARPAbet2PhoneticAlphabetConvertor()
+        ipa = obj.convert_to_international_phonetic_alphabet(arpabet)
+        phoneme_dict[word] = ipa
+
+    # Now remove those words which have less than 3 phonemes and more than 6 phonemes.
+    phoneme_dict_filtered = dict()
+    for key, value in phoneme_dict.items():
+        if len(value) > 2 and len(value) < 7:
+            phoneme_dict_filtered[key] = value
+
+    # Read the similarity_aggregated.csv file and create a mapping of phonemes and ph_vectors.
+    phoneme_vectors_csv = pd.read_csv('G:\jw_lab\jwlab_eeg\\regression\phoneme_data\similarity_aggregated.csv', delimiter='\t')
+    ph_vectors_dict = dict()
+
+    for i in range(len(phoneme_vectors_csv)):
+        row = phoneme_vectors_csv.iloc[i].values
+        ph_vectors_dict[row[0]] = row[1:]
+
+    return phoneme_dict_filtered, ph_vectors_dict
+
+
+def concat_ph_many_words():
+    import numpy as np
+    word_ph_vect_dict = dict()
+    phoneme_dict_filtered, ph_vectors_dict = get_words_ph_list()
+    phonemes_set = set(ph_vectors_dict.keys())
+    for word, ipa in phoneme_dict_filtered.items():
+        # First find out the vectors for each phoneme and then concatenate.
+        ph_vector = []
+        flag = 0
+        for phoneme in ipa:
+            if phoneme not in phonemes_set:
+                flag = 1
+                break
+
+        if flag == 0:
+            for phoneme in ipa:
+                ph_vector.extend(ph_vectors_dict[phoneme])
+            max_length = 6 * 36
+            fl_len = len(ph_vector)
+            ph_vector_padded = np.pad(ph_vector, (0, max_length - fl_len), mode='constant', constant_values=(0))
+            word_ph_vect_dict[word] = ph_vector_padded
+    np.savez('G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\cmu_dict_no_stims_ph_concat.npz', word_ph_vect_dict)
+
+    data = np.load("G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\all_ph_concat_padded.npz")
+    data = data['arr_0']
+    for key, word in labels_mapping.items():
+        word_ph_vect_dict[word] = data[key]
+
+    # Now save the phoneme vectors to disk.
+    np.savez('G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\cmu_dict_no_stims_ph_concat.npz', word_ph_vect_dict)
+
+def present_in_word2vec():
+    """
+    Get the list of words that are present in word2vec.
+    """
+    # First load the model.
+
+    from gensim.models import KeyedVectors
+    model = KeyedVectors.load_word2vec_format("G:\jw_lab\jwlab_eeg\\regression\GoogleNews-vectors-negative300.bin",binary=True)  # Pretrained Word2Vec vectors.
+
+    w2v_vocab = model.vocab
+
+    cmu_dict_words_and_ph = np.load('G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\cmu_dict_no_stims_ph_concat.npz', allow_pickle=True)['arr_0'].tolist()
+
+    final_word_set = set()
+    for word in cmu_dict_words_and_ph.keys():
+        try:
+            val = w2v_vocab[word]
+            final_word_set.add(word)
+        except:
+            pass
+
+    # Now you have the list, so create two matrices, phoneme vecs and word vecs.
+    all_phoneme_vectors = []
+    all_w2v_vecs_cmu_filtered = []
+    final_word_list = list(final_word_set)
+    for word in final_word_list:
+        all_phoneme_vectors.append(cmu_dict_words_and_ph[word].tolist())
+        all_w2v_vecs_cmu_filtered.append(model.wv[word].tolist())
+
+    # Create test set.
+    stim_test_set = []
+    stim_y_true = []
+    for word in labels_mapping.values():
+        stim_test_set.append(cmu_dict_words_and_ph[word].tolist())
+        stim_y_true.append(model.wv[word])
+
+    # Now save the arrays to disk.
+    np.savez('G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\all_cmu_ph_no_stim_vecs.npz', all_phoneme_vectors)
+    np.savez('G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\\all_cmu_no_stim_word2vecs.npz', all_w2v_vecs_cmu_filtered)
+
+
+
+
 all_ph_concat_padded_list = get_all_concat_embeds()
 np.savez_compressed("G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\all_ph_concat_padded.npz", all_ph_concat_padded_list)
 
