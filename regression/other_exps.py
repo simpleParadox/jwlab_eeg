@@ -643,47 +643,67 @@ r2_values = []
 ## Define the hyperparameters.
 ridge_params = {'alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
 # This is because all the word embeddings are the same for each window.
-i = 0
-j = 0
-child = False
+# i = 0
+# j = 0
+# child = False
+#
+# if child == False:
+#     # y_train_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+#     print("child is false")
+#     y_test_w2v = get_w2v_embeds_from_dict(labels_mapping.keys())
+# else:
+#     # y_train_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
+#     print("Child is true")
+#     y_test_w2v = get_tuned_cbt_childes_w2v_embeds(labels_mapping.keys())
+# #
+# # # x_train_ph = get_all_ph_concat_embeds(y_train[i][j])
+# x_test_ph = get_all_ph_concat_embeds(labels_mapping.keys())
 
-if child == False:
-    # y_train_w2v = get_w2v_embeds_from_dict(y_train[i][j])
-    print("child is false")
-    y_test_w2v = get_w2v_embeds_from_dict(labels_mapping.keys())
-else:
-    # y_train_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
-    print("Child is true")
-    y_test_w2v = get_tuned_cbt_childes_w2v_embeds(labels_mapping.keys())
-
-# x_train_ph = get_all_ph_concat_embeds(y_train[i][j])
-x_test_ph = get_all_ph_concat_embeds(labels_mapping.keys())
-
-# Cloning the data to have duplicate instances.
-idxs = [i for i in range(0,16)]
-from sklearn.utils import resample
-temp = resample(idxs, n_samples=600)
-
-x = np.array([x_test_ph[j].tolist() for j in temp])
-y = np.array([y_test_w2v[j].tolist() for j in temp])
-
+# # Cloning the data to have duplicate instances.
+# idxs = [i for i in range(0,16)]
+# from sklearn.utils import resample
+# temp = resample(idxs, n_samples=600)
+#
+# x = np.array([x_test_ph[j].tolist() for j in temp])
+# y = np.array([y_test_w2v[j].tolist() for j in temp])
+x = np.load('G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\all_cmu_phoneme_vecs.npz', allow_pickle=True)['arr_0']
+y = np.load('G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\\all_cmu_word2vecs.npz', allow_pickle=True)['arr_0']
 xtrain,xtest, ytrain,ytest = train_test_split(x,y, test_size=0.2)
-# model = Ridge(solver='cholesky')
-model = LinearRegression()
-model.fit(xtrain, ytrain)
-r2 = model.score(xtest, ytest)
-weights_dup = model.coef_
+from sklearn.svm import LinearSVR
+from sklearn.tree import DecisionTreeRegressor
+# from sklearn.ensemble import RandomForestRegressor
+model = Ridge(solver='cholesky')
+ridge_params = {'alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+# model = LinearSVR()
+
+def calculate_residual(true_vecs, pred_vecs):
+    # Note: The arugments contain many arrays.
+    return true_vecs - pred_vecs
+
+stim_test_set = np.load('G:\jw_lab\jwlab_eeg\\regression\phoneme_embeddings\\all_ph_concat_padded.npz', allow_pickle=True)['arr_0'].tolist()
+stim_y_true_w2v = np.load('G:\jw_lab\jwlab_eeg\\regression\\w2v_embeds\\embeds_with_label_dict.npz', allow_pickle=True)['arr_0'].tolist()[0]
+stim_y_true_w2v = np.array([vector.tolist() for vector in stim_y_true_w2v.values()])
+
+model = DecisionTreeRegressor()
+model.fit(x, y)
+print(model.score(stim_test_set, stim_y_true_w2v))
+preds = model.predict(stim_test_set)
+residuals = calculate_residual(stim_y_true_w2v, preds)
 
 
-# clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
-# clf.fit(xtrain, ytrain)
-# r2 = clf.best_estimator_.score(xtest, ytest)
-# weights_dup = clf.best_estimator_.coef_
+
+model = Ridge()
+clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
+clf.fit(x, y)
+r2 = clf.best_estimator_.score(stim_test_set, stim_y_true_w2v)
+preds = clf.predict(stim_test_set)
+weights = clf.best_estimator_.coef_
+residuals = calculate_residual(stim_y_true_w2v, preds)
 
 #------------------------------------------------------------------------------------------------------------------------
 
 # Implement LOOCV
-loo = LeaveOneOut()
+
 # for train_idx, test_idx in loo.split(x_test_ph):
 #     print(train_idx)
 #     print(test_idx)
@@ -691,7 +711,8 @@ loo = LeaveOneOut()
     # y_train, y_test = y_test_w2v[train_idx], y_test_w2v[test_idx]
 
 # model = Ridge(solver='cholesky')
-model = LinearRegression()
+loo = LeaveOneOut()
+model = Ridge()
 model.fit(x_test_ph, y_test_w2v)
 r2 = model.score(x_test_ph, y_test_w2v)
 weights = model.coef_
@@ -699,11 +720,9 @@ import sklearn
 
 clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=loo.split(x_test_ph))
 clf.fit(x_test_ph, y_test_w2v)
-def calculate_residual(true_vecs, pred_vecs):
-    # Note: The arugments contain many arrays.
-    return true_vecs - pred_vecs
+
 y_pred_w2v_test = clf.predict(x_test_ph)  # Get the prediction w2v embeddings from the phonemes.
-w2v_test_res = calculate_residual(y_test_w2v, y_pred_w2v_test)
+w2v_test_res = calculate_residual(y_test_w2v, clf.predict(x_test_ph))
 # np.savez_compressed('G:\jw_lab\jwlab_eeg\\regression\w2v_embeds\\tuned_w2v_residuals.npz', w2v_test_res)
 r2 = clf.best_estimator_.score(x_test_ph, y_test_w2v)
 
