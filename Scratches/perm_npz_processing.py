@@ -33,7 +33,7 @@ def single_window_perm():
     """
     numpy_vars = {}
     i = 0
-    for np_name in glob.glob('G:\jw_lab\jwlab_eeg\\regression\permutation_test_results\\12m fine tuned res\*.np[yz]'):
+    for np_name in glob.glob('G:\jw_lab\jwlab_eeg\\regression\classification\lr\\non_perm\\12m\*.np[yz]'):
         numpy_vars[i] = np.load(np_name, allow_pickle=True)
         i += 1
 
@@ -59,9 +59,12 @@ def single_window_perm():
         for d in res:
             vals = d[0] # This gives you the dictionary which contains 50 values for all windows.
             # print(vals[wind])
-            all_wind_vals[wind].extend([np.mean(vals[wind])])
+            # all_wind_vals[wind].extend([np.mean((vals[wind]))])
+            all_wind_vals[wind].extend(vals[wind])
     #
-    # np.savez_compressed('G:\jw_lab\jwlab_eeg\\regression\permuted_npz_processed\kde\9m_fine_res_w2v_kde_null_dist.npz', all_wind_vals)
+    d = dict()
+    d[0] = all_wind_vals
+    np.savez_compressed('G:\jw_lab\jwlab_eeg\\regression\classification\lr\\non_perm\\12m_lr_50xval_1000_max_iter.npz', d)
     # Now get kernel pdfs for each window.
 
     smoothed_perms = {}
@@ -72,7 +75,7 @@ def single_window_perm():
     #
     final_res_arr = np.array(smoothed_perms)
     # Now save the 'final_res' object to disk.
-    np.savez_compressed('G:\jw_lab\jwlab_eeg\\regression\permuted_npz_processed\kde\\12m_fine_res_w2v_kde_null_dist.npz', final_res_arr)
+    np.savez_compressed('G:\jw_lab\jwlab_eeg\\regression\permuted_npz_processed\classification\lr\9m\9m_lr_animacy_50_xval_kde_1000maxiter.npz', final_res_arr)
 
 
 
@@ -84,7 +87,7 @@ def tgm_perm():
     # Load the data.
     i = 0
     numpy_tgms = {}
-    for np_name in glob.glob('G:\jw_lab\jwlab_eeg\\regression\permutation_test_results\\tgms\Across\\12_to_9m_pre_w2v_xval\*.np[yz]'):
+    for np_name in glob.glob('G:\jw_lab\jwlab_eeg\\regression\permutation_test_results\\tgms\eeg_to_ph\\12m\*.np[yz]'):
         numpy_tgms[i] = np.load(np_name, allow_pickle=True)
         i += 1
 
@@ -100,9 +103,11 @@ def tgm_perm():
 
     tgm_avg = {}
     for i in range(len(tgms)):
-        permutation = tgms[i]
+        permutation = tgms[i]#.tolist()
+        # a = permutation
+        # break
         tgm_avg[i] = np.mean(permutation, axis=0)
 
     ###### final_res_arr = np.array(tgm_avg)
     # Now save the 'final_res' object to disk.
-    np.savez_compressed('G:\jw_lab\jwlab_eeg\\regression\permuted_npz_processed\\tgms\Across\\non_kde\\12_to_9m_pre_w2v\\12_to_9m_pre_w2v_xval.npz', tgm_avg)
+    np.savez_compressed('G:\jw_lab\jwlab_eeg\\regression\permuted_npz_processed\\tgms\\eeg_to_ph\\12m_null_dist.npz', tgm_avg)
