@@ -1353,8 +1353,8 @@ def non_parametric_cluster():
     import mne
 
     # Load the scoreMean values for the two age groups.
-    results1 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\glove\\12m_glove_50_pre_50xval.npz", allow_pickle=True)['arr_0'].tolist()
-    results2 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\12m_pre_w2v_from_eeg_non_perm.npz", allow_pickle=True)['arr_0'].tolist()
+    results1 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\Across\\9-12_across_pre_w2v_from_eeg_non_perm.npz", allow_pickle=True)['arr_0'].tolist()
+    results2 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\Across\\12-9_across_pre_w2v_from_eeg_non_perm.npz", allow_pickle=True)['arr_0'].tolist()
 
 
     # Do the scoreMean calculation here.
@@ -1383,7 +1383,8 @@ def non_parametric_cluster():
     length_per_window_plt = 10  # 1200 / len(scoreMean)
 
     x_graph = np.arange(-200, 910, length_per_window_plt)
-    x_graph += 50  # NOTE: Change this based on the window size.
+    shift = 0
+    x_graph += shift  # NOTE: Change this based on the window size.
 
     largest_cluster_len = 0
     max_idx = 0
