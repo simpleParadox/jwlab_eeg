@@ -576,7 +576,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='12m')
+    plt.plot(x_graph, y_graph, 'k-', label='9m')
 
     # , markersize=10)
     ylim = [0.3, 0.8]
@@ -590,7 +590,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("12m 100-10 glove_100 from EEG optim 50xval shift-r-50ms")
+    plt.title("9m w2v detrend_order2 100-10 non-perm 40xval r-100ms")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
@@ -1353,8 +1353,8 @@ def non_parametric_cluster():
     import mne
 
     # Load the scoreMean values for the two age groups.
-    results1 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\Across\\9-12_across_pre_w2v_from_eeg_non_perm.npz", allow_pickle=True)['arr_0'].tolist()
-    results2 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\Across\\12-9_across_pre_w2v_from_eeg_non_perm.npz", allow_pickle=True)['arr_0'].tolist()
+    results1 = np.load("G:\jw_lab\jwlab_eeg\\regression\classification\lr\\non_perm\9m_lr_50xval_1000_max_iter.npz", allow_pickle=True)['arr_0'].tolist()
+    results2 = np.load("G:\jw_lab\jwlab_eeg\\regression\classification\lr\\non_perm\\12m_lr_50xval_1000_max_iter.npz", allow_pickle=True)['arr_0'].tolist()
 
 
     # Do the scoreMean calculation here.
