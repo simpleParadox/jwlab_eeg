@@ -27,7 +27,7 @@ stimuli_to_second_ipa_mapping = {'baby':23, 'bear':25, 'bird':24, 'bunny':24,
                                  'cup': 24, 'juice': 44, 'milk': 25, 'spoon': 38}
 
 # The following dictionary contains the list of all phonemes for the stimuli words. Note that the sizes might be different.
-all_phonemes_list = {'baby':[17, 23, 25, 23, 28], 'bear':[17, 25, 24, 10], 'bird':[17, 25, 19], 'bunny':[17, 15, 34, 28],
+all_phonemes_list = {'baby':[17, 23, 25, 23, 28], 'bear':[17, 25, 24, 10], 'bird':[17, 25, 39, 19], 'bunny':[17, 15, 34, 28],
                                  'cat':[30, 16, 41], 'dog':[19, 15, 11], 'duck':[19, 24, 30], 'mom': [33, 15, 33],
                                  'banana': [17, 24, 34, 16, 34, 24], 'bottle': [17, 15, 41, 24, 32], 'cookie': [30, 44, 30, 28],
                                  'cracker': [30, 10, 16, 30, 24, 10],'cup': [30, 24, 38], 'juice': [22, 44, 40],
@@ -257,7 +257,7 @@ def present_in_word2vec():
 
 
 all_ph_concat_padded_list = get_all_concat_embeds()
-np.savez_compressed("G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\all_ph_concat_padded.npz", all_ph_concat_padded_list)
+np.savez_compressed("G:\\jw_lab\\jwlab_eeg\\regression\\phoneme_embeddings\\all_ph_concat_padded_1.npz", all_ph_concat_padded_list)
 
 
 
