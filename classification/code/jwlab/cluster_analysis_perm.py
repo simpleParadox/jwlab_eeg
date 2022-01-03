@@ -576,10 +576,10 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='9m')
+    plt.plot(x_graph, y_graph, 'k-', label='12m')
 
     # , markersize=10)
-    ylim = [0.3, 0.8]
+    ylim = [0.0, 0.5]
     plt.ylim(ylim[0], ylim[1])
     # for cluster in clusters[1:]:
     #     x1 = cluster[0] * 10
@@ -590,7 +590,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("9m w2v detrend_order2 100-10 non-perm 40xval r-100ms")
+    plt.title("12m w2v from eeg no_base_no_highfilter r-100ms")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])

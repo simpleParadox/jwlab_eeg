@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.metrics.pairwise import cosine_distances
 from scipy.spatial.distance import cosine
 from scipy.fft import fft
 from scipy.signal import stft
@@ -377,7 +376,16 @@ def two_vs_two(y_test, preds):
     gcf = None  # plot_grid(grid)
     return points, total_points, points / total_points, gcf, grid
 
+def cosine_matching(y_test, preds):
+    """
+    Function to store the cosine similarity of the predictions to the true word vectors.
+    """
+    scores = []
+    for i in range(len(y_test)):
+        scores.append(cosine_similarity([y_test[i]], [preds[i]])[0][0])
 
+    assert len(scores) == len(y_test)
+    return scores
 
 def extended_2v2(y_test, preds):
     """
@@ -403,10 +411,12 @@ def extended_2v2(y_test, preds):
             s_j = y_test[j]
             s_j_pred = preds[j]
 
+            # Compute cosine distance.
             dsii = cosine(s_i, s_i_pred)
             dsjj = cosine(s_j, s_j_pred)
             dsij = cosine(s_i, s_j_pred)
             dsji = cosine(s_j, s_i_pred)
+
 
             # sum_ii_jj.append((dsii + dsjj))
             # sum_ij_ji.append((dsij + dsji))
