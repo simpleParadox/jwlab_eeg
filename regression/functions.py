@@ -376,15 +376,25 @@ def two_vs_two(y_test, preds):
     gcf = None  # plot_grid(grid)
     return points, total_points, points / total_points, gcf, grid
 
-def cosine_matching(y_test, preds):
+def cosine_matching(y_test, preds, against_mean=False):
     """
     Function to store the cosine similarity of the predictions to the true word vectors.
     """
-    scores = []
-    for i in range(len(y_test)):
-        scores.append(cosine_similarity([y_test[i]], [preds[i]])[0][0])
 
-    assert len(scores) == len(y_test)
+    scores = []
+    if against_mean == False:
+        for i in range(len(y_test)):
+            scores.append(cosine_similarity([y_test[i]], [preds[i]])[0][0])
+    else:
+        mean_vector = np.mean(y_test, axis=0)
+        print("Mean vector shape")
+        print(mean_vector.shape)
+        for i in range(len(preds)):
+            scores.append(cosine_similarity([mean_vector], [preds[i]])[0][0])
+        print(scores)
+        print("successful")
+
+    # assert len(scores) == len(y_test)
     return scores
 
 def extended_2v2(y_test, preds):
