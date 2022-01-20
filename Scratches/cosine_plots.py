@@ -1,5 +1,5 @@
 import numpy as np
-temp = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\cosine_sim_9m_results_pre_and_post_onset.npz", allow_pickle=True)
+temp = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\cosine_sim_9m_results_with_mean_ytrue_vec.npz", allow_pickle=True)
 score_iters = temp['arr_0'].tolist()
 
 window_scores = {}
@@ -41,7 +41,6 @@ np.savez_compressed("G:\jw_lab\jwlab_eeg\\regression\cosines\\processed_cosine_s
     
 
 
-
 # Plotting the cosine distance for the pre-onset window.
 import matplotlib.pyplot as plt
 import matplotlib.cm as mplcm
@@ -50,7 +49,7 @@ import numpy as np
 
 # pre_onset_data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\processed_cosine_scores_dict_9m_pre_onset.npz", allow_pickle=True)['arr_0'].tolist()
 # post_onset_data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\processed_cosine_scores_dict_9m_post_onset.npz", allow_pickle=True)['arr_0'].tolist()
-data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\processed_cosine_scores_dict_9m_pre_and_post_onset.npz", allow_pickle=True)['arr_0'].tolist()
+data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\cosine_sim_9m_results_with_mean_ytrue_vec.npz", allow_pickle=True)['arr_0'].tolist()
 x_graph = np.arange(-200, 910, 10)
 x_graph += 100
 plt.clf()
