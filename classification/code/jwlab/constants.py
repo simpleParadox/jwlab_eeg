@@ -63,3 +63,12 @@ elif (user == 'rohancc'):
     db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db2/"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
+
+elif (user=='rohanmac'):
+    cleaned_data_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/cleaned2/"
+    cleaned
+    bad_trials_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/ML_badtrials-Table 2.csv"
+    db_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/db_jennlocal/"
+    db_abs_200uv_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/db_abs_remove_200uv/"
+    # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
+    # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
