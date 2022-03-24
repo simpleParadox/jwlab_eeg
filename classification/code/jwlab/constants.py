@@ -66,7 +66,7 @@ elif (user == 'rohancc'):
 
 elif (user=='rohanmac'):
     cleaned_data_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/cleaned2/"
-    cleaned
+    cleaned_ml_mar2022_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/cleaned_ml_mar2022_band_rmbase_baseline_corr/"
     bad_trials_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/ML_badtrials-Table 2.csv"
     db_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/db_jennlocal/"
     db_abs_200uv_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/db_abs_remove_200uv/"

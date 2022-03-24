@@ -10,7 +10,7 @@ sys.path.insert(1, '/Users/simpleparadox/PycharmProjects/jwlab_eeg/classificatio
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
-from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath
+from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, cleaned_ml_mar2022_filepath
 
 
 ################################ prep data ################################
@@ -46,9 +46,9 @@ def init(age_group):
 def load_ml_data(participants):
     # read all participant csvs, concat them into one dataframe
     if participants[0][0] == '1':
-        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
+        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_ml_mar2022_filepath, s)) for s in participants]
     else:
-        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
+        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_ml_mar2022_filepath, s)) for s in participants]
 
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
     try:
