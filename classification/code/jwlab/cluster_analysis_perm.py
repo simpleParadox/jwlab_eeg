@@ -598,7 +598,6 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.show()
     plt.savefig("18-07-2021-12m 100-10 tuned_w2v_from_eeg non-perm 50iter shift-r 50ms")
 
 
