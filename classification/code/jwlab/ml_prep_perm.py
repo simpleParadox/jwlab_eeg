@@ -3,12 +3,14 @@ import random
 from numpy import copy
 import pandas as pd
 import numpy as np
+import sys
 from scipy.signal import resample
 from IPython.display import display
+sys.path.insert(1, '/Users/simpleparadox/PycharmProjects/jwlab_eeg/classification/code/')
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
-from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, cleaned_data_filepath_new_filter
+from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, cleaned_ml_mar2022_filepath
 
 
 ################################ prep data ################################
@@ -24,17 +26,17 @@ labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
 
 
 def init(age_group):
-    if age_group is 9:
+    if age_group == 9:
         # participants = ["904", "905", "906", "908", "909", "910", "912", "913", "914", "916", "917", "921", "923",
         #                 "927", "929", "930", "932"]
-        participants = ["904", "905","906", "908", "909", "910", "912", "913", "914", "916", "917", "919", "920", "921",
-                         "923", "924", "927", "929","928", "930", "932"]
+        participants = ["904", "905", "906", "908", "909", "910", "912", "913", "914", "916", "917", "919", "920", "921",
+                         "923", "924", "927", "928", "929", "930", "932"]
 
     # all
     #         participants = [ "904", "905","906", "908", "909", "912", "913", "914", "916", "917", "919", "920", "921", "923", "924", "927", "929","928", "930", "932"]
 
-    elif age_group is 12:
-        participants = ['105', '106', '107', '109', '111', '112', '115', '116', '117', '119', '120', '121', '122', '124']
+    elif age_group == 12:
+        participants = ["105", "106", "107", "109", "111", "112", "115", "116", "117", "119", "120", "121", "122", "124"]
     else:
         raise ValueError("Unsupported age group!")
 
@@ -44,18 +46,21 @@ def init(age_group):
 def load_ml_data(participants):
     # read all participant csvs, concat them into one dataframe
     if participants[0][0] == '1':
-        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
+        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_ml_mar2022_filepath, s)) for s in participants]
     else:
-        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s)) for s in participants]
+        dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_ml_mar2022_filepath, s)) for s in participants]
 
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
-    df = df.drop('E65', axis=1)
+    try:
+        df = df.drop('E65', axis=1)
+    except Exception as e:
+        print(e)
     scaler = StandardScaler()
     scaled_df = scaler.fit_transform(df.iloc[:,:-1].values)
     new_df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns[:-1])
     df = pd.concat([new_df, df['Time']], axis=1)
 
-    jenn_local_label_filepath = "G:\jw_lab\jwlab_eeg\Data\Imported\label_jennlocal\\"
+    jenn_local_label_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/label_abs_remove_200uv/"
 
     # ys = [np.loadtxt("%s%s_labels.txt" % (cleaned_data_filepath, s)).tolist()
     #       for s in participants]

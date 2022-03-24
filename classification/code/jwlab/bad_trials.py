@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 from math import isnan
-from jwlab.constants import bad_trials_filepath, db_filepath, cleaned_data_filepath
+from jwlab.constants import bad_trials_filepath, db_filepath, cleaned_data_filepath, db_abs_200uv_filepath
+db_filepath = db_abs_200uv_filepath  #NOTE: Comment this line if using the old db_filepath.
 print(bad_trials_filepath)
 print("Hello")
 bad_trial_df = pd.read_csv(bad_trials_filepath)

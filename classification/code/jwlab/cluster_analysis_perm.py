@@ -25,25 +25,26 @@ from scipy.cluster import hierarchy
 # pattern = tx.compile(['baby', 'bat', 'bad'])
 # hits = pattern.findall('The baby was scared by the bad bat.')
 # hits = ['baby', 'bat', 'bad']
-sys.path.insert(1,
-                '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
+from statsmodels.stats.multitest import multipletests
 
+sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
+sys.path.insert(1, '/Users/simpleparadox/PycharmProjects/jwlab_eeg/classification/code')
 from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg, remove_samples
 from matplotlib import pyplot as plt
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
+sys.path.insert(1, '/Users/simpleparadox/PycharmProjects/jwlab_eeg')
 from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_2v2_phonemes, extended_2v2_perm, \
     get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, \
     w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
     ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, \
     get_tuned_cbt_childes_w2v_embeds, get_all_ph_concat_embeds, \
     get_glove_embeds, get_cbt_childes_50d_embeds, get_reduced_w2v_embeds, sep_by_prev_anim, prep_filtered_X, \
-    get_residual_pretrained_w2v, get_residual_tuned_w2v, \
-    get_glove_embeds_200, get_glove_embeds_100, get_glove_embeds_50, cosine_matching
+    get_residual_pretrained_w2v, get_residual_tuned_w2v
 
 from regression.rsa_helper import make_rdm, corr_between_rdms
 
-from sklearn.linear_model import Ridge
+
 
 labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
                   4: 'cat', 5: 'dog', 6: 'duck', 7: 'mom',
@@ -112,6 +113,77 @@ def minimal_mouth_X(X):
     return [X_mod]
 
 
+
+def average_fold_accs(data):
+    result = {}
+    for key, val in data.items():
+        result[key] = np.mean(val)
+
+    return result
+
+
+def significance(h1, h0):
+    """"
+    This function calculates the p-value of the alternate hypothesis against the
+    null distribution.
+    """
+    """h1 is the alternate hypothesis. This contains the observed values for
+    each window which will then be averaged.
+    h0 is the null hypothesis. h0 will have many values for one single window.
+    The function performs the statistical test with the t-test with the bejamini hochberg correction.
+    """
+    # First we process 'h1' to average all the cross-validation folds accuracies for each window.
+    null_h = h0
+    alt_h = h1[0]
+
+    alt_h_avg = average_fold_accs(alt_h)
+
+    # Only considering the positive windows.
+
+
+
+    # """
+    # Kernel Density Estimation for smoothing the null_distribution values.
+    # """
+    # temp = stats.gaussian_kde(h0[0])
+    #
+    # # Now we perform the significance testing between the 'h1_avg' and 'h0'.
+    """
+    The p-value is calculated by finding the number of times the permuted accuracies
+    are above the observed value (true value).
+    The process is done for each window.
+    """
+
+    denom = len(null_h[0])#np.arange(15,len(alt_h_avg)))#len(null_h[0])
+    p_values_list = []  # Stores the window based p-values against the null distribution.
+    for window in range(15, len(alt_h_avg)):
+        obs_score = alt_h_avg[window]
+        permute_scores = null_h[window]
+        count = 0
+        # Now count how many of the permute scores are >= obs_score.
+        for j in range(len(permute_scores)):
+            if permute_scores[j] > obs_score:
+                count += 1
+
+        p_value = count / denom
+        p_values_list.append(p_value)
+
+    # Implementing the Benjamini-Hochberg correction.
+    # First have an index_array just in case.
+    idxs = [i for i in range(15, len(alt_h_avg))]
+    # Sort the p_values and idxs in ascending order.
+    p_vals_list_asc, p_vals_idx_sort = (list(t) for t in zip(*sorted(zip(p_values_list, idxs))))
+    p_vals_asc_rank = [i for i in range(len(alt_h_avg))]
+
+    reject, pvals_corrected, alph_sidak, alph_bonf = multipletests(p_vals_list_asc, is_sorted=True, method='fdr_by') # You can change the alpha=0.05 to 0.01 for a stricter condition.
+
+    p_vals_idx_sort = np.array(p_vals_idx_sort)
+
+    return reject, pvals_corrected, p_vals_idx_sort
+
+
+
+
 def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config,
                                type='simple', residual=False, child_residual=False):
     print("Cluster analysis procedure")
@@ -119,7 +191,6 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
     sampl_iter_word_pairs_2v2 = []
     results = {}
-    cv_sim_results = []
     animacy_results = {}
     preds_results = {}
     # null_dist_results = []
@@ -127,17 +198,15 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     flag = 0
     w2v_res_list = []
     cbt_res_list = []
-    r2_train_values = []
-    r2_test_values = []
 
     if residual == True:
         # Calculate the residual phoneme vectors here by calling the function.
-        print('Calculating residuals')
         w2v_residuals, r2 = cv_all_ph_concat_padded_residual_mod(child=child_residual)
+
+
 
     for i in range(sampling_iterations):
         print("Sampling iteration: ", i)
-        dataset_loaded = 0
         if averaging == "permutation":
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config,
                                                       downsample_num=1000)
@@ -149,11 +218,10 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # temp_results = cross_validaton_averaging(X_train, X_test, y_train, y_test, useRandomizedLabel)
 
         elif averaging == "average_trials_and_participants":
+            flag = 0
 
-            if dataset_loaded == 0:
-                X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
-                                                          sliding_window_config, downsample_num=1000)
-                dataset_loaded = 1
+            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
+                                                      sliding_window_config, downsample_num=1000)
             # X = remove_samples(X) # Use only for the 9 month olds.
             # X = minimal_mouth_X(X)
 
@@ -171,8 +239,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 for i in range(50):
                     X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel,
                                                                          train_only=False, test_size=0.2)
-                    cv_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(
-                        X_train, y_train, X_test, y_test)
+                    temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested( X_train, y_train, X_test, y_test)
 
                     # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test)
 
@@ -180,26 +247,17 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
                 # Process temp_results_list to obtain a single "temp_results" list.
                 temp_results = process_temp_results(temp_results_list)
-                # temp_results
 
             else:
                 # Non-permuted test.
-                print('Simple')
                 X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False,
-                                                                     test_size=0.20)
+                                                                     test_size=0.2)
+                if residual == True:
+                    temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, w2v_residuals)
+                else:
+                    temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test)
 
-                # if residual == True:
-                #     print('Residual is true')
-                # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, w2v_residuals)
-                # else:
-                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(
-                    X_train, y_train, X_test, y_test)
-                cv_sim_results.append(temp_results)
-
-                # temp_results, temp_diag_tgm, word_pairs_2v2_sampl, r2_train, r2_test = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test, child=True)
-                # r2_train_values.append(r2_train)
-                # r2_test_values.append(r2_test)
-
+                # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test)
                 # w2v_res, cbt_res,  = cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test)
 
             # w2v_res_list.append(w2v_res)
@@ -218,12 +276,9 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             if sampling_iterations == 0:
                 print("Warning: This does not do fold validation")
         elif averaging == "tgm":
-            # TGM within group.
             print('TGM')
-            if dataset_loaded == 0:
-                X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
-                                                          sliding_window_config, downsample_num=1000)
-                dataset_loaded = 1
+            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
+                                                      sliding_window_config, downsample_num=1000)
 
             if type == 'permutation':
                 # The split of the dataset into train and test set happens more than once here for each permuted label assignment.
@@ -232,25 +287,17 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 for i in range(50):
                     X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel,
                                                                          train_only=False, test_size=0.2)
-                    tgm_results_res = cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False)
-                    temp_results_list.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
+                    tgm_results_perm = cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False)
+                    temp_results_list.append(tgm_results_perm)  # The temp_results is expected to be a square matrix.
                 # Process temp_results_list to obtain a single "temp_results" list.
                 temp_tgm_results = process_permuted_tgm_res(temp_results_list)
                 tgm_results.append(temp_tgm_results)
-            else:
-                print('Simple')
-                X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False,
-                                                                     test_size=0.2)
-                tgm_results_res = cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False)
-                tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
         elif averaging == 'across':
-            print('Across')
             # Other group was loaded before.
-            age_group_1 = 12
-            age_group_2 = 9
+            age_group_1 = 9
+            age_group_2 = 12
             X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels",
                                                               sliding_window_config, downsample_num=1000)
-            num_win = num_win_1
             X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel,
                                                                          train_only=True, test_size=0)
             X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels",
@@ -259,18 +306,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel,
                                                                          train_only=False, test_size=0.9)
 
-            if type == 'tgm':
-                print(type)
-                temp_results = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=False)
-                tgm_results.append(temp_results)
-            else:
-                print(type)
-                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(
-                    X_train_1, y_train_1, X_test_2, y_test_2)
-                # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg(X_train_1, X_test_2, y_train_1, y_test_2, child=False)
-
-
-
+            temp_results = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2)
+            tgm_results.append(temp_results)
 
 
 
@@ -312,34 +349,29 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     #         else:
     #             results[i][j] = temp_results[i][j]
 
-    # To store the cosine_matching function results.
-    np.savez_compressed(
-        "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/cosines/cosine_sim_9m_results_pre_and_post_onset.npz",
-        cv_sim_results)
-
-    # NOTE: Next three lines for storing the .npz arrays.
     # perm_results = np.array(results)
     # timestr = time.strftime("%Y%m%d-%H%M%S")
-    # try:
-    #     np.savez_compressed(f'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/non_permuted_results/9m/no_baseline_no_highfilter_nodetrend/12m_{timestr}.npz', perm_results)
-    # except:
-    #     print("Couldn't save file")
+    # # filename = date + '.npz'
+    # np.savez_compressed(f'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/12m perm res/{timestr}.npz', perm_results)
     # else:
     # Averaging was of type 'tgm'.
-    # NOTE: The following are for TGMs only (non-permuted).
-    # Calculate average of all the matrices across 'n' sampling iterations.
+    ## Calculate average of all the matrices across 'n' sampling iterations.
+    ## For only non-permutated labels.
     # final_tgm = np.mean(tgm_results, axis=0)
     # # Save the tgm in a csv file.
     # step_size = sliding_window_config[3]
     # ind = np.arange(-150, 1050, step_size).tolist()
     # cols = np.arange(-150, 1050, step_size).tolist()
     # df = pd.DataFrame(data=final_tgm, index=ind, columns=cols)
-    # df.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results/detrend/masked_trial/scaled_later/9m_masked_detrend_pre_onset_True_order_20_scale_later.csv")
+    # df.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results/12m_tgm_res_w2v-100-10_40iters.csv")
+    # For only permutated labels TGM.
+    perm_results = np.array(tgm_results)
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    # filename = date + '.npz'
+    np.savez_compressed(f'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/tgms/9m/{timestr}.npz', perm_results)
 
-    # NOTE: This following code section is only for TGMs permutated labels.
-    # perm_results = np.array(tgm_results)
-    # timestr = time.strftime("%Y%m%d-%H%M%S")
-    # np.savez_compressed(f'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/tgms/eeg_to_ph/Across/12m_to_9m/{timestr}.npz', perm_results)
+    # Save the 'null_dist' in the significance_testing directory.
+    # np.savez_compressed('/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code/jwlab/significance_testing/null_dist_results_9_10x3.npz', null_dist_results)
 
     # For predicting animacy from predictions.
     # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(animacy_results, num_win, num_folds)
@@ -357,13 +389,10 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     # max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
 
     # # # dendrogram(np.mean(w2v_res_list, axis=0))
-    # # # ## REMOVE FOR NULL FUNCTION
+    # # ## REMOVE FOR NULL FUNCTION
     # if len(sliding_window_config[2]) == 1:
-    #     print('R2 train values: ', r2_train_values)
-    #     print('R2 test values: ', r2_test_values)
     #     print("Results:", results)
     #     createGraph(results, t_mass_pos, adj_clusters_pos)
-
     #     # # word_pair_graph(sampl_iter_word_pairs_2v2)
     #     # print(animacy_results)
     #     # createGraph(animacy_results, tvalues_pos, adj_clusters_pos)
@@ -527,18 +556,18 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     # Done: Find the above chance accuracy x1 and x2 values for shading. Do you really need the tvalues_pos?
     # You need tvalues_pos if you are shading the region with max t-value. This might be a good idea.
     # It also might be a good idea to save the results somewhere to avoid rerunning the experiments everytime.
-    # max_pos_tvalue_idx = t_mass_pos.index(max(t_mass_pos)) - 1
+    max_pos_tvalue_idx = t_mass_pos.index(max(t_mass_pos)) - 1
     # # # print("max_pos_tvalue_idx: ", max_pos_tvalue_idx)
     # # # print("clusters_pos: ", clusters_pos)
     # # print("adj_clusters_pos: ", adj_clusters_pos)
-    # x1 = adj_clusters_pos[max_pos_tvalue_idx][0] + 100
-    # x2 = adj_clusters_pos[max_pos_tvalue_idx][-1] + 100
+    x1 = adj_clusters_pos[max_pos_tvalue_idx][0] + 50
+    x2 = adj_clusters_pos[max_pos_tvalue_idx][-1] + 50
 
     # Running the following line will fail if h1 and h0 are not initialized.
     # h0 needs to be initialized for many permutation iterations.
-    # reject, pvals_corrected, p_vals_idx_sort = significance(h1, h0)
-    # dot_idxs = p_vals_idx_sort[reject]
-    # x_dots = x_graph[dot_idxs]
+    reject, pvals_corrected, p_vals_idx_sort = significance(h1, h0)
+    dot_idxs = p_vals_idx_sort[reject]
+    x_dots = x_graph[dot_idxs]
 
     # Make sure to change this index to which you wanna retrieve.
     # pink_clusters = [list(i) for i in mit.consecutive_groups(sorted(x_graph[p_vals_idx_sort[:27]] / 10))]
@@ -548,8 +577,9 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='9m')
+    plt.plot(x_graph, y_graph, 'k-', label='12m')
 
+    # , markersize=10)
     ylim = [0.3, 0.8]
     plt.ylim(ylim[0], ylim[1])
     # for cluster in clusters[1:]:
@@ -561,14 +591,14 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("9m w2v from eeg no_base_no_highfilter r-100ms")
+    plt.title("12m 100-10 glove_100 from EEG optim 50xval shift-r-50ms")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("9m w2v from eeg reject_asr 30iters")
+    plt.savefig("18-07-2021-12m 100-10 tuned_w2v_from_eeg non-perm 50iter shift-r 50ms")
 
 
 def shuffle_labels(y_train, y_test):
@@ -696,19 +726,18 @@ def cv_all_ph_concat_padded_residual_mod(child=False):
     scoring = 'neg_mean_squared_error'
     r2_values = []
 
+
     ## Define the hyperparameters.
-    ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+    ridge_params = {'alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
     # This is because all the word embeddings are the same for each window.
     i = 0
     j = 0
 
     if child == False:
         # y_train_w2v = get_w2v_embeds_from_dict(y_train[i][j])
-        print("child is false")
         y_test_w2v = get_w2v_embeds_from_dict(labels_mapping.keys())
     else:
         # y_train_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
-        print("Fine-tuned")
         y_test_w2v = get_tuned_cbt_childes_w2v_embeds(labels_mapping.keys())
 
     # x_train_ph = get_all_ph_concat_embeds(y_train[i][j])
@@ -719,10 +748,11 @@ def cv_all_ph_concat_padded_residual_mod(child=False):
     # for train_idx, test_idx in loo.split(x_test_ph):
     #     print(train_idx)
     #     print(test_idx)
-    # X_train, X_test = x_test_ph[train_idx], x_test_ph[test_idx]
-    # y_train, y_test = y_test_w2v[train_idx], y_test_w2v[test_idx]
+        # X_train, X_test = x_test_ph[train_idx], x_test_ph[test_idx]
+        # y_train, y_test = y_test_w2v[train_idx], y_test_w2v[test_idx]
 
     model = Ridge()
+    import sklearn
 
     clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=loo.split(x_test_ph))
     clf.fit(x_test_ph, y_test_w2v)
@@ -760,7 +790,7 @@ def cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test, child=Fal
     # This is because all the word embeddings are the same for each window.
     i = 0
     j = 0
-    # print(y_train[i][j])
+
     if child == False:
         y_train_w2v = get_w2v_embeds_from_dict(y_train[i][j])
         y_test_w2v = get_w2v_embeds_from_dict(y_test[i][j])
@@ -780,9 +810,6 @@ def cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test, child=Fal
     clf.fit(x_train_ph, y_train_w2v)
     y_pred_w2v_test = clf.predict(x_test_ph)  # Get the prediction w2v embeddings from the phonemes.
     y_pred_w2v_train = clf.predict(x_train_ph)
-
-    r2_train = clf.best_estimator_.score(x_train_ph, y_train_w2v)
-    r2_test = clf.best_estimator_.score(x_test_ph, y_test_w2v)
 
     # clf_glove = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=12, cv=5)
     # clf_glove.fit(x_train_ph, y_train_glove)
@@ -805,9 +832,10 @@ def cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test, child=Fal
     # cbt_test_res = calculate_residual(y_test_cbt, y_pred_cbt_test)
 
     # return w2v_test_res#, cbt_test_res  # This can be changed according to what you want (for w2v or for cbt).
-    return w2v_train_res, w2v_test_res, r2_train, r2_test
+    return w2v_train_res, w2v_test_res
     # return cbt_train_res, cbt_test_res
     # return glove_train_res, glove_test_res
+
 
 
 def cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, residual_vecs):
@@ -823,7 +851,8 @@ def cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, residual_vecs):
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
     #
     # w2v_train_res, w2v_test_res = cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test, child=child)
-    w2v_test_res = residual_vecs  # Because it's only 16 words.
+    w2v_test_res = residual_vecs # Because it's only 16 words.
+
 
     for i in range(len(X_train)):
         temp_results = {}
@@ -886,7 +915,6 @@ def cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, residual_vecs):
 
     return results, tgm_matrix_temp, all_word_pairs_2v2
 
-
 def cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test, child=False):
     # First calculate the residuals. Train on ph, test on w2v, then get w2v residuals.
     results = []
@@ -898,8 +926,8 @@ def cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test, child=False):
 
     ## Define the hyperparameters.
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
-    w2v_train_res, w2v_test_res, r2_train, r2_test = cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test,
-                                                                                      child=child)
+    #
+    w2v_train_res, w2v_test_res = cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test, child=child)
 
     for i in range(len(X_train)):
         temp_results = {}
@@ -935,7 +963,7 @@ def cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test, child=False):
             # w2v_test_res = calculate_residual(y_test_w2v, y_pred_w2v_test)
 
             # Now we train on EEG to predict the residuals from Word2Vec embeddings which were predicted from the phoneme embeddings.
-            model_res = Ridge()
+            model_res = Ridge(solver='cholesky')
 
             clf_res = GridSearchCV(model_res, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
 
@@ -959,7 +987,7 @@ def cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test, child=False):
 
         results.append(temp_results)
 
-    return results, tgm_matrix_temp, all_word_pairs_2v2, r2_train, r2_test
+    return results, tgm_matrix_temp, all_word_pairs_2v2
 
 
 def monte_carlo_animacy_from_vectors(y_vectors):
@@ -993,11 +1021,8 @@ def monte_carlo_animacy_from_vectors(y_vectors):
 
 
 def cross_validaton_nested(X_train, y_train, X_test, y_test):
-    print("Calling cross_validaton_nested")
     results = []
     preds = []
-    global_sim_results = []
-
     animacy_results = []
     tgm_matrix_temp = np.zeros((120, 120))
     # scoring = 'accuracy'
@@ -1009,7 +1034,6 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
     all_word_pairs_2v2 = {}
     for i in range(len(X_train)):
         temp_results = {}
-        sim_results = {}
         temp_preds = {}
         temp_animacy_results = {}
         for j in range(len(X_train[i])):
@@ -1024,46 +1048,20 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             # model = LinearSVC(C=1e-9, max_iter=1000)
 
             # Get pretrained word2vec google news embeddings.
-            y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
-            y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
-
-            # Get phoneme vectors all ph concat.
-            # y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
-            # y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
+            # y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+            # y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
 
             # Get tuned w2v vectors on CBT and Childes. 1000 epochs during the fine-tuning process.
-            # y_train_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
-            # y_test_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_test[i][j])
-
-            # Get residual pretrained w2v embeddings.
-            # print('Getting pretrained residuals')
-            # y_train_labels_w2v = get_residual_pretrained_w2v(y_train[i][j])
-            # y_test_labels_w2v = get_residual_pretrained_w2v(y_test[i][j])
-
-            # Get residual tuned w2v embeddings.
-            # print('Getting tuned residuals')
-            # y_train_labels_w2v = get_residual_tuned_w2v(y_train[i][j])
-            # y_test_labels_w2v = get_residual_tuned_w2v(y_test[i][j])
+            y_train_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
+            y_test_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_test[i][j])
 
             # The following functions retrieve the embeddings of size 16x16 (SVD/PCA).
             # y_train_labels_w2v = get_reduced_w2v_embeds(y_train[i][j], type='svd')
             # y_test_labels_w2v = get_reduced_w2v_embeds(y_test[i][j], type='svd')
 
-            # Get glove embeddings here - 300 dimensions.
+            # Get glove embeddings here.
             # y_train_labels_w2v = get_glove_embeds(y_train[i][j])
             # y_test_labels_w2v = get_glove_embeds(y_test[i][j])
-
-            # Get glove embeddings here - 200 dimensions.
-            # y_train_labels_w2v = get_glove_embeds_200(y_train[i][j])
-            # y_test_labels_w2v = get_glove_embeds_200(y_test[i][j])
-
-            # # Get glove embeddings here - 100 dimensions.
-            # y_train_labels_w2v = get_glove_embeds_100(y_train[i][j])
-            # y_test_labels_w2v = get_glove_embeds_100(y_test[i][j])
-
-            # # Get glove embeddings here - 50 dimensions.
-            # y_train_labels_w2v = get_glove_embeds_50(y_train[i][j])
-            # y_test_labels_w2v = get_glove_embeds_50(y_test[i][j])
 
             # One-hot vectors here.
             # y_train_labels = get_phoneme_classes(y_train[i][j])
@@ -1096,16 +1094,9 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             best_alphas.append(clf.best_params_)
             y_pred = clf.predict(X_test[i][j])
 
-            # Calculating cosine similarity between the predicted and the true word vectors.
-            similarities = cosine_matching(y_pred, y_test_labels_w2v, against_mean=True)
-            if j in sim_results.keys():
-                sim_results[j] = similarities
-            else:
-                sim_results[j] = similarities
-
             # Many scoring functions.
 
-            # points, total_points, testScore, gcf, grid, word_pairs = extended_2v2(y_test_labels_w2v, y_pred)
+            points, total_points, testScore, gcf, grid, word_pairs = extended_2v2(y_test_labels_w2v, y_pred)
             # points, total_points, testScore, gcf, grid = w2v_across_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid= w2v_within_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
@@ -1133,21 +1124,17 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             # else:
             #     temp_animacy_results[j] = [animacy_score]
 
-            # Uncomment the next five lines when using the 2v2 test.
-            # if j in temp_results.keys():
-            #     temp_results[j] += [testScore]
-            # else:
-            #     temp_results[j] = [testScore]
+            if j in temp_results.keys():
+                temp_results[j] += [testScore]
+            else:
+                temp_results[j] = [testScore]
 
-        # results.append(temp_results)
-
-        global_sim_results.append(sim_results)
-
+        results.append(temp_results)
         # preds.append(temp_preds)
         # animacy_results.append(temp_animacy_results)
-    # print(best_alphas)
+    print(best_alphas)
 
-    return global_sim_results, animacy_results, preds, tgm_matrix_temp, all_word_pairs_2v2
+    return results, animacy_results, preds, tgm_matrix_temp, all_word_pairs_2v2
 
 
 def cross_validaton_nested_concat(X_train, y_train, X_test, y_test):
@@ -1180,9 +1167,9 @@ def cross_validaton_nested_concat(X_train, y_train, X_test, y_test):
             # y_test_labels = get_phoneme_classes(y_test[i][j])
 
             # Get first sim_agg embeddings here.
-            # y_train_labels_ph = get_sim_agg_first_embeds(y_train[i][j])
-            # y_test_labels_ph = get_sim_agg_first_embeds(y_test[i][j])
-            # which_phoneme = 1
+            y_train_labels_ph = get_sim_agg_first_embeds(y_train[i][j])
+            y_test_labels_ph = get_sim_agg_first_embeds(y_test[i][j])
+            which_phoneme = 1
 
             # Get second sim_agg embeddings here
             # y_train_labels_ph = get_sim_agg_second_embeds(y_train[i][j])
@@ -1246,18 +1233,16 @@ def cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False
         for j in range(len(X_train[i])):
             if res == False:
                 y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
-                # y_train_labels = get_all_ph_concat_embeds(y_train[i][j])
             else:
-                # y_train_labels, y_test_labels = cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test, child=child)
-                pass
+                y_train_labels, y_test_labels = cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test,
+                                                                                 child=child)
             model = Ridge()
-            clf = GridSearchCV(model, ridge_params, scoring='neg_mean_squared_error', n_jobs=-1, cv=5)
+            clf = GridSearchCV(model, ridge_params, scoring='neg_mean_squared_error', n_jobs=10, cv=5)
             clf.fit(X_train[i][j], y_train_labels)
 
             for k in range(len(X_test[i])):
                 if res == False:
                     y_test_labels = get_w2v_embeds_from_dict(y_test[i][k])
-                    # y_test_labels = get_all_ph_concat_embeds(y_test[i][k])
                 y_pred = clf.predict(X_test[i][k])
                 points, total_points, testScore, gcf, grid, word_pairs = extended_2v2(y_test_labels, y_pred)
 
@@ -1358,3 +1343,70 @@ def get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg):
     print("The max absolute t mass is: {0}\n".format(max_abs_tmass))
 
     return max_abs_tmass, t_mass_pos, t_mass_neg
+
+
+
+
+def non_parametric_cluster():
+    from mne.stats import permutation_cluster_test
+    from mne.stats import permutation_cluster_1samp_test
+    import mne
+
+    # Load the scoreMean values for the two age groups.
+    results1 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\Across\\9-12_across_pre_w2v_from_eeg_non_perm.npz", allow_pickle=True)['arr_0'].tolist()
+    results2 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\\Across\\12-9_across_pre_w2v_from_eeg_non_perm.npz", allow_pickle=True)['arr_0'].tolist()
+
+
+    # Do the scoreMean calculation here.
+    # scoreMean1 = []
+    # scoreMean2 = []
+    # for i in range(len(results1)):
+    #     for j in range(len(results1[i])):
+    #         scoreMean1.append(round(np.mean(results1[i][j]), 4))
+    # for i in range(len(results2)):
+    #     for j in range(len(results2[i])):
+    #         scoreMean2.append(round(np.mean(results2[i][j]), 4))
+    #
+    scoreMean1 = [v for v in results1[0].values()]
+    scoreMean2 = [v for v in results2[0].values()]
+    scoreMean1 = np.array(scoreMean1)
+    temp1 = scoreMean1.T
+    scoreMean2 = np.array(scoreMean2)
+    temp2 = scoreMean2.T
+    # X = [temp1, temp2]
+    # f_obs, clusters, cluster_pv, h0 = permutation_cluster_test(X, verbose=True, n_permutations=10000) # By default this uses the F-statistic
+
+    Y = scoreMean1 - scoreMean2
+    # The cluster permutation test takes in the difference and then does the t-test internally on that.
+    t_obs, clusters, cluster_pv, h0 = permutation_cluster_1samp_test(Y.T, verbose=True, n_permutations=10000) # This uses the T-statistic
+
+    # Now retrieve the start and end indices of the largest window.
+    length_per_window_plt = 10  # 1200 / len(scoreMean)
+
+    x_graph = np.arange(-200, 910, length_per_window_plt)
+    shift = 0
+    x_graph += shift  # NOTE: Change this based on the window size.
+
+    largest_cluster_len = 0
+    max_idx = 0
+    for c_idx in range(len(clusters)):
+        if len(clusters[c_idx][0]) >= largest_cluster_len:
+            largest_cluster_len = len(clusters[c_idx][0])
+            max_idx = c_idx
+
+    start = clusters[max_idx][0][0]
+    end = clusters[max_idx][0][-1]
+    print(x_graph[start])
+    print(x_graph[end])
+
+
+
+
+
+
+
+# Trying to implement Binomial test to check my understanding.
+# import scipy
+# scipy.stats.binom_test(, 50, 0.5, alternative='greater')
+
+
