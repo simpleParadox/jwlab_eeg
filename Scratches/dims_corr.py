@@ -24,7 +24,7 @@ for window in range(len(avg_window_pred)):
     pred_vector = avg_window_pred[window]
     window_corr = []
     for j in range(300):
-        corr = st.pearsonr(pred_vector[:, j], true_vecs[:, j])
+        corr = st.pearsonr(pred_vector[:, j], true_vecs[:, j])[0]
         window_corr.append(corr)
     column_corrs.append(window_corr)
 
@@ -32,5 +32,34 @@ for window in range(len(avg_window_pred)):
 # Now make a violin plot. Use Seaborn?
 import seaborn as sns
 import matplotlib.pyplot as plt
+plt.clf()
 sns.violinplot(data=column_corrs)
+plt.xticks([])
+plt.ylim(-1,1)
+plt.xlabel('Window')
+plt.show()
+
+# TODO: Implement mean correlation (for each dimension) and then plot it.
+# See how the correlation changes as time progress.
+# Denote the onset with a vertical line.
+
+sem_list = []
+corr_mean_list = []
+for corr_list in column_corrs:
+    sem_list.append(st.sem(corr_list))
+    corr_mean_list.append(np.mean(corr_list))
+sem_list = np.array(sem_list)
+corr_mean_list = np.array(corr_mean_list)
+
+plt.clf()
+length_per_window_plt = 10  # 1200 / len(scoreMean)
+x_graph = np.arange(-200, 910, length_per_window_plt)
+x_graph += 100
+plt.plot(x_graph, corr_mean_list, color='black')
+plt.fill_between(x_graph, corr_mean_list + sem_list, corr_mean_list - sem_list, color='C0', alpha=0.5)
+plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
+plt.axvline(0, linestyle='--')
+plt.axhline(0, linestyle='--')
+plt.xlabel("Window")
+plt.ylabel("Correlation")
 plt.show()

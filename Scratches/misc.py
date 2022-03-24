@@ -156,6 +156,14 @@ def significance(h1, h0):
     h0 is the null hypothesis. h0 will have many values for one single window.
     The function performs the statistical test with the t-test with the bejamini hochberg correction.
     """
+
+    # The following lines are for debugging purposes only.
+    h1 = np.load("G:\jw_lab\jwlab_eeg\\regression\\non_permuted_results\9m_pre_w2v_from_eeg_non_perm.npz",
+                 allow_pickle=True)['arr_0'].tolist()
+    h0 = np.load("G:\jw_lab\jwlab_eeg\\regression\permuted_npz_processed\kde\9m_pre_w2v_kde_null_dist.npz",
+                 allow_pickle=True)['arr_0'].tolist()
+
+
     # First we process 'h1' to average all the cross-validation folds accuracies for each window.
     null_h = h0
     alt_h = h1[0]
@@ -169,17 +177,24 @@ def significance(h1, h0):
     The process is done for each window.
     """
 
+    all_perm_accs = []
+    for perm_accs in h0.values():
+        all_perm_accs.extend(perm_accs)
+
     denom = len(null_h[0])
+    # denom = len(all_perm_accs)
+    count_dict = {}
     p_values_list = []  # Stores the window based p-values against the null distribution.
     for window in range(len(alt_h_avg)):
         obs_score = alt_h_avg[window]
         permute_scores = null_h[window]
+        # permute_scores = all_perm_accs
         count = 0
         # Now count how many of the permute scores are >= obs_score.
         for j in range(len(permute_scores)):
             if permute_scores[j] > obs_score:
                 count += 1
-
+        count_dict[window] = count
         p_value = count / denom
         p_values_list.append(p_value)
 
@@ -190,7 +205,22 @@ def significance(h1, h0):
     p_vals_list_asc, p_vals_idx_sort = (list(t) for t in zip(*sorted(zip(p_values_list, idxs))))
     p_vals_asc_rank = [i for i in range(len(alt_h_avg))]
 
-    reject, pvals_corrected, alph_sidak, alph_bonf = multipletests(p_vals_list_asc, is_sorted=True, method='fdr_bh')
+    reject, pvals_corrected, alph_sidak, alph_bonf = multipletests(p_vals_list_asc, is_sorted=True, method='fdr_by', alpha=0.01)
+
+    # The following line is for debugging.
+    reject1, pvals_corrected1, alph_sidak, alph_bonf = multipletests(p_values_list, is_sorted=False, method='fdr_by',alpha=0.01)
+    p_values_uncorrected = np.array(p_values_list)
+
+    plt.clf()
+    sns.set_style("whitegrid")
+    sns.lineplot(np.arange(len(p_values_uncorrected)), p_values_uncorrected, label="Uncorrected")
+    sns.lineplot(np.arange(len(pvals_corrected1)), pvals_corrected1, label="Corrected", alpha=0.7)
+    plt.title("9m pre-w2v from EEG Uncorrected vs Corrected p-values")
+    plt.xlabel("Window")
+    plt.ylabel("p-value")
+    plt.legend()
+    plt.show()
+
 
     p_vals_idx_sort = np.array(p_vals_idx_sort)
 

@@ -519,7 +519,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     length_per_window_plt = 10  # 1200 / len(scoreMean)
 
     x_graph = np.arange(-200, 910, length_per_window_plt)
-    x_graph += 100  # NOTE: Change this based on the window size.
+    x_graph += 50  # NOTE: Change this based on the window size.
     y_graph = scoreMean
 
     stdevplt = np.array(stdev)
@@ -568,7 +568,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("08-12-2021 9m w2v from eeg no_base_no_highfilter r-100ms 20iters")
+    plt.savefig("9m w2v from eeg reject_asr 30iters")
 
 
 def shuffle_labels(y_train, y_test):

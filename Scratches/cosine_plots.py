@@ -1,44 +1,59 @@
+import glob
 import numpy as np
-temp = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\cosine_sim_9m_results_with_mean_ytrue_vec.npz", allow_pickle=True)
-score_iters = temp['arr_0'].tolist()
+word_scores_all = []
+for f in glob.glob("G:\jw_lab\jwlab_eeg\\regression\cosines\permutation\9m\\*npz"):
+    temp = np.load(f, allow_pickle=True)#  np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\permutation\9m\cosine_sim_9m_perm_10_iters_20220117-234146.npz", allow_pickle=True)
+    score_iters = temp['arr_0'].tolist()
 
-window_scores = {}
-for run, scores in enumerate(score_iters):
-    window_scores[run] = scores[0]
+    window_scores = {}
+    for run, scores in enumerate(score_iters):
+        window_scores[run] = scores[0]
 
-appended_window_scores = {}
-for i in range(len(window_scores[0])):
-    appended_window_scores[i] = []
+    appended_window_scores = {}
+    for i in range(len(window_scores[0])):
+        appended_window_scores[i] = []
 
-for window in range(len(window_scores[0])):
-    for run, scores in window_scores.items():
-        window_all_word_scores = scores[window]  # Get the scores for that window.
-        appended_window_scores[window].append([window_all_word_scores])
+    for window in range(len(window_scores[0])):
+        for run, scores in window_scores.items():
+            window_all_word_scores = scores[window]  # Get the scores for that window.
+            appended_window_scores[window].append([window_all_word_scores])
 
-global_flat_wind_scores = []
-for key, wind_score in appended_window_scores.items():
-    a = wind_score
-    flattened_wind_score = []
-    for j in range(len(a)):
-        flattened_wind_score.append(a[0][0])
-    global_flat_wind_scores.append(np.mean(flattened_wind_score, axis=0))
+    global_flat_wind_scores = []
+    for key, wind_score in appended_window_scores.items():
+        a = wind_score
+        flattened_wind_score = []
+        for j in range(len(a)):
+            flattened_wind_score.append(a[0][0])
+        global_flat_wind_scores.append(np.mean(flattened_wind_score, axis=0))
 
-labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
-                  4: 'cat', 5: 'dog', 6: 'duck', 7: 'mom',
-                  8: 'banana', 9: 'bottle', 10: 'cookie',
-                  11: 'cracker', 12: 'cup', 13: 'juice',
-                  14: 'milk', 15: 'spoon'}
+    labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
+                      4: 'cat', 5: 'dog', 6: 'duck', 7: 'mom',
+                      8: 'banana', 9: 'bottle', 10: 'cookie',
+                      11: 'cracker', 12: 'cup', 13: 'juice',
+                      14: 'milk', 15: 'spoon'}
 
-final_word_scores = {}
-for i in range(len(labels_mapping)):
-    final_word_scores[labels_mapping[i]] = []
-for i in range(len(labels_mapping)):
-    for j in range(len(global_flat_wind_scores)):
-        final_word_scores[labels_mapping[i]].append(global_flat_wind_scores[j][i])
+    final_word_scores = {}
+    for i in range(len(labels_mapping)):
+        final_word_scores[labels_mapping[i]] = []
+    for i in range(len(labels_mapping)):
+        for j in range(len(global_flat_wind_scores)):
+            final_word_scores[labels_mapping[i]].append(global_flat_wind_scores[j][i])
+    word_scores_all.append(final_word_scores)
+
+word_dict = {}
+for word in labels_mapping.values():
+    word_dict[word] = []
+
+for word in labels_mapping.values():
+    for word_score in word_scores_all:
+        word_dict[word].append(word_score[word])
+
+avg_word_dict = {}
+for word in labels_mapping.values():
+    avg_word_dict[word] = np.mean(word_dict[word], axis=0).tolist()
 
 
-np.savez_compressed("G:\jw_lab\jwlab_eeg\\regression\cosines\\processed_cosine_scores_dict_9m_pre_and_post_onset.npz", final_word_scores)
-    
+np.savez_compressed("G:\jw_lab\jwlab_eeg\\regression\cosines\\processed_perm_avg_cosine_scores_9m_pre_and_post_onset.npz", avg_word_dict)
 
 
 # Plotting the cosine distance for the pre-onset window.
@@ -49,7 +64,7 @@ import numpy as np
 
 # pre_onset_data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\processed_cosine_scores_dict_9m_pre_onset.npz", allow_pickle=True)['arr_0'].tolist()
 # post_onset_data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\processed_cosine_scores_dict_9m_post_onset.npz", allow_pickle=True)['arr_0'].tolist()
-data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\cosine_sim_9m_results_with_mean_ytrue_vec.npz", allow_pickle=True)['arr_0'].tolist()
+data = np.load("G:\jw_lab\jwlab_eeg\\regression\cosines\processed_perm_avg_cosine_scores_9m_pre_and_post_onset.npz", allow_pickle=True)['arr_0'].tolist()
 x_graph = np.arange(-200, 910, 10)
 x_graph += 100
 plt.clf()
