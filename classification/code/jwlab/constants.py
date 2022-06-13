@@ -57,8 +57,8 @@ elif (user == 'rohan'):
 elif (user == 'rohancc'):
     # print("user rohan compute canada")
     # ---- File path for Rohan on Compute Canada.
-    cleaned_data_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/cleaned/"
-    bad_trials_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/ML_badtrials-Table 1.csv"
-    db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db/"
+    cleaned_data_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/cleaned2/"
+    bad_trials_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/ML_badtrials-Table 2.csv"
+    db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db2/"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"

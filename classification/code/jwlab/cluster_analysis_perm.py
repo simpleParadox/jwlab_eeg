@@ -327,11 +327,11 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
     # Uncomment the following three lines for the regualar (EEG->word embedding stuff stats calculation.)
     # For predicting raw w2v from EEG.
-    pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
+    # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
-    adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
+    # adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
 
-    max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
+    # max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
     
     # # dendrogram(np.mean(w2v_res_list, axis=0))
     # ## REMOVE FOR NULL FUNCTION
