@@ -4,11 +4,11 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-type=FAIL
 #SBATCH --account=rrg-afyshe
-#SBATCH --time=5:30:00
+#SBATCH --time=3:00:00
 # SBATCH --array=1-100
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=8000
-#SBATCH --job-name=9m_combination_2_13-06-2022
+#SBATCH --job-name=9m_cleaned2_combination_2_15-06-2022
 #SBATCH --output=%x-%j.out
 
 source ~/jwlab/bin/activate

@@ -62,3 +62,7 @@ elif (user == 'rohancc'):
     db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db2/"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
+
+    # ADAM detrended data
+    adam_40_order_filepath = "/home/rsaha/scratch/jwlab_eeg/data/adam_detrend_low_no_bad_40_order/"
+    adam_30_order_filepath = "/home/rsaha/scratch/jwlab_eeg/data/adam_detrend_csv_low_no_bad_remove/"

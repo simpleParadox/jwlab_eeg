@@ -9,7 +9,7 @@ from IPython.display import display
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
-from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath
+from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, adam_40_order_filepath, adam_30_order_filepath
 
 
 labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
@@ -43,7 +43,13 @@ def load_ml_data(participants):
     dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s))
            for s in participants]
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
-    df = df.drop('E65', axis=1)
+    try:
+        df = df.drop('E65', axis=1)
+    except:
+        print("Could not drop E65")
+    
+    print("Shape of df: ", df.shape)
+
 
     # Scaling here
     scaler = StandardScaler()
@@ -449,6 +455,10 @@ def remap_label(y):
 def slide_df(df, start_time, end_time, window_lengths, step_length):
     window_list = []
     num_win = []
+
+
+    df['Time'] = np.trunc(df['Time'])
+
 
     df = df[(df.Time >= start_time) & (df.Time < end_time)]
 
