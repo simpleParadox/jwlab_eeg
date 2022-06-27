@@ -7,7 +7,7 @@ from scipy.fft import fft
 from scipy.signal import stft
 from copy import deepcopy
 import pandas as pd
-import pickle
+# import pickle
 import random
 import gensim
 from numpy import load, savez_compressed
@@ -113,7 +113,7 @@ def get_embeds_list():
     return w2v_array
 
 
-w2v_array = get_embeds_list()
+# w2v_array = get_embeds_list()
 
 
 def test_model_permute(X, y):
@@ -439,6 +439,82 @@ def extended_2v2(y_test, preds):
                 #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
                 # else:
                 #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+            else:
+                neg_diff.append((dsij + dsji) - (dsii + dsjj))
+            total_points += 1
+            # word_pairs[i].append(temp_score)
+            # word_pairs[j].append(temp_score)
+
+    grid = np.zeros((16, 16))
+    # for pair in index_pairs:
+        # row, col = pair
+
+        # # print(pair)
+        # grid[row, col] += 1
+        # grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    diff = np.mean(diff)
+    both_diff = np.mean(both_diff)
+    neg_diff = np.mean(neg_diff)
+    return points, total_points, points / total_points, gcf, grid, word_pairs, diff, both_diff, neg_diff
+
+# Added 16-06-2022
+def extended_2v2_mod(y_test, preds):
+    """
+    If the two halves of the 2v2 test are equal then assign point = 0.5 instead of 1.
+    """
+    # print("Extended 2v2 mod")
+    points = 0
+    total_points = 0
+    diff = []
+    both_diff = []
+    neg_diff = []
+    # sum_ii_jj = []
+    # sum_ij_ji = []
+    # x_length = [_ for _ in range(preds.shape[0] - 1)]
+    word_pairs = {}
+    # for k in range(0, 16):
+    #     word_pairs[k] = []
+    # index_pairs = []
+    for i in range(preds.shape[0] - 1):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        for j in range(i+1, preds.shape[0]):
+            temp_score = 0
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            # These are cosine distances.
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            # sum_ii_jj.append((dsii + dsjj))
+            # sum_ij_ji.append((dsij + dsji))
+            both_diff.append((dsij + dsji) - (dsii + dsjj))
+            
+
+            if (dsii + dsjj) < (dsij + dsji):
+                # Obviously dsij + dsij - dsii - dsjj > 0.
+                diff.append((dsij + dsji) - (dsii + dsjj))    
+                points += 1
+                temp_score = 1  # If the 2v2 test does not pass then temp_score = 0.
+                # si_idx = get_idx_in_list(s_i.tolist())
+                # sj_idx = get_idx_in_list(s_j.tolist())
+                # index_pairs.append([si_idx, sj_idx])
+                # if f"{si_idx}_{sj_idx}" in word_pairs:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                # else:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+            elif (dsii + dsjj) == (dsij + dsji):
+                points += 0.5
+                diff.append(0)
             else:
                 neg_diff.append((dsij + dsji) - (dsii + dsjj))
             total_points += 1

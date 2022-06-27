@@ -9,7 +9,7 @@ from IPython.display import display
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
-from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, adam_40_order_filepath, adam_30_order_filepath
+from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath#, adam_40_order_filepath, adam_30_order_filepath
 
 
 labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',

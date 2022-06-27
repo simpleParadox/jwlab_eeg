@@ -39,10 +39,10 @@ from matplotlib import pyplot as plt
 
 
 # NOTE: If you set useRandomizedLabel = True and set type='simple', it will runt eh null_distribution. But you have to run it 100 times/jobs.
-# result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 10], type='simple')
+# result = cluster_analysis_procedure(9, True, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 50], type='simple')
 # result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 70], type='simple', residual=True, child_residual=False)
 
-result = cluster_analysis_procedure(9, False, "tgm", [-200, 1000, [100], 10], [5, 4, 4], type='simple')
+result = cluster_analysis_procedure(9, True, "tgm", [-200, 1000, [100], 10], [5, 4, 50], type='simple')
 # result = cluster_analysis_procedure(12, False, "across", [-200, 1000, [100], 10], [5, 4, 50], type='tgm')
 # In[25]:
 
