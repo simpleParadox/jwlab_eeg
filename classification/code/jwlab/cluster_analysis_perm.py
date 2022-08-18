@@ -5,6 +5,7 @@ import random
 from scipy import stats
 import more_itertools as mit
 from sklearn.metrics import accuracy_score
+from sklearn.decomposition import PCA
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import Ridge
 from sklearn.linear_model import LogisticRegression
@@ -35,7 +36,7 @@ from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_
     get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
     ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, get_tuned_cbt_childes_w2v_embeds, get_all_ph_concat_embeds, \
     get_glove_embeds, get_cbt_childes_50d_embeds, get_reduced_w2v_embeds, sep_by_prev_anim, prep_filtered_X, get_residual_pretrained_w2v, get_residual_tuned_w2v, \
-    get_glove_embeds_200, get_glove_embeds_100, get_glove_embeds_50, plot_image, extended_2v2_mod
+    get_glove_embeds_200, get_glove_embeds_100, get_glove_embeds_50, plot_image, extended_2v2_mod, corr_score
 
 
 # from regression.rsa_helper import make_rdm, corr_between_rdms
@@ -106,7 +107,7 @@ def minimal_mouth_X(X):
     return [X_mod]
 
 
-def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', residual=False, child_residual=False):
+def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -121,11 +122,19 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     tgm_diff_results = []
     tgm_both_diff_results = []
     tgm_neg_diff_results = []
+    equal_count_results = []
+    roe_matrix_results = []
     flag = 0
     w2v_res_list = []
     cbt_res_list = []
     r2_train_values = []
     r2_test_values = []
+
+    if seed > 0:
+        seed_range = np.arange((seed - 1) * sampling_iterations, seed * sampling_iterations, 1)
+    # else:
+    #     pos_seed = seed * -1
+    #     seed_range = np.arange((pos_seed - 1) * sampling_iterations, pos_seed * sampling_iterations)
 
 
     if residual == True:
@@ -149,7 +158,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         elif averaging == "average_trials_and_participants":
             flag = 0
 
-            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
+            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000, animacy=animacy)
+            # print("Y after prep_ml is: ", y)
             # X = remove_samples(X) # Use only for the 9 month olds.
             # X = minimal_mouth_X(X)
 
@@ -181,7 +191,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # Non-permuted test.
                 print('Simple')
                 try:
-                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2)
+                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2, animacy=animacy)
                     successful_iterations += 1
                 except:
                     print("Error in prep_matrices_avg, continuing to the next sampling iteration.")
@@ -191,7 +201,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 #     print('Residual is true')
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, w2v_residuals)
                 # else:
-                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test)
+                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=animacy)
 
 
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl, r2_train, r2_test = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test, child=True)
@@ -220,8 +230,18 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         elif averaging == "tgm":
             # TGM within group.
             print('TGM')
-            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
-                                                      sliding_window_config, downsample_num=1000)
+            if seed >= 0:
+                current_seed = seed_range[i]
+                print("Seed range: ", seed_range)
+                print("Current seed: ", current_seed)
+            else:
+                current_seed = -1
+            try:
+                print("Inside try")
+                X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels",
+                                                      sliding_window_config, downsample_num=1000, current_seed=current_seed)
+            except Exception as e:
+                print(e)
 
             if type == 'permutation':
                 # The split of the dataset into train and test set happens more than once here for each permuted label assignment.
@@ -237,43 +257,55 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             else:
                 print('Simple: tgm')
                 try:
-                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2)
+                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2, current_seed=current_seed)
                     successful_iterations += 1
                 except:
                     print("Error in prep_matrices_avg, continuing to next iteration.")
                     continue
-                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res = cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False)
+                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False, target_pca=target_pca)
                 tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
                 tgm_diff_results.append(tgm_diff_res)
                 tgm_both_diff_results.append(tgm_both_diff_res)
                 tgm_neg_diff_results.append(tgm_neg_diff_res)
+                equal_count_results.append(equal_count_matrix)
+                roe_matrix_results.append(roe_matrix)
 
         elif averaging == 'across':
             print('Across')
             # Other group was loaded before.
-            age_group_1 = 12
-            age_group_2 = 9
-            X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
-            num_win = num_win_1
-            X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel, train_only = True, test_size=0)
-            X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
-            # Now the other group
-            X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, train_only = False, test_size=0.9)
-
+            age_group_1 = 9
+            age_group_2 = 12
+            try:
+                print("Loading age group 1")
+                X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
+                num_win = num_win_1
+                print("Preparing age group 1")
+                X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel, train_only = True, test_size=0)
+                print("Loading age group 2")
+                X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
+                # Now the other group
+                print("Preparing age group 2")
+                X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, train_only = False, test_size=0.9)
+            except Exception as e:
+                print(e)
+                print("Error in loading or preparing data, moving to next iteration.")
+                continue
+                
             if type == 'tgm':
                 print(type)
-                temp_results = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=True)
-                tgm_results.append(temp_results)
+                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=False, target_pca=target_pca)
+                tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
+                tgm_diff_results.append(tgm_diff_res)
+                tgm_both_diff_results.append(tgm_both_diff_res)
+                tgm_neg_diff_results.append(tgm_neg_diff_res)
+                equal_count_results.append(equal_count_matrix)
+                roe_matrix_results.append(roe_matrix)
             else:
                 print(type)
                 temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2)
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg(X_train_1, X_test_2, y_train_1, y_test_2, child=False)
             
             
-            
-
-
-
 
         else:
             print("Warning: This will only use the requested averaging matrix to perform a cross val")
@@ -304,8 +336,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         #             animacy_results[i][j] = temp_animacy_results[i][j]
 
 
-        # Uncomment the following 'for' block for the regular EEG -> word embedding.
-        if averaging == 'average_trials_and_participants':
+        if averaging == 'average_trials_and_participants' or (averaging=='across' and type!='tgm'):
             for i in range(len(temp_results)):
                 if i not in results.keys():
                     results[i] = {}
@@ -325,79 +356,115 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     #Averaging was of type 'tgm'.
     ## NOTE: The following are for TGMs only (non-permuted).
     ##Calculate average of all the matrices across 'n' sampling iterations. 
-    if averaging == 'tgm':
-        file_name = "cleaned2_mod_50"
-        if useRandomizedLabel:
-            # Permutation test.
-            final_tgm = np.mean(tgm_results, axis=0)
-            timestr = time.strftime("%Y%m%d-%H%M%S")
-            np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/permutation/9m_mod_2v2/{timestr}_{file_name}.npz", final_tgm)
+    if averaging == 'tgm' or (averaging == 'across' and type=='tgm'):
+        if corr:
+            # Use correlation instead of 2vs2.
+            corr_file_name = f"{age_group}m_corr"
+            if useRandomizedLabel:
+                npz_folder_path = f"{age_group}m_corr"
+                final_roe_matrix_tgm = np.mean(roe_matrix_results, axis=0)
+                timestr = time.strftime("%Y%m%d-%H%M%S")
+                np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/permutation/{npz_folder_path}/{timestr}_corr_seed_{seed}.npz", final_roe_matrix_tgm)
+            else:
+                final_roe_matrix_tgm = np.mean(roe_matrix_results, axis=0)
+                step_size = sliding_window_config[3]
+                ind = np.arange(-150, 1050, step_size).tolist()
+                cols = np.arange(-150, 1050, step_size).tolist()
+                corr_df = pd.DataFrame(data=final_roe_matrix_tgm, index=ind, columns=cols)
+                corr_df.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{corr_file_name}.csv")
+                plt.clf()
+                truth = corr_df.values
+                fig, singax= plt.subplots()
+                thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
+                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
+                        draw_mask=True, draw_contour=True, colorbar=True,
+                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                        cbar_unit="Correlation", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                
+                plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{corr_file_name}.png")
         else:
-            # Non-permuted test.
-            final_tgm = np.mean(tgm_results, axis=0)
-            # Save the tgm in a csv file.
-            step_size = sliding_window_config[3]
-            ind = np.arange(-150, 1050, step_size).tolist()
-            cols = np.arange(-150, 1050, step_size).tolist()
-            df = pd.DataFrame(data=final_tgm, index=ind, columns=cols)
-            truth = df.values
-            fig, singax= plt.subplots()
-            thresh_fdr = 10.5355 # For 9m_tgm_pre_w2v
-            df.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_2v2.csv")
-            plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax, vmax=0.65, vmin=0.35,
-                    draw_mask=True, draw_contour=True, colorbar=True,
-                    draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                    cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
-            plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_2v2.png")
+            # file_name = f"{age_group}_detrending_low_pass_only_reref_with_baseline_filepath_mod"
+            # Using the 2 vs 2 test.
+            file_name = f"{age_group}m_across_cleaned2_mod_2v2"
+            if averaging == 'across':
+                file_name = f"{age_group_1}m_to_{age_group_2}m_cleaned2_test_90_percent_2"
+            if useRandomizedLabel:
+                npz_folder_path = f"{age_group}m_w2v_pca_mod_2v2"
+                if averaging == 'across':
+                    npz_folder_path = f"across_{age_group_1}_to_{age_group_2}_mod_2v2"
+                # Permutation test.
+                final_tgm = np.mean(tgm_results, axis=0)
+                timestr = time.strftime("%Y%m%d-%H%M%S")
+                final_equal_count_tgm = np.mean(equal_count_results, axis=0)
+                np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/permutation/{npz_folder_path}/{timestr}_{file_name}_seed_{seed}.npz", final_tgm)
+                np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/permutation/{npz_folder_path}/{timestr}_equal_count_seed_{seed}.npz", final_equal_count_tgm)
+            else:
+                # Non-permuted test.
+                final_tgm = np.mean(tgm_results, axis=0)
+                # Save the tgm in a csv file.
+                step_size = sliding_window_config[3]
+                ind = np.arange(-150, 1050, step_size).tolist()
+                cols = np.arange(-150, 1050, step_size).tolist()
+                df = pd.DataFrame(data=final_tgm, index=ind, columns=cols)
+                truth = df.values
+                fig, singax= plt.subplots()
+                thresh_fdr = 10.5355 # For 9m_tgm_pre_w2v
+                df.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_2v2.csv")
+                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax, vmax=0.65, vmin=0.35,
+                        draw_mask=True, draw_contour=True, colorbar=True,
+                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_2v2.png")
 
-            final_tgm1 = np.mean(tgm_diff_results, axis=0)
-            df1 = pd.DataFrame(data=final_tgm1, index=ind, columns=cols)
-            df1.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_diff.csv")
+                final_tgm1 = np.mean(tgm_diff_results, axis=0)
+                df1 = pd.DataFrame(data=final_tgm1, index=ind, columns=cols)
+                df1.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_diff.csv")
 
-            final_tgm2 = np.mean(tgm_both_diff_results, axis=0)
-            df2 = pd.DataFrame(data=final_tgm2, index=ind, columns=cols)
-            df2.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_both_diff.csv")
+                final_tgm2 = np.mean(tgm_both_diff_results, axis=0)
+                df2 = pd.DataFrame(data=final_tgm2, index=ind, columns=cols)
+                df2.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_both_diff.csv")
 
 
-            final_tgm3 = np.mean(tgm_neg_diff_results, axis=0)
-            df3 = pd.DataFrame(data=final_tgm3, index=ind, columns=cols)
-            df3.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_neg_diff.csv")
+                final_tgm3 = np.mean(tgm_neg_diff_results, axis=0)
+                df3 = pd.DataFrame(data=final_tgm3, index=ind, columns=cols)
+                df3.to_csv(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_neg_diff.csv")
 
-            truth = df1.values
-            plt.clf()
-            fig, singax= plt.subplots()
-            thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
-            plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
-                    draw_mask=True, draw_contour=True, colorbar=True,
-                    draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                    cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                truth = df1.values
+                plt.clf()
+                fig, singax= plt.subplots()
+                thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
+                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
+                        draw_mask=True, draw_contour=True, colorbar=True,
+                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                
+                plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_diff.png")
+
+
+                truth = df2.values
+                plt.clf()
+                fig, singax= plt.subplots()
+                thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
+                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
+                        draw_mask=True, draw_contour=True, colorbar=True,
+                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                
+                plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_both_diff.png")
+
+
+                truth = df3.values
+                plt.clf()
+                fig, singax= plt.subplots()
+                thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
+                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
+                        draw_mask=True, draw_contour=True, colorbar=True,
+                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                
+                plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_neg_diff.png")
+
             
-            plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_diff.png")
-
-
-            truth = df2.values
-            plt.clf()
-            fig, singax= plt.subplots()
-            thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
-            plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
-                    draw_mask=True, draw_contour=True, colorbar=True,
-                    draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                    cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
-            
-            plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_both_diff.png")
-
-
-            truth = df3.values
-            plt.clf()
-            fig, singax= plt.subplots()
-            thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
-            plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
-                    draw_mask=True, draw_contour=True, colorbar=True,
-                    draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                    cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
-            
-            plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{file_name}_neg_diff.png")
-
 
         
 
@@ -420,12 +487,14 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     
     # # dendrogram(np.mean(w2v_res_list, axis=0))
     # ## REMOVE FOR NULL FUNCTION
-    if averaging == 'average_trials_and_participants':
+    if averaging == 'average_trials_and_participants' or (averaging=='across' and type!='tgm'):
         if useRandomizedLabel:
-            # inal_tgm = np.mean(results, axis=0)
-            file_name = 'cleaned2_mod_50'
+            # final_tgm = np.mean(results, axis=0)
+            file_name = f'across_{age_group_1}_{age_group_2}_cleaned2_mod_50'
             timestr = time.strftime("%Y%m%d-%H%M%S")
-            np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/9m_mod_2v2/{timestr}_{file_name}.npz", results)
+            if averaging == 'across':
+                folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
+            np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{folder_path}/{timestr}_{file_name}.npz", results)
         else:
             pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
@@ -595,7 +664,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     length_per_window_plt = 10  # 1200 / len(scoreMean)
 
     x_graph = np.arange(-200, 910, length_per_window_plt)
-    x_graph += 50  # NOTE: Change this based on the window size.
+    x_graph += 100  # NOTE: Change this based on the window size.
     y_graph = scoreMean
 
     stdevplt = np.array(stdev)
@@ -624,7 +693,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='9m')
+    plt.plot(x_graph, y_graph, 'k-', label='12m')
 
     # , markersize=10)
     ylim = [0.3, 0.8]
@@ -638,14 +707,14 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("9m w2v")
+    plt.title("12m animacy w2v")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("15-06-2022 9m w2v extended_2v2_mod")
+    plt.savefig("Aug 17 2022 12m animacy")
 
 
 
@@ -1078,7 +1147,7 @@ def monte_carlo_animacy_from_vectors(y_vectors):
 
 
 
-def cross_validaton_nested(X_train, y_train, X_test, y_test):
+def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
     print("Calling cross_validaton_nested")
     results = []
     preds = []
@@ -1107,8 +1176,23 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             # model = LinearSVC(C=1e-9, max_iter=1000)
 
             # Get pretrained word2vec google news embeddings.
-            y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
-            y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+            if animacy:
+                y_train_labels_w2v = y_train[i][j]
+                y_test_labels_w2v = y_test[i][j]
+            else:
+                y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+                y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+            
+            # print("y_train_labels_w2v: ", y_train_labels_w2v)
+            # print("y_test_labels_w2v: ", y_test_labels_w2v)
+
+            
+
+            # Get padded phoneme embeddings (Predict phoneme vectors from EEG).
+            # y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
+            # y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
+            # print("Phonemes shape: ", y_train_labels_w2v.shape)
+            
 
             # Get tuned w2v vectors on CBT and Childes. 1000 epochs during the fine-tuning process.
             # y_train_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
@@ -1172,16 +1256,23 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
             # model = LogisticRegression(multi_class='multinomial')
 
             model = Ridge()
+            if animacy:
+                model = LogisticRegression(max_iter=1000)
+                ridge_params = {'C': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}
+                scoring = "accuracy"
 
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
             clf.fit(X_train[i][j].values, y_train_labels_w2v)
-            best_alphas.append(clf.best_params_)
+            # best_alphas.append(clf.best_params_)
             y_pred = clf.predict(X_test[i][j].values)
 
             # Many scoring functions.
 
             # points, total_points, testScore, gcf, grid, word_pairs, diff, both_diff, neg_diff = extended_2v2(y_test_labels_w2v, y_pred)
-            points, total_points, testScore, gcf, grid, word_pairs, diff, both_diff, neg_diff = extended_2v2_mod(y_test_labels_w2v, y_pred)
+            if animacy:
+                testScore = accuracy_score(y_test_labels_w2v, y_pred)
+            else:
+                points, total_points, testScore, gcf, grid, word_pairs, diff, both_diff, neg_diff, equal_count = extended_2v2_mod(y_test_labels_w2v, y_pred)
             # points, total_points, testScore, gcf, grid = w2v_across_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid= w2v_within_animacy_2v2(y_test_labels, y_pred)
             # points, total_points, testScore, gcf, grid = extended_2v2_phonemes(y_test_labels, y_pred, y_test[i][j], first_or_second=which_phoneme)
@@ -1219,7 +1310,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test):
         results.append(temp_results)
         # preds.append(temp_preds)
         # animacy_results.append(temp_animacy_results)
-    print(best_alphas)
+    # print(best_alphas)
 
     return results, animacy_results, preds, tgm_matrix_temp, all_word_pairs_2v2
 
@@ -1317,39 +1408,65 @@ def cross_validaton_nested_concat(X_train, y_train, X_test, y_test):
     return results, tgm_matrix_temp
 
 
-def cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False):
+def cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False, target_pca=False):
     # results = []
     print("Inside cross-validation tgm")
     tgm_matrix_temp = np.zeros((120, 120))
     diff_tgm = np.zeros((120, 120))
     both_diff_tgm = np.zeros((120, 120))
     neg_diff_tgm = np.zeros((120, 120))
+    equal_count_matrix = np.zeros((120, 120))
+    roe_matrix = np.zeros((120, 120))
 
     ## Define the hyperparameters.
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+    
 
     for i in range(len(X_train)):
         temp_results = {}
         for j in range(len(X_train[i])):
+            
             if res == False:
                 y_train_labels = get_w2v_embeds_from_dict(y_train[i][j])
             else:
                 y_train_labels, y_test_labels = cv_all_ph_concat_padded_residual(X_train, X_test, y_train, y_test, child=child)
+            
+            if target_pca:
+                print("Initiate target PCA")
+                target_scaler = StandardScaler()
+                y_train_labels = target_scaler.fit_transform(y_train_labels)
+                pca = PCA(n_components = 0.95, random_state=42)
+                y_train_labels = pca.fit_transform(y_train_labels)
+            
+                
             model = Ridge()
             clf = GridSearchCV(model, ridge_params, scoring='neg_mean_squared_error', n_jobs=-1, cv=5)
             clf.fit(X_train[i][j].values, y_train_labels)
+            equal_count_list = []
 
             for k in range(len(X_test[i])):
                 if res==False:
                     y_test_labels = get_w2v_embeds_from_dict(y_test[i][k])
+                    if target_pca:
+                        y_test_labels = target_scaler.transform(y_test_labels)
+                        y_test_labels = pca.transform(y_test_labels)
                 y_pred = clf.predict(X_test[i][k].values)
-                # points, total_points, testScore, gcf, grid, word_pairs, diff, both_diff, neg_diff = extended_2v2(y_test_labels, y_pred)
-                points, total_points, testScore, gcf, grid, word_pairs, diff, both_diff, neg_diff = extended_2v2_mod(y_test_labels, y_pred)
+
+                # roe_mean, feature_corrs = corr_score(y_test_labels, y_pred)
+                # roe_matrix[j, k] = roe_mean
+
+                # points, total_points, testScore, gcf, grid, word_pairs, diff, both_diff, neg_diff, equal_count = extended_2v2(y_test_labels, y_pred)
+
+                points, total_points, testScore, gcf, grid, word_pairs, diff, both_diff, neg_diff, equal_count = extended_2v2_mod(y_test_labels, y_pred)
+
+                equal_count_matrix[j, k] = equal_count
 
                 tgm_matrix_temp[j, k] = testScore
                 diff_tgm[j, k] = diff
                 both_diff_tgm[j, k] = both_diff
                 neg_diff_tgm[j,k] = neg_diff
+
+
 
             #     if k in temp_results.keys():
             #         temp_results[j] += [testScore]
@@ -1362,7 +1479,7 @@ def cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False
             #
             # results.append(temp_results)
 
-    return tgm_matrix_temp, diff_tgm, both_diff_tgm, neg_diff_tgm
+    return tgm_matrix_temp, diff_tgm, both_diff_tgm, neg_diff_tgm, equal_count_matrix, roe_matrix
 
 
 def t_test(results, num_win, num_folds):
@@ -1447,3 +1564,38 @@ def get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg):
     print("The max absolute t mass is: {0}\n".format(max_abs_tmass))
 
     return max_abs_tmass, t_mass_pos, t_mass_neg
+
+
+
+
+def cluster_permutation_test(results1, results2, threshold=0.05, n_permutations=10000):
+    """
+    Non-parametric cluster-level paired t-test.
+    """
+    from mne.stats import spatio_temporal_cluster_1samp_test
+    from scipy.stats import ttest_ind
+    # results1_temp = np.array(results1).reshape(-1, 1)
+    #
+    # results2_temp = np.array(results2).reshape(-1, 1)
+    # X = results1_temp - results2_temp
+    # X = X.reshape(X.shape[0], -1)
+    results1_temp = []
+    for i in range(len(results1)):
+        for k,v in results1[i].items():
+            results1_temp.append(v)
+    results2_temp = []
+    for i in range(len(results2)):
+        for k,v in results2[i].items():
+            results2_temp.append(v)
+    results1_temp = np.array(results1_temp)
+    results2_temp = np.array(results2_temp)
+
+    X = results1_temp - results2_temp
+
+    # X = [results1, results2]
+    threshold = 0.05
+    n_permutations = 10000
+
+    # ttest_ind(results1, results2)
+    t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X, threshold=threshold, n_permutations=n_permutations)
+

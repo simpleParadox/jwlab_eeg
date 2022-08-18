@@ -9,7 +9,9 @@ from IPython.display import display
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
-from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath#, adam_40_order_filepath, adam_30_order_filepath
+from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, cleaned_data_filepath_e65, cleaned_data_filepath_bad_remove, \
+    no_detrending_low_pass_only_reref_with_baseline_filepath, no_detrending_low_pass_only_reref_no_baseline_filepath, detrending_low_pass_only_reref_with_baseline_filepath, \
+        cleaned2_causal_with_baseline, cleaned2_causal_no_baseline, cleaned2_causal_butter_with_baseline_1hz, cleaned2_causal_butter_with_baseline_01hz#, adam_40_order_filepath, adam_30_order_filepath
 
 
 labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
@@ -40,7 +42,8 @@ def init(age_group):
 
 def load_ml_data(participants):
     # read all participant csvs, concat them into one dataframe
-    dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (cleaned_data_filepath, s))
+    data_path = cleaned_data_filepath
+    dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (data_path, s))
            for s in participants]
     df = pd.concat(dfs, axis=0, ignore_index=True, sort=True)
     try:
@@ -48,16 +51,20 @@ def load_ml_data(participants):
     except:
         print("Could not drop E65")
     
-    print("Shape of df: ", df.shape)
+    # print("Shape of df: ", df.shape)
 
 
     # Scaling here
     scaler = StandardScaler()
+    # print(df.columns)
     scaled_df = scaler.fit_transform(df.iloc[:,:-1].values)
     new_df = pd.DataFrame(scaled_df, index=df.index, columns=df.columns[:-1])
     df = pd.concat([new_df, df['Time']], axis=1)
 
+    
     jenn_local_label_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/label_jennlocal/"
+    print("Labels filepath: ", jenn_local_label_filepath)
+
     ys = [np.loadtxt("%s%s_labels.txt" % (jenn_local_label_filepath, s)).tolist()
           for s in participants]
 
@@ -65,14 +72,14 @@ def load_ml_data(participants):
     return df, ys
 
 
-def prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
+def prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000, current_seed=-1, animacy=False):
     participants = init(age_group)
     df, ys = load_ml_data(participants)
     return prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config,
-                            downsample_num=downsample_num)
+                            downsample_num=downsample_num, current_seed=current_seed, animacy=animacy)
 
 
-def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000):
+def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000, current_seed=-1, animacy = False):
     # for the ml segment we only want post-onset data, ie. sections of each epoch where t>=0
     # df = df[df.Time >= 0]
 
@@ -104,8 +111,10 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     # print("Y is",Y)
 
     if useRandomizedLabel:
+        if current_seed >= 0:
+            np.random.seed(current_seed)
         np.random.shuffle(Y)
-        random.shuffle(Y)
+        # print("Shuffled Y is: ", Y)
         # remap_label(Y)  ## Changed from the above two lines to this -> just to test it out. Commenting this out and using the later one.
         # print("Labels shuffled.")
 
@@ -173,9 +182,10 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             # #     random.shuffle(y)
             # #     np.random.shuffle(y)
 
-            ## binary: animacy
-            # y[y < 8] = 0
-            # y[y >= 8] = 1
+            if animacy:
+                ## binary: animacy
+                y[y < 8] = 0
+                y[y >= 8] = 1
 
             #     #mom and baby vs all
             #             y[y == 0] = 0
@@ -280,11 +290,16 @@ def remove_samples(X):
 
     return [dfs]
 
-def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20):
+def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, current_seed=-1, animacy=False):
     participants = init(age_group)
     num_participants = len(participants)
     num_indices = len(X[0][0])
     fivefold_testsize = int(test_size * num_indices)
+    if current_seed >= 0:
+        # Setting the seed if it's greater than zero. This means use the seed.
+        np.random.seed(current_seed)
+        print("Seed set to: ", current_seed)
+    print("Seed is: ", current_seed)
     test_indices = np.random.choice(num_indices - 1, fivefold_testsize, replace=False)
 
 
@@ -355,13 +370,14 @@ def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_s
         #     random.shuffle(y_test_pt)
 
     # binary classification, comment these if you want the labels only. Commented out by Rohan.
-    # for i in range(len(X)):
-    #     for j in range(len(X[0])):
-    #         y_train[i][j][y_train[i][j] < 8] = 0
-    #         y_train[i][j][y_train[i][j] >= 8] = 1
-    #
-    #         y_test_pt[i][j][y_test_pt[i][j] < 8] = 0
-    #         y_test_pt[i][j][y_test_pt[i][j] >= 8] = 1
+    if animacy:
+        for i in range(len(X)):
+            for j in range(len(X[0])):
+                y_train[i][j][y_train[i][j] < 8] = 0
+                y_train[i][j][y_train[i][j] >= 8] = 1
+        
+                y_test_pt[i][j][y_test_pt[i][j] < 8] = 0
+                y_test_pt[i][j][y_test_pt[i][j] >= 8] = 1
 
     return X_train, X_test_pt, y_train, y_test_pt
 

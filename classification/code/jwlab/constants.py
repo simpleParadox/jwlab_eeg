@@ -50,6 +50,34 @@ elif (user == 'rohancc'):
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 
+    # E65 reference.
+    cleaned_data_filepath_e65 = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_e65/"
+
+
+
+    # Bad trials removed data and supporting files.
+    cleaned_data_filepath_bad_remove = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_bad_remove/"
+    bad_remove_db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db_bad_remove_processed/"
+
+
+    # no_detrending_low_pass_only_reref_with and without baseline.
+    no_detrending_low_pass_only_reref_with_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/no_detrending_low_pass_only_reref_with_baseline/'
+    no_detrending_low_pass_only_reref_no_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/no_detrending_low_pass_only_reref_no_baseline/'
+
+    # ADAM detrending data low pass only reref with and without baseline.
+    detrending_low_pass_only_reref_with_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/adam_detrending_low_pass_only_reref_with_baseline/csv/'
+    detrending_low_pass_only_reref_no_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/adam_detrending_low_pass_only_reref_no_baseline/csv/'
+
+    # Causal filtering.
+    cleaned2_causal_with_baseline = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal/'
+    cleaned2_causal_no_baseline = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal_no_base/'
+
+    # Butterworth filtering.
+    cleaned2_causal_butter_with_baseline_1hz = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal_with_base_butter/'
+    cleaned2_causal_butter_with_baseline_01hz = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal_with_base_butter_0.1/'
+
+
+
     # ADAM detrended data
     # adam_40_order_filepath = "/home/rsaha/scratch/jwlab_eeg/data/adam_detrend_low_no_bad_40_order/"
     # adam_30_order_filepath = "/home/rsaha/scratch/jwlab_eeg/data/adam_detrend_csv_low_no_bad_remove/"

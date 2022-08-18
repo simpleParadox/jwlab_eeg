@@ -5,6 +5,7 @@ from sklearn.metrics.pairwise import cosine_distances
 from scipy.spatial.distance import cosine
 from scipy.fft import fft
 from scipy.signal import stft
+from scipy.stats import pearsonr
 from copy import deepcopy
 import pandas as pd
 # import pickle
@@ -406,6 +407,7 @@ def extended_2v2(y_test, preds):
     # x_length = [_ for _ in range(preds.shape[0] - 1)]
     word_pairs = {}
     # for k in range(0, 16):
+    equal_count = 0
     #     word_pairs[k] = []
     # index_pairs = []
     for i in range(preds.shape[0] - 1):
@@ -429,9 +431,13 @@ def extended_2v2(y_test, preds):
 
             if dsii + dsjj <= dsij + dsji:
                 # Obviously dsij + dsij - dsii - dsjj > 0.
-                diff.append((dsij + dsji) - (dsii + dsjj))    
+                diff.append((dsij + dsji) - (dsii + dsjj))
+    
                 points += 1
                 temp_score = 1  # If the 2v2 test does not pass then temp_score = 0.
+
+                if (dsii + dsjj) == (dsij + dsji):
+                    equal_count += 1
                 # si_idx = get_idx_in_list(s_i.tolist())
                 # sj_idx = get_idx_in_list(s_j.tolist())
                 # index_pairs.append([si_idx, sj_idx])
@@ -461,7 +467,7 @@ def extended_2v2(y_test, preds):
     diff = np.mean(diff)
     both_diff = np.mean(both_diff)
     neg_diff = np.mean(neg_diff)
-    return points, total_points, points / total_points, gcf, grid, word_pairs, diff, both_diff, neg_diff
+    return points, total_points, points * 1.0 / total_points, gcf, grid, word_pairs, diff, both_diff, neg_diff, equal_count
 
 # Added 16-06-2022
 def extended_2v2_mod(y_test, preds):
@@ -481,6 +487,7 @@ def extended_2v2_mod(y_test, preds):
     # for k in range(0, 16):
     #     word_pairs[k] = []
     # index_pairs = []
+    equal_count = 0
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
         s_i_pred = preds[i]
@@ -515,6 +522,8 @@ def extended_2v2_mod(y_test, preds):
             elif (dsii + dsjj) == (dsij + dsji):
                 points += 0.5
                 diff.append(0)
+                equal_count += 1
+                print("Both sides are equal.")
             else:
                 neg_diff.append((dsij + dsji) - (dsii + dsjj))
             total_points += 1
@@ -537,7 +546,19 @@ def extended_2v2_mod(y_test, preds):
     diff = np.mean(diff)
     both_diff = np.mean(both_diff)
     neg_diff = np.mean(neg_diff)
-    return points, total_points, points / total_points, gcf, grid, word_pairs, diff, both_diff, neg_diff
+    return points, total_points, points * 1.0 / total_points, gcf, grid, word_pairs, diff, both_diff, neg_diff, equal_count
+
+
+# Added 2022-07-15
+def corr_score(y_test, preds):
+    feature_corrs = []
+    for j in range(y_test.shape[1] - 1):
+        # Calculate column-wise correlation.
+        feature_corrs.append(pearsonr(y_test[:,j], preds[:, j])[0])
+    
+    roe_mean = np.mean(feature_corrs)
+    return roe_mean, feature_corrs
+
 
 
 # Added 05-12-2020
@@ -1027,6 +1048,18 @@ def get_glove_embeds_50(labels):
     return glove_label_embeds
 
 def get_w2v_embeds_from_dict(labels):
+    embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
+    embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']
+    embeds_with_labels_dict = embeds_with_labels_dict[0]
+
+    w2v_labels = []
+    for label in labels:
+        w2v_labels.append(embeds_with_labels_dict[int(label)])
+    w2v_labels = np.array(w2v_labels)
+
+    return w2v_labels
+
+def get_prev_w2v_embeds_from_dict(labels):
     embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
     embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']
     embeds_with_labels_dict = embeds_with_labels_dict[0]
