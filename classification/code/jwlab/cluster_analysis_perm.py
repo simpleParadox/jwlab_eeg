@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import Ridge
 from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import RidgeClassifier
 from sklearn.model_selection import RepeatedKFold
 from sklearn.model_selection import GridSearchCV
@@ -107,7 +108,7 @@ def minimal_mouth_X(X):
     return [X_mod]
 
 
-def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False):
+def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, no_animacy_avg=False):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -160,6 +161,9 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000, animacy=animacy)
             # print("Y after prep_ml is: ", y)
+            # print("Raveled after prep_ml is: ", np.ravel(y))
+            # print("Length of raveled Y after prep_ml is: ", np.ravel(y).shape)
+            # print("Good trial count: ", good_trial_count)
             # X = remove_samples(X) # Use only for the 9 month olds.
             # X = minimal_mouth_X(X)
 
@@ -191,17 +195,23 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # Non-permuted test.
                 print('Simple')
                 try:
-                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2, animacy=animacy)
+                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg)
                     successful_iterations += 1
-                except:
+                    print(f"Shape of X_test and y_test {X_test[0][0].shape} {y_test[0][0].shape}")
+                except Exception as e:
                     print("Error in prep_matrices_avg, continuing to the next sampling iteration.")
+                    print(e)
                     continue
 
                 # if residual == True:
                 #     print('Residual is true')
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, w2v_residuals)
                 # else:
-                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=animacy)
+                if not no_animacy_avg:
+                    temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=animacy)
+                else:
+                    temp_results = cv_animacy(X_train, y_train, X_test, y_test)
+                    
 
 
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl, r2_train, r2_test = cv_residual_w2v_ph_eeg(X_train, X_test, y_train, y_test, child=True)
@@ -273,8 +283,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         elif averaging == 'across':
             print('Across')
             # Other group was loaded before.
-            age_group_1 = 9
-            age_group_2 = 12
+            age_group_1 = 12
+            age_group_2 = 9
             try:
                 print("Loading age group 1")
                 X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
@@ -490,11 +500,12 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     if averaging == 'average_trials_and_participants' or (averaging=='across' and type!='tgm'):
         if useRandomizedLabel:
             # final_tgm = np.mean(results, axis=0)
-            file_name = f'across_{age_group_1}_{age_group_2}_cleaned2_mod_50'
+            file_name = f'animacy_{age_group}m'
             timestr = time.strftime("%Y%m%d-%H%M%S")
+            folder_path = f"animacy_{age_group}m"
             if averaging == 'across':
                 folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
-            np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{folder_path}/{timestr}_{file_name}.npz", results)
+            np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{folder_path}/{timestr}_{file_name}_all_data.npz", results)
         else:
             pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
@@ -517,7 +528,6 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         # rsa(np.mean(w2v_res_list, axis=0), np.mean(cbt_res_list, axis=0))
 
     return results
-
 
 
 def process_pair_graph(data_dict):
@@ -693,7 +703,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='12m')
+    plt.plot(x_graph, y_graph, 'k-', label='9m avg_ref animacy all data')
 
     # , markersize=10)
     ylim = [0.3, 0.8]
@@ -707,14 +717,14 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("12m animacy w2v")
+    plt.title("9m avg_ref animacy no avg test 50 iters")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("Aug 17 2022 12m animacy")
+    plt.savefig("Aug 25 2022 animacy all data 50 iters no average test")
 
 
 
@@ -1146,6 +1156,37 @@ def monte_carlo_animacy_from_vectors(y_vectors):
     return np.mean(accs)
 
 
+def cv_animacy(X_train, y_train, X_test, y_test):
+    print("Inside cv animacy")
+    results = []
+    
+    scoring = 'accuracy'
+
+    ## Define the hyperparameters.
+    logreg_params = {'C': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+    for i in range(len(X_train)):
+        temp_results = {}
+        for j in range(len(X_train[i])):
+            y_train_labels_w2v = y_train[i][j]
+            y_test_labels_w2v = y_test[i][j]
+            model = LogisticRegression()
+
+            clf = GridSearchCV(model, logreg_params, scoring=scoring, n_jobs=-1, cv=5)
+            clf.fit(X_train[i][j].values, y_train_labels_w2v)
+            y_pred = clf.predict(X_test[i][j].values)
+            testScore = accuracy_score(y_test_labels_w2v, y_pred)
+            print(f"Score is: {testScore}")
+            print(f"y_pred is {y_pred}")
+            
+            if j in temp_results.keys():
+                temp_results[j] += [testScore]
+            else:
+                temp_results[j] = [testScore]
+
+        results.append(temp_results)
+    return results
+        
+
 
 def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
     print("Calling cross_validaton_nested")
@@ -1185,6 +1226,11 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
             
             # print("y_train_labels_w2v: ", y_train_labels_w2v)
             # print("y_test_labels_w2v: ", y_test_labels_w2v)
+
+            # one_count = sum(y_train_labels_w2v)
+            # zero_count = len(y_train_labels_w2v) - one_count
+
+            # print(f"label count: one={one_count}, zero={zero_count}")
 
             
 
@@ -1257,14 +1303,17 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
 
             model = Ridge()
             if animacy:
-                model = LogisticRegression(max_iter=1000)
+                # model = LogisticRegression(max_iter=1000)
                 ridge_params = {'C': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}
+                model = LogisticRegression()
+                # ridge_params = {'min_samples_split': [2,3,4]}
                 scoring = "accuracy"
 
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
             clf.fit(X_train[i][j].values, y_train_labels_w2v)
             # best_alphas.append(clf.best_params_)
             y_pred = clf.predict(X_test[i][j].values)
+            # print("y_pred inside cross_validaton_nested: ", y_pred)
 
             # Many scoring functions.
 
@@ -1573,12 +1622,15 @@ def cluster_permutation_test(results1, results2, threshold=0.05, n_permutations=
     Non-parametric cluster-level paired t-test.
     """
     from mne.stats import spatio_temporal_cluster_1samp_test
+    from mne.stats import permutation_cluster_1samp_test
     from scipy.stats import ttest_ind
     # results1_temp = np.array(results1).reshape(-1, 1)
     #
     # results2_temp = np.array(results2).reshape(-1, 1)
     # X = results1_temp - results2_temp
     # X = X.reshape(X.shape[0], -1)
+
+    # NOTE: results1 and results2 are the results dictionary that has all the cv fold accuracy for each window.
     results1_temp = []
     for i in range(len(results1)):
         for k,v in results1[i].items():

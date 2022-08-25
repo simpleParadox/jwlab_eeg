@@ -65,6 +65,8 @@ def load_ml_data(participants):
     jenn_local_label_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/label_jennlocal/"
     print("Labels filepath: ", jenn_local_label_filepath)
 
+    # NOTE: Use the different folder for labels and db only if you're using the bad_remove filepath.
+
     ys = [np.loadtxt("%s%s_labels.txt" % (jenn_local_label_filepath, s)).tolist()
           for s in participants]
 
@@ -290,7 +292,7 @@ def remove_samples(X):
 
     return [dfs]
 
-def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, current_seed=-1, animacy=False):
+def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, current_seed=-1, animacy=False, no_animacy_avg=False):
     participants = init(age_group)
     num_participants = len(participants)
     num_indices = len(X[0][0])
@@ -324,6 +326,10 @@ def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_s
         df_test_m.append(df_test)
         df_train_m.append(df_train)
 
+    # print("Len of df train: ", len(df_train_m[0][1]))
+    # print("Len of df test: ", len(df_test_m[0][1]))
+    
+
     X_train = []
     y_train = []
 
@@ -356,7 +362,11 @@ def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_s
         X_test_i = []
         y_test_i = []
         for j in range(len(X[0])):
-            X_test_pt_temp, y_test_temp_pt, ps, w = average_trials_and_participants(df_test_m[i][j], participants)
+            if not no_animacy_avg:
+                X_test_pt_temp, y_test_temp_pt, ps, w = average_trials_and_participants(df_test_m[i][j], participants)
+            else:
+                X_test_pt_temp, y_test_temp_pt, ps, w = no_average(df_test_m[i][j])
+                
             X_test_i.append(pd.DataFrame(X_test_pt_temp))
             # if use_randomized_label:
             #     np.random.shuffle(y_test_temp_pt)
@@ -369,10 +379,11 @@ def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_s
         #     np.random.shuffle(y_test_pt)
         #     random.shuffle(y_test_pt)
 
-    # binary classification, comment these if you want the labels only. Commented out by Rohan.
+    # Animacy classification code.
     if animacy:
         for i in range(len(X)):
             for j in range(len(X[0])):
+                # print("y_train inside average trials and participants: ", y_train[i][j])
                 y_train[i][j][y_train[i][j] < 8] = 0
                 y_train[i][j][y_train[i][j] >= 8] = 1
         

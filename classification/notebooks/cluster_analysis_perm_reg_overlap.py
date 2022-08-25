@@ -42,11 +42,11 @@ from matplotlib import pyplot as plt
 
 
 # NOTE: If you set useRandomizedLabel = True and set type='simple', it will run the null_distribution. But you have to run it 100 times/jobs.
-result = cluster_analysis_procedure(12, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 30], type='simple', animacy=True)
+result = cluster_analysis_procedure(12, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 50], type='simple', animacy=True, no_animacy_avg=True)
 # result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 70], type='simple', residual=True, child_residual=False)
 
 # result = cluster_analysis_procedure(12, False, "tgm", [-200, 1000, [100], 10], [5, 4, 50], type='simple', seed=seed, corr=False, target_pca=False)
-# result = cluster_analysis_procedure(12, False, "across", [-200, 1000, [100], 10], [5, 4, 50], type='tgm', seed=seed, corr=False, target_pca=False, animacy=True)
+# result = cluster_analysis_procedure(12, False, "across", [-200, 1000, [100], 10], [5, 4, 50], type='simple', seed=seed, corr=False, target_pca=False, animacy=True)
 
 # In[25]:
 
