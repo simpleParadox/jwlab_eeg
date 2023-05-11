@@ -25,20 +25,7 @@ if (user == "karl"):
     db_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/db/"
     df_filepath = "/home/kjslakov/projects/def-jwerker/kjslakov/data/ml_df_readys.pkl"
     df_filepath_sktime = "/home/kjslakov/projects/def-jwerker/kjslakov/data/ml_df_sktime.pkl"
-elif (user == "jennlocal"):
-    # ---- File path on network drive: ----
-    db_filepath = "/Users/JennMacBook/Desktop/Studies/Animates EEG/7_Data/runningOffline/db/"
-    cleaned_data_filepath = "/Users/JennMacBook/Desktop/Studies/Animates EEG/7_Data/runningOffline/cleaned/"
-    bad_trials_filepath = "/Users/JennMacBook/Desktop/Studies/Animates EEG/7_Data/runningOffline/ML_badtrials-Table 1.csv"
-    #db_filepath = "/Volumes/OFFCAMPUS/Jenn/Imported data/db/"
-    #cleaned_data_filepath = "/Volumes/OFFCAMPUS/Jenn/Imported data/cleaned/"
-    #bad_trials_filepath = "/Volumes/OFFCAMPUS/Jenn/Datatracker/ML_badtrials-Table 1.csv"
-    #messy_trials_filepath = "/Volumes/OFFCAMPUS/Jenn/Datatracker/ML-Table 1.csv"
-elif (user == "roxy"):
-    # ---- File Path on Roxy local: ----
-    db_filepath = "/Users/roxyk/Desktop/lab/db/"
-    cleaned_data_filepath = "/Users/roxyk/Desktop/lab/cleaned/"
-    bad_trials_filepath = "/Users/roxyk/Desktop/lab/Datatracker/ML_badtrials-Table 1.csv"
+    
 elif (user == "jenncc"):
     # ---- File Path on Jenn compute canada: ----
     db_filepath = "/home/campbejc/projects/def-campbejc/campbejc/data/lab/db/"
@@ -48,10 +35,9 @@ elif (user == "jenncc"):
 elif (user == 'rohan'):
     print("user rohan")
     # ---- File path for Rohan on Local machine.
-    cleaned_data_filepath = "G:\\jw_lab\\jwlab_eeg\Data\\\Imported\\cleaned2\\"
-    cleaned_data_filepath_new_filter = 'G:\jw_lab\jwlab_eeg\Data\Imported\cleaned_new_filter\\'
-    bad_trials_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\ML_badtrials-Table  jenn.csv"
-    db_filepath = "G:\\jw_lab\\jwlab_eeg\\Data\\Imported\\db_jennlocal\\"
+    cleaned_data_filepath = "Z:\\Jenn\\Data\\Imported data\\cleaned\\"
+    bad_trials_filepath = "Z:\\Jenn\\Datatracker\\ML_badtrials-Table 1.csv"
+    db_filepath = "Z:\\Jenn\\Data\\Imported data\\db\\"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 
@@ -64,11 +50,34 @@ elif (user == 'rohancc'):
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 
-elif (user=='rohanmac'):
-    cleaned_data_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/cleaned2/"
-    cleaned_ml_mar2022_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/cleaned_ml_mar2022_band_rmbase_baseline_corr/"
-    bad_trials_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/ML_badtrials-Table 2.csv"
-    db_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/db_jennlocal/"
-    db_abs_200uv_filepath = "/Users/simpleparadox/Desktop/Projects/jwlab_eeg/Data/Imported/db_abs_remove_200uv/"
-    # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
-    # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
+    # E65 reference.
+    cleaned_data_filepath_e65 = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_e65/"
+
+
+
+    # Bad trials removed data and supporting files.
+    cleaned_data_filepath_bad_remove = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_bad_remove/"
+    bad_remove_db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db_bad_remove_processed/"
+
+
+    # no_detrending_low_pass_only_reref_with and without baseline.
+    no_detrending_low_pass_only_reref_with_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/no_detrending_low_pass_only_reref_with_baseline/'
+    no_detrending_low_pass_only_reref_no_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/no_detrending_low_pass_only_reref_no_baseline/'
+
+    # ADAM detrending data low pass only reref with and without baseline.
+    detrending_low_pass_only_reref_with_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/adam_detrending_low_pass_only_reref_with_baseline/csv/'
+    detrending_low_pass_only_reref_no_baseline_filepath = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/adam_detrending_low_pass_only_reref_no_baseline/csv/'
+
+    # Causal filtering.
+    cleaned2_causal_with_baseline = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal/'
+    cleaned2_causal_no_baseline = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal_no_base/'
+
+    # Butterworth filtering.
+    cleaned2_causal_butter_with_baseline_1hz = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal_with_base_butter/'
+    cleaned2_causal_butter_with_baseline_01hz = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_causal_with_base_butter_0.1/'
+
+
+
+    # ADAM detrended data
+    # adam_40_order_filepath = "/home/rsaha/scratch/jwlab_eeg/data/adam_detrend_low_no_bad_40_order/"
+    # adam_30_order_filepath = "/home/rsaha/scratch/jwlab_eeg/data/adam_detrend_csv_low_no_bad_remove/"

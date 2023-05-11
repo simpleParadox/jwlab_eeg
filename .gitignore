@@ -3,7 +3,6 @@ __pycache__/
 eeg_visuals/
 *.py[cod]
 *$py.class
-
 # C extensions
 *.so
 
@@ -139,4 +138,7 @@ regression/GoogleNews-vectors-negative300.bin.gz
 regression/test.ipynb
 regression/w2v_embeds/
 regression/data/
+
+*.out
+*.png
 EventTimings/

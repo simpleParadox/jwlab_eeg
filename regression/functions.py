@@ -4,9 +4,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import cosine
 from scipy.fft import fft
 from scipy.signal import stft
+from scipy.stats import pearsonr
 from copy import deepcopy
 import pandas as pd
-import pickle
+# import pickle
 import random
 # import gensim
 from numpy import load, savez_compressed
@@ -125,7 +126,7 @@ def get_embeds_list():
     return w2v_array
 
 
-w2v_array = get_embeds_list()
+# w2v_array = get_embeds_list()
 
 
 def test_model_permute(X, y):
@@ -429,13 +430,16 @@ def extended_2v2(y_test, preds):
     """
     points = 0
     total_points = 0
-    # diff = []
+    diff = []
+    both_diff = []
+    neg_diff = []
     # sum_ii_jj = []
     # sum_ij_ji = []
     # x_length = [_ for _ in range(preds.shape[0] - 1)]
     word_pairs = {}
-    for k in range(0, 16):
-        word_pairs[k] = []
+    # for k in range(0, 16):
+    equal_count = 0
+    #     word_pairs[k] = []
     # index_pairs = []
     for i in range(preds.shape[0] - 1):
         s_i = y_test[i]
@@ -445,7 +449,6 @@ def extended_2v2(y_test, preds):
             s_j = y_test[j]
             s_j_pred = preds[j]
 
-            # Compute cosine distance.
             dsii = cosine(s_i, s_i_pred)
             dsjj = cosine(s_j, s_j_pred)
             dsij = cosine(s_i, s_j_pred)
@@ -454,11 +457,18 @@ def extended_2v2(y_test, preds):
 
             # sum_ii_jj.append((dsii + dsjj))
             # sum_ij_ji.append((dsij + dsji))
-            # diff.append((dsii + dsjj) - (dsij + dsji))
+            both_diff.append((dsij + dsji) - (dsii + dsjj))
+            
 
             if dsii + dsjj <= dsij + dsji:
+                # Obviously dsij + dsij - dsii - dsjj > 0.
+                diff.append((dsij + dsji) - (dsii + dsjj))
+    
                 points += 1
                 temp_score = 1  # If the 2v2 test does not pass then temp_score = 0.
+
+                if (dsii + dsjj) == (dsij + dsji):
+                    equal_count += 1
                 # si_idx = get_idx_in_list(s_i.tolist())
                 # sj_idx = get_idx_in_list(s_j.tolist())
                 # index_pairs.append([si_idx, sj_idx])
@@ -466,9 +476,11 @@ def extended_2v2(y_test, preds):
                 #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
                 # else:
                 #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+            else:
+                neg_diff.append((dsij + dsji) - (dsii + dsjj))
             total_points += 1
-            word_pairs[i].append(temp_score)
-            word_pairs[j].append(temp_score)
+            # word_pairs[i].append(temp_score)
+            # word_pairs[j].append(temp_score)
 
     grid = np.zeros((16, 16))
     # for pair in index_pairs:
@@ -483,7 +495,101 @@ def extended_2v2(y_test, preds):
     # pairs in an array; in other words, store the index pairs.
 
     gcf = None  # plot_grid(grid)
-    return points, total_points, points / total_points, gcf, grid, word_pairs
+    diff = np.mean(diff)
+    both_diff = np.mean(both_diff)
+    neg_diff = np.mean(neg_diff)
+    return points, total_points, points * 1.0 / total_points, gcf, grid, word_pairs, diff, both_diff, neg_diff, equal_count
+
+# Added 16-06-2022
+def extended_2v2_mod(y_test, preds):
+    """
+    If the two halves of the 2v2 test are equal then assign point = 0.5 instead of 1.
+    """
+    # print("Extended 2v2 mod")
+    points = 0
+    total_points = 0
+    diff = []
+    both_diff = []
+    neg_diff = []
+    # sum_ii_jj = []
+    # sum_ij_ji = []
+    # x_length = [_ for _ in range(preds.shape[0] - 1)]
+    word_pairs = {}
+    # for k in range(0, 16):
+    #     word_pairs[k] = []
+    # index_pairs = []
+    equal_count = 0
+    for i in range(preds.shape[0] - 1):
+        s_i = y_test[i]
+        s_i_pred = preds[i]
+        for j in range(i+1, preds.shape[0]):
+            temp_score = 0
+            s_j = y_test[j]
+            s_j_pred = preds[j]
+
+            # These are cosine distances.
+            dsii = cosine(s_i, s_i_pred)
+            dsjj = cosine(s_j, s_j_pred)
+            dsij = cosine(s_i, s_j_pred)
+            dsji = cosine(s_j, s_i_pred)
+
+            # sum_ii_jj.append((dsii + dsjj))
+            # sum_ij_ji.append((dsij + dsji))
+            both_diff.append((dsij + dsji) - (dsii + dsjj))
+            
+
+            if (dsii + dsjj) < (dsij + dsji):
+                # Obviously dsij + dsij - dsii - dsjj > 0.
+                diff.append((dsij + dsji) - (dsii + dsjj))    
+                points += 1
+                temp_score = 1  # If the 2v2 test does not pass then temp_score = 0.
+                # si_idx = get_idx_in_list(s_i.tolist())
+                # sj_idx = get_idx_in_list(s_j.tolist())
+                # index_pairs.append([si_idx, sj_idx])
+                # if f"{si_idx}_{sj_idx}" in word_pairs:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] += 1
+                # else:
+                #     word_pairs[f'{si_idx}_{sj_idx}'] = 1
+            elif (dsii + dsjj) == (dsij + dsji):
+                points += 0.5
+                diff.append(0)
+                equal_count += 1
+                print("Both sides are equal.")
+            else:
+                neg_diff.append((dsij + dsji) - (dsii + dsjj))
+            total_points += 1
+            # word_pairs[i].append(temp_score)
+            # word_pairs[j].append(temp_score)
+
+    grid = np.zeros((16, 16))
+    # for pair in index_pairs:
+        # row, col = pair
+
+        # # print(pair)
+        # grid[row, col] += 1
+        # grid[col, row] += 1
+
+    # Next, for each word pair in the 2v2 test, increament that cell by 1. Have to make sure that the matrices are symmetric.
+    # But first, you need to find out the word pair. One way is to store the word
+    # pairs in an array; in other words, store the index pairs.
+
+    gcf = None  # plot_grid(grid)
+    diff = np.mean(diff)
+    both_diff = np.mean(both_diff)
+    neg_diff = np.mean(neg_diff)
+    return points, total_points, points * 1.0 / total_points, gcf, grid, word_pairs, diff, both_diff, neg_diff, equal_count
+
+
+# Added 2022-07-15
+def corr_score(y_test, preds):
+    feature_corrs = []
+    for j in range(y_test.shape[1] - 1):
+        # Calculate column-wise correlation.
+        feature_corrs.append(pearsonr(y_test[:,j], preds[:, j])[0])
+    
+    roe_mean = np.mean(feature_corrs)
+    return roe_mean, feature_corrs
+
 
 
 # Added 05-12-2020
@@ -957,6 +1063,18 @@ def get_w2v_embeds_from_dict(labels):
 
     return w2v_labels
 
+def get_prev_w2v_embeds_from_dict(labels):
+    embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
+    embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']
+    embeds_with_labels_dict = embeds_with_labels_dict[0]
+
+    w2v_labels = []
+    for label in labels:
+        w2v_labels.append(embeds_with_labels_dict[int(label)])
+    w2v_labels = np.array(w2v_labels)
+
+    return w2v_labels
+
 def get_child_only_w2v_embeds(labels):
     child_only_w2v_loaded = load(child_only_w2v_path, allow_pickle=True)
     child_only_w2v = child_only_w2v_loaded['arr_0']
@@ -1227,5 +1345,81 @@ def prep_filtered_X(X):
         X_test.append(X_test_i)
         y_test.append(y_test_i)
 
+    
     return X_train, X_test, y_train, y_test
 
+
+
+def plot_image(data, times, mask=None, ax=None, vmax=None, vmin=None,
+               draw_mask=None, draw_contour=None, colorbar=True,
+               draw_diag=True, draw_zerolines=True, xlabel="Time (s)", ylabel="Time (s)",
+               cbar_unit="%", cmap="RdBu_r", mask_alpha=.5, mask_cmap="RdBu_r"):
+    """Return fig and ax for further styling of GAT matrix, e.g., titles
+
+    Parameters
+    ----------
+    data: array of scores
+    times: list of epoched time points
+    mask: None | array
+    ...
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.axes()
+
+    if vmax is None:
+        vmax = np.abs(data).max()
+    if vmin is None:
+        vmax = np.abs(data).max()
+        vmin = -vmax
+    tmin, tmax = xlim = times[0], times[-1]
+    extent = [tmin, tmax, tmin, tmax]
+    im_args = dict(interpolation='nearest', origin='lower',
+                   extent=extent, aspect='auto', vmin=vmin, vmax=vmax)
+
+    if mask is not None:
+        draw_mask = True if draw_mask is None else draw_mask
+        draw_contour = True if draw_contour is None else draw_contour
+    if any((draw_mask, draw_contour,)):
+        if mask is None:
+            raise ValueError("No mask to show!")
+
+    if draw_mask:
+        ax.imshow(data, alpha=mask_alpha, cmap=mask_cmap, **im_args)
+        im = ax.imshow(np.ma.masked_where(~mask, data), cmap=cmap, **im_args)
+    else:
+        im = ax.imshow(data, cmap=cmap, **im_args)
+    if draw_contour and np.unique(mask).size == 2:
+        big_mask = np.kron(mask, np.ones((10, 10)))
+        ax.contour(big_mask, colors=["k"], extent=extent, linewidths=[1],
+                   aspect=1,
+                   corner_mask=False, antialiased=False, levels=[.5])
+    ax.set_xlim(xlim)
+    ax.set_ylim(xlim)
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(12)
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(12)
+
+    if draw_diag:
+        ax.plot((tmin, tmax), (tmin, tmax), color="k", linestyle=":")
+    if draw_zerolines:
+        ax.axhline(0, color="k", linestyle=":")
+        ax.axvline(0, color="k", linestyle=":")
+
+    if ylabel != '':
+        ax.set_ylabel(ylabel)
+    if xlabel != '':
+        ax.set_xlabel(xlabel)
+    ax.xaxis.label.set_size(15)
+    ax.yaxis.label.set_size(15)
+    #     plt.xticks(np.arange)
+    #     ax.xaxis.set_tick_params(direction='out', which='bottom')
+    #     ax.tick_params(axis='x',direction='out')
+    if colorbar:
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label(cbar_unit, fontsize=12)
+    ax.set_aspect(1. / ax.get_data_ratio())
+    #     ax.set_title("GAT Matrix")
+
+    return (fig if ax is None else ax), im
