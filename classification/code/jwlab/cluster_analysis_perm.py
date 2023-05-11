@@ -1,4 +1,5 @@
 from fileinput import filename
+from select import select
 import pandas as pd
 import numpy as np
 import random
@@ -16,9 +17,10 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import LeaveOneOut
 from sklearn.preprocessing import StandardScaler
+import xgboost as xgb
 import sys
 import time
-import seaborn as sns
+# import seaborn as sns
 import matplotlib as mpl
 from sklearn.metrics import accuracy_score
 from sklearn.decomposition import TruncatedSVD
@@ -108,7 +110,7 @@ def minimal_mouth_X(X):
     return [X_mod]
 
 
-def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, no_animacy_avg=False):
+def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -145,7 +147,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
 
     for i in range(sampling_iterations):
-        print("Sampling iteration: ", i)
+        print("Sampling iteration: ", i, flush=True)
         if averaging == "permutation":
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config,
                                                       downsample_num=1000)
@@ -195,9 +197,13 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # Non-permuted test.
                 print('Simple')
                 try:
-                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg)
+                    if animacy:
+                        X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, False, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg)
+                    else:
+                        # X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg, current_seed=i)
+                        X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg, current_seed=i)
                     successful_iterations += 1
-                    print(f"Shape of X_test and y_test {X_test[0][0].shape} {y_test[0][0].shape}")
+                    # print(f"Shape of X_test and y_test {X_test[0][0].shape} {y_test[0][0].shape}")
                 except Exception as e:
                     print("Error in prep_matrices_avg, continuing to the next sampling iteration.")
                     print(e)
@@ -207,10 +213,15 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 #     print('Residual is true')
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, w2v_residuals)
                 # else:
-                if not no_animacy_avg:
-                    temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=animacy)
-                else:
-                    temp_results = cv_animacy(X_train, y_train, X_test, y_test)
+                # if not animacy:
+                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=animacy, iteration=i)
+                # else:
+                #     try:
+                #         temp_results = cv_animacy(X_train, y_train, X_test, y_test, do_eeg_pca=do_eeg_pca, do_sliding_window=do_sliding_window)
+                #     except Exception as  e:
+                #         print("Something wrong in cv_animacy, continuing to next iteration.")
+                #         print(e)
+                #         continue
                     
 
 
@@ -267,7 +278,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             else:
                 print('Simple: tgm')
                 try:
-                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2, current_seed=current_seed)
+                    # X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2, current_seed=i)
+                    X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2)
                     successful_iterations += 1
                 except:
                     print("Error in prep_matrices_avg, continuing to next iteration.")
@@ -283,19 +295,20 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         elif averaging == 'across':
             print('Across')
             # Other group was loaded before.
-            age_group_1 = 12
-            age_group_2 = 9
+            age_group_1 = 9
+            age_group_2 = 12
             try:
-                print("Loading age group 1")
+                print(f"Loading age group 1: age group 1 - {age_group_1}")
                 X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
                 num_win = num_win_1
+
                 print("Preparing age group 1")
                 X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel, train_only = True, test_size=0)
-                print("Loading age group 2")
+                print(f"Loading age group 2: age group 2 - {age_group_2}")
                 X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
                 # Now the other group
                 print("Preparing age group 2")
-                X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, train_only = False, test_size=0.9)
+                X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, train_only = False, test_size=0.9, current_seed=i)
             except Exception as e:
                 print(e)
                 print("Error in loading or preparing data, moving to next iteration.")
@@ -347,6 +360,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
 
         if averaging == 'average_trials_and_participants' or (averaging=='across' and type!='tgm'):
+            # print("Results", results)
             for i in range(len(temp_results)):
                 if i not in results.keys():
                     results[i] = {}
@@ -395,11 +409,11 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         else:
             # file_name = f"{age_group}_detrending_low_pass_only_reref_with_baseline_filepath_mod"
             # Using the 2 vs 2 test.
-            file_name = f"{age_group}m_across_cleaned2_mod_2v2"
+            file_name = f"{age_group}m_cleaned2_mod_2v2_inside_scaling_no_seed_second_run"
             if averaging == 'across':
-                file_name = f"{age_group_1}m_to_{age_group_2}m_cleaned2_test_90_percent_2"
+                file_name = f"{age_group_1}m_to_{age_group_2}m_cleaned2_test_90_percent_2_inside_scaling"
             if useRandomizedLabel:
-                npz_folder_path = f"{age_group}m_w2v_pca_mod_2v2"
+                npz_folder_path = f"{age_group}m_inside_scaling"
                 if averaging == 'across':
                     npz_folder_path = f"across_{age_group_1}_to_{age_group_2}_mod_2v2"
                 # Permutation test.
@@ -407,7 +421,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 timestr = time.strftime("%Y%m%d-%H%M%S")
                 final_equal_count_tgm = np.mean(equal_count_results, axis=0)
                 np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/permutation/{npz_folder_path}/{timestr}_{file_name}_seed_{seed}.npz", final_tgm)
-                np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/permutation/{npz_folder_path}/{timestr}_equal_count_seed_{seed}.npz", final_equal_count_tgm)
+                # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/permutation/{npz_folder_path}/{timestr}_equal_count_seed_{seed}.npz", final_equal_count_tgm)
             else:
                 # Non-permuted test.
                 final_tgm = np.mean(tgm_results, axis=0)
@@ -507,16 +521,16 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
             np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{folder_path}/{timestr}_{file_name}_all_data.npz", results)
         else:
-            pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
+            # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
-            adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
+            # adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
 
-            max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
+            # max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
             if len(sliding_window_config[2]) == 1:
                 print('R2 train values: ', r2_train_values)
                 print('R2 test values: ', r2_test_values)
                 print("Results:", results)
-                createGraph(results, t_mass_pos, adj_clusters_pos)
+                createGraph(results)#, t_mass_pos, adj_clusters_pos)
                 
                 # # word_pair_graph(sampl_iter_word_pairs_2v2)
                 # print(animacy_results)
@@ -663,7 +677,7 @@ def dendrogram(ytdist):
 
     
 
-def createGraph(results, t_mass_pos, adj_clusters_pos):
+def createGraph(results):
     scoreMean = []
     stdev = []
     for i in range(len(results)):
@@ -703,7 +717,7 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='9m avg_ref animacy all data')
+    plt.plot(x_graph, y_graph, 'k-', label='9m')
 
     # , markersize=10)
     ylim = [0.3, 0.8]
@@ -717,16 +731,15 @@ def createGraph(results, t_mass_pos, adj_clusters_pos):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("9m avg_ref animacy no avg test 50 iters")
+    plt.title("9m animacy avg_trials_and_part 50 iters inside_scaling")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("Aug 25 2022 animacy all data 50 iters no average test")
-
-
+    plt.savefig("Feb 4 2023 12m animacy second_run inside_scaling_no_seed avg_trials_and_part 10 iters")
+    
 
 def shuffle_labels(y_train, y_test):
     train_len = len(y_train)
@@ -1156,39 +1169,185 @@ def monte_carlo_animacy_from_vectors(y_vectors):
     return np.mean(accs)
 
 
-def cv_animacy(X_train, y_train, X_test, y_test):
+def compute_ncsnr(
+        betas: np.ndarray,
+        stimulus_ids: np.ndarray,
+):
+    """
+    Computes the noise ceiling signal to noise ratio.
+
+    :param betas: Array of betas or other neural data with shape (num_betas, num_voxels)
+    :param stimulus_ids: Array that specifies the stimulus that betas correspond to, shape (num_betas)
+    :return: Array of noise ceiling snr values with shape (num_voxels)
+    """
+
+    unique_ids = np.unique(stimulus_ids)  # For animacy, this corresponds to the samples that are animate and inanimate.
+    # print("unique ids: ", unique_ids)
+
+
+    betas_var = []
+    for i in unique_ids:
+        stimulus_betas = betas[stimulus_ids == i]
+        betas_var.append(stimulus_betas.var(axis=0, ddof=1))  # I believe axis=0 calculates the variance for each feature.
+    betas_var_mean = np.nanmean(np.stack(betas_var), axis=0)
+
+    std_noise = np.sqrt(betas_var_mean)
+
+    std_signal = 1. - betas_var_mean
+    # print("Std signal: ", std_signal)
+    std_signal[std_signal < 0.] = 0.
+    std_signal = np.sqrt(std_signal)
+    ncsnr = std_signal / std_noise
+
+    return ncsnr
+
+
+def compute_nc(ncsnr: np.ndarray, num_averages: int = 1):
+    """
+    Convert the noise ceiling snr to the actual noise ceiling estimate
+
+    :param ncsnr: Array of noise ceiling snr values with shape (num_voxels)
+    :param num_averages: Set to the number of repetitions that will be averaged together
+        If there are repetitions that won't be averaged, then leave this as 1
+    :return: Array of noise ceiling values with shape (num_voxels)
+    """
+    ncsnr_squared = ncsnr ** 2
+    nc = 100. * ncsnr_squared / (ncsnr_squared + (1. / num_averages))
+    return nc
+
+def cv_animacy(X_train, y_train, X_test, y_test, do_eeg_pca=False, do_sliding_window=False):
     print("Inside cv animacy")
     results = []
     
     scoring = 'accuracy'
+    
+
+    all_y_train_labels = []
+    all_y_test_labels = []
 
     ## Define the hyperparameters.
-    logreg_params = {'C': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+    logreg_params = {'C': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100]}
+    xgboost_classifier_params = {'n_estimators': [500]}
+    train_data_features = []
+    test_data_features = []
+    temp_results = {}
     for i in range(len(X_train)):
-        temp_results = {}
         for j in range(len(X_train[i])):
+            # print("Window: ", j)
             y_train_labels_w2v = y_train[i][j]
             y_test_labels_w2v = y_test[i][j]
-            model = LogisticRegression()
+            all_y_train_labels.append(y_train_labels_w2v)
+            all_y_test_labels.append(y_test_labels_w2v)
 
-            clf = GridSearchCV(model, logreg_params, scoring=scoring, n_jobs=-1, cv=5)
-            clf.fit(X_train[i][j].values, y_train_labels_w2v)
-            y_pred = clf.predict(X_test[i][j].values)
-            testScore = accuracy_score(y_test_labels_w2v, y_pred)
-            print(f"Score is: {testScore}")
-            print(f"y_pred is {y_pred}")
-            
-            if j in temp_results.keys():
-                temp_results[j] += [testScore]
+            # model = xgb.XGBClassifier(silent=True)
+            # clf = GridSearchCV(model, xgboost_classifier_params, scoring=scoring, n_jobs=-1, cv=5)
+            # print("Doing XGBoost Classification")
+            if do_eeg_pca:
+                model = LogisticRegression()
+                clf = GridSearchCV(model, logreg_params, scoring=scoring, n_jobs=-1, cv=5)
+                # Do standard scaling here.
+                scaler = StandardScaler()
+                x_data = scaler.fit_transform(X_train[i][j].values)
+                x_test_data = scaler.transform(X_test[i][j].values)
+                pca = PCA(n_components=0.95)  # Using 95% of variance explained.
+                x_data = pca.fit_transform(x_data)
+                x_test_data = pca.transform(x_test_data)
+                clf.fit(x_data, y_train_labels_w2v)
+                y_pred = clf.predict(x_test_data)
             else:
-                temp_results[j] = [testScore]
+                # Select the features here using noise ceiling.
+                # First calculate the noise ceiling on the training data.
+                betas = X_train[i][j].values
+                betas = (betas - betas.mean(axis=0)) / (betas.std(axis=0) + 1e-7)
+                # print("Betas: ", betas)
+                # test_betas = X_test[i][j].values
+                # test_betas = (test_betas - test_betas.mean(axis=0)) / (test_betas.std(axis=0) + 1e-7)
 
-        results.append(temp_results)
+                # test_eeg = test_betas
+                
+                train_stims = y_train_labels_w2v
+                # print("Train_ stims: ", train_stims)
+                # test_stims = y_test_labels_w2v
+                train_eeg = betas
+                # Compute the signal to noise ratio and noise ceiling for the train data.
+                train_ncsnr = compute_ncsnr(train_eeg, train_stims)
+                # print("train_ncsnr: ", train_ncsnr)s
+                train_nc = compute_nc(train_ncsnr, num_averages=1)
+                # print("Train NC: ", train_nc)
+                # print("Train NC len: ", len(train_nc))
+                
+
+                # test_ncsnr = compute_ncsnr(test_eeg, test_stims)
+                # test_nc = compute_nc(test_ncsnr, num_averages=1)
+                
+
+                # Top nth percentile.
+                # thresh = np.percentile(train_nc, 90)
+                thresh = 0.10  # Instead of doing this just select the top 10 sensors.
+                
+                # Select the top 10 features.
+                top_sensors = sorted(range(len(train_nc)), key=lambda i: train_nc[i])[-10:]
+                # print("Calculated the top 10 sensors: ", top_sensors)
+
+                # train_feature_mask = train_nc >= thresh
+                train_feature_mask = top_sensors
+
+                # print("test_feature_mask: ", sum(test_feature_mask))
+
+                scaler = StandardScaler()
+                X_train_scaled = scaler.fit_transform(X_train[i][j].values)
+                X_test_scaled = scaler.transform(X_test[i][j].values)
+
+                X_train_scaled_features = X_train_scaled[:, train_feature_mask]
+                X_test_scaled_features = X_test_scaled[:, train_feature_mask]  
+                train_data_features.append(X_train_scaled_features)
+                test_data_features.append(X_test_scaled_features)
+
+    # print("Train data features: ", train_data_features)
+    # print("Test data features: ", test_data_features)
+
+    # assert len(train_data_features) == 1200
+    # assert len(test_data_features) == 1200
+    window_size = 100
+    sliding_step_size = 10
+    
+    sliding_window_train_data = []
+    sliding_window_test_data = []
+    if do_sliding_window:
+        for i in range(0, len(train_data_features)-window_size + sliding_step_size, sliding_step_size):
+        
+            # Do the sliding window procedure here because the noise ceiling is being calculated
+            # for each time point but for a set of sixty sensors only
+            sliding_window_train_data.append(np.hstack(train_data_features[i:i+window_size]))
+            sliding_window_test_data.append(np.hstack(test_data_features[i:i+window_size]))
+        assert len(sliding_window_train_data) == len(sliding_window_test_data)
+
+    
+
+    for i in range(len(sliding_window_train_data)):
+        # print("Window: ", i)
+        train_data = sliding_window_train_data[i]
+        test_data = sliding_window_test_data[i]
+        y_train_labels = all_y_train_labels[i]
+        y_test_labels = all_y_test_labels[i]
+        model = LogisticRegression(max_iter=4000)
+        clf = GridSearchCV(model, logreg_params, scoring=scoring, n_jobs=-1, cv=5)
+        clf.fit(train_data, y_train_labels)
+        y_pred = clf.predict(test_data)
+
+        testScore = accuracy_score(y_test_labels, y_pred)
+        
+        if i in temp_results.keys():
+            temp_results[i] += [testScore]
+        else:
+            temp_results[i] = [testScore]
+
+    results.append(temp_results)
     return results
         
 
 
-def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
+def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iteration=-1):
     print("Calling cross_validaton_nested")
     results = []
     preds = []
@@ -1201,6 +1360,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
     best_alphas = []
     all_word_pairs_2v2 = {}
+
     for i in range(len(X_train)):
         temp_results = {}
         temp_preds = {}
@@ -1220,9 +1380,15 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
             if animacy:
                 y_train_labels_w2v = y_train[i][j]
                 y_test_labels_w2v = y_test[i][j]
+
+                # print("Y train labels w2v: ", y_train_labels_w2v)
             else:
                 y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
                 y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+                # y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
+                # y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
+                # y_train_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
+                # y_test_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_test[i][j])
             
             # print("y_train_labels_w2v: ", y_train_labels_w2v)
             # print("y_test_labels_w2v: ", y_test_labels_w2v)
@@ -1308,12 +1474,22 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
                 model = LogisticRegression()
                 # ridge_params = {'min_samples_split': [2,3,4]}
                 scoring = "accuracy"
+            
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train[i][j].values)
+            X_test_scaled = scaler.transform(X_test[i][j].values)
+            
 
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
-            clf.fit(X_train[i][j].values, y_train_labels_w2v)
+            # clf.fit(X_train[i][j].values, y_train_labels_w2v)
+            clf.fit(X_train_scaled, y_train_labels_w2v)
             # best_alphas.append(clf.best_params_)
-            y_pred = clf.predict(X_test[i][j].values)
+            # y_pred = clf.predict(X_test[i][j].values)
+            y_pred = clf.predict(X_test_scaled)
+            preds.append(y_pred)
             # print("y_pred inside cross_validaton_nested: ", y_pred)
+
+            
 
             # Many scoring functions.
 
@@ -1357,6 +1533,9 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False):
                 temp_results[j] = [testScore]
 
         results.append(temp_results)
+        # Save the predictions to disk.
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/predictions/12m_pre_w2v_iteration_{iteration}.npz", preds)
         # preds.append(temp_preds)
         # animacy_results.append(temp_animacy_results)
     # print(best_alphas)
@@ -1490,7 +1669,10 @@ def cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False
                 
             model = Ridge()
             clf = GridSearchCV(model, ridge_params, scoring='neg_mean_squared_error', n_jobs=-1, cv=5)
-            clf.fit(X_train[i][j].values, y_train_labels)
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train[i][j].values)
+            # clf.fit(X_train[i][j].values, y_train_labels)
+            clf.fit(X_train_scaled, y_train_labels)
             equal_count_list = []
 
             for k in range(len(X_test[i])):
@@ -1499,7 +1681,9 @@ def cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False
                     if target_pca:
                         y_test_labels = target_scaler.transform(y_test_labels)
                         y_test_labels = pca.transform(y_test_labels)
-                y_pred = clf.predict(X_test[i][k].values)
+                X_test_scaled = scaler.transform(X_test[i][k].values)
+                # y_pred = clf.predict(X_test[i][k].values)
+                y_pred = clf.predict(X_test_scaled)
 
                 # roe_mean, feature_corrs = corr_score(y_test_labels, y_pred)
                 # roe_matrix[j, k] = roe_mean

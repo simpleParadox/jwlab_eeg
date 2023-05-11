@@ -9,8 +9,8 @@ import numpy as np
 import setup_jwlab
 
 import sys
-seed = int(sys.argv[1])
-print("SLURM array task ID: ", sys.argv[1])
+seed = -1# int(sys.argv[1])
+# print("SLURM array task ID: ", sys.argv[1])
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
@@ -42,11 +42,12 @@ from matplotlib import pyplot as plt
 
 
 # NOTE: If you set useRandomizedLabel = True and set type='simple', it will run the null_distribution. But you have to run it 100 times/jobs.
-result = cluster_analysis_procedure(12, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 50], type='simple', animacy=True, no_animacy_avg=True)
+# result = cluster_analysis_procedure(12, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 50], type='simple', animacy=False, no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False)
+result = cluster_analysis_procedure(12, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 50], type='simple', animacy=True, no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False)
 # result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 70], type='simple', residual=True, child_residual=False)
 
 # result = cluster_analysis_procedure(12, False, "tgm", [-200, 1000, [100], 10], [5, 4, 50], type='simple', seed=seed, corr=False, target_pca=False)
-# result = cluster_analysis_procedure(12, False, "across", [-200, 1000, [100], 10], [5, 4, 50], type='simple', seed=seed, corr=False, target_pca=False, animacy=True)
+# result = cluster_analysis_procedure(12, False, "across", [-200, 1000, [100], 10], [5, 4, 10], type='simple', seed=seed, corr=False, target_pca=False, animacy=False)
 
 # In[25]:
 
