@@ -16,7 +16,7 @@ for curr_subject = SUBJECTS
     label = zeros(size(EEG.epoch, 2), 1); % list for labels (cells). 
     for i = 1:size(EEG.epoch, 2)
         cell_num = EEG.epoch(i).eventmffkey_cel; % cell value 1-36
-        obs_num = EEG.epoch(i).eventmffkey_obs;
+        obs_num = EEG.epoch(i).eventmffdikey_obs;
         if ischar(cell_num) 
             cell_num = str2double(cell_num);
           else   

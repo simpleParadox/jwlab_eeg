@@ -1,5 +1,6 @@
+# import sys
+# sys.path.append('G:\jw_lab\jwlab_eeg\classification\code')
 from jwlab.constants import old_participants
-
 
 def map_participants(ys, participants):
     for i in range(len(participants)):
