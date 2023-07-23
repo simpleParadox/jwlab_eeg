@@ -50,6 +50,9 @@ elif (user == 'rohancc'):
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 
+    # 0.3Hz high-pass filtering.
+    # cleaned_data_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/0point3Hzto50Hz/"
+
     # E65 reference.
     cleaned_data_filepath_e65 = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/band_pass_original_e65/"
 

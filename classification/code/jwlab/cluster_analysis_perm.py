@@ -39,7 +39,7 @@ from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_
     get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
     ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, get_tuned_cbt_childes_w2v_embeds, get_all_ph_concat_embeds, \
     get_glove_embeds, get_cbt_childes_50d_embeds, get_reduced_w2v_embeds, sep_by_prev_anim, prep_filtered_X, get_residual_pretrained_w2v, get_residual_tuned_w2v, \
-    get_glove_embeds_200, get_glove_embeds_100, get_glove_embeds_50, plot_image, extended_2v2_mod, corr_score
+    plot_image, extended_2v2_mod, corr_score
 
 
 # from regression.rsa_helper import make_rdm, corr_between_rdms
@@ -717,7 +717,7 @@ def createGraph(results):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='9m')
+    plt.plot(x_graph, y_graph, 'k-', label='12m')
 
     # , markersize=10)
     ylim = [0.3, 0.8]
@@ -731,14 +731,14 @@ def createGraph(results):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("9m animacy avg_trials_and_part 50 iters inside_scaling")
+    plt.title("0point3Hz high pass 12m w2v from eeg")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("Feb 4 2023 12m animacy second_run inside_scaling_no_seed avg_trials_and_part 10 iters")
+    plt.savefig("/home/rsaha/scratch/jwlab_outputs/July 15 2023 30 iters 12m w2v from eeg 0point3Hz high pass.png")
     
 
 def shuffle_labels(y_train, y_test):
@@ -1535,7 +1535,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
         results.append(temp_results)
         # Save the predictions to disk.
         timestr = time.strftime("%Y%m%d-%H%M%S")
-        np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/predictions/12m_pre_w2v_iteration_{iteration}.npz", preds)
+        # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/predictions/12m_pre_w2v_iteration_{iteration}.npz", preds)
         # preds.append(temp_preds)
         # animacy_results.append(temp_animacy_results)
     # print(best_alphas)

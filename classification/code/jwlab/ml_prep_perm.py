@@ -96,7 +96,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     bad_trial_count = []
     for each_ps in range(len(ys)):
         for bad_trial in range(len(ybad[each_ps])):
-            print("each_ps", each_ps)
+            # print("each_ps", each_ps)
             # ys_curr[each_ps]: for the total trial sub-list of each participant of ys_curr...
             # ybad[each_ps][bad_trial]: for each trial index in the bad trial sub-list of each participant of ybad...
             # minus 1 since in ys_curr trials are zero-indexed while in bad_trial it's one-indexed (because they are directly read from csv)
@@ -331,7 +331,7 @@ def remove_samples(X):
 #     return X_train, X_test_pt, y_train, y_test_pt
 
 # Added this function for the noise ceiling calculation of the animacy classification.
-def prep_matrices_avg(X, age_group, train_only=False, test_size=0.20, current_seed=-1,
+def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, current_seed=-1,
                       animacy=False, no_animacy_avg=False):
     participants = init(age_group)
     num_participants = len(participants)

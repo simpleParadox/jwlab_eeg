@@ -1423,3 +1423,18 @@ def plot_image(data, times, mask=None, ax=None, vmax=None, vmin=None,
     #     ax.set_title("GAT Matrix")
 
     return (fig if ax is None else ax), im
+
+
+
+
+def get_channel_group_names(participant):
+    if participant == 9:
+        temp = np.load("/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_9m.npz", allow_pickle=True)
+    elif participant == 12:
+        temp = np.load("/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_12m.npz", allow_pickle=True)
+    
+    data = [temp[i] for i in temp]
+    data = data[0]  # After this operation, you can use the channel names as indices.
+
+
+
