@@ -1063,6 +1063,13 @@ def get_w2v_embeds_from_dict(labels):
 
     return w2v_labels
 
+def get_trial_dist_vectors(labels, all_dist_vectors):
+    trial_dist_vectors = []
+    for label in labels:
+        trial_dist_vectors.append(all_dist_vectors[int(label)])
+    return np.array(trial_dist_vectors)
+        
+
 def get_prev_w2v_embeds_from_dict(labels):
     embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)
     embeds_with_labels_dict = embeds_with_labels_dict_loaded['arr_0']

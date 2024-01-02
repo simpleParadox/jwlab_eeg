@@ -40,7 +40,7 @@ def init(age_group):
     return participants
 
 
-def load_ml_data(participants):
+def load_ml_data(participants, ch_group=False, group_num=None):
     # read all participant csvs, concat them into one dataframe
     data_path = cleaned_data_filepath
     dfs = [pd.read_csv("%s%s_cleaned_ml.csv" % (data_path, s))
@@ -50,6 +50,26 @@ def load_ml_data(participants):
         df = df.drop('E65', axis=1)
     except:
         print("Could not drop E65")
+    
+    if ch_group:
+        assert group_num is not None
+        # Do the group channel analysis where you select the channels groups.
+        if participants[0][0] == '1':
+            part_suffix = '12'
+        else:
+            part_suffix = '9'
+        ch_group_data = np.load(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_{part_suffix}m.npz", allow_pickle=True)
+        
+        ch_data = [ch_group_data[k] for k in ch_group_data] # All the group channels. Immediate neighbours of all channels.
+        ch_data = ch_data[0]  # The object contains two items. Selecting the first item.
+        column_subset = ['Time']
+        column_subset.extend(ch_data[group_num])
+
+        df = df[column_subset]
+
+
+        
+
     
     # print("Shape of df: ", df.shape)
 
@@ -74,10 +94,11 @@ def load_ml_data(participants):
     return df, ys
 
 
-def prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000, current_seed=-1, animacy=False):
+def prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config, downsample_num=1000, current_seed=-1, 
+            animacy=False, ch_group=False, group_num=None):
     participants = init(age_group)
     print("Participants: ", participants)
-    df, ys = load_ml_data(participants)
+    df, ys = load_ml_data(participants, ch_group=ch_group, group_num=group_num)
     return prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, sliding_window_config,
                             downsample_num=downsample_num, current_seed=current_seed, animacy=animacy)
 
@@ -140,7 +161,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
             df = df.drop(columns=["Time"], axis=1)
             X = df.values
             X = np.reshape(
-                X, (window_lengths[length_per_window], 60, -1))
+                X, (window_lengths[length_per_window], len(df.columns), -1))
             # X = resample(X, downsample_num, axis=0)
             (i, j, k) = X.shape
             X = np.reshape(X, (k, j * window_lengths[length_per_window]))
@@ -200,7 +221,13 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
 
 
 
-def remove_samples(X):
+def randomly_remove_samples(X):
+    """
+    Randomly remove samples from the 9m old so that the sample numbers 
+    are equal to those of the 12m olds.
+    """
+    
+    # For each label in the 9m old, randomly drop 19 samples.
 
     labels = X[0][0]['label'].values
     df_index = X[0][0].index
@@ -213,7 +240,7 @@ def remove_samples(X):
     indices_to_drop = []
     for idx in indices:
         # idx is a list.
-        no_elements_to_delete = 8 #len(idx) // 4
+        no_elements_to_delete = 19 #len(idx) // 4
         no_elements_to_keep = len(idx) - no_elements_to_delete
         b = set(random.sample(idx, no_elements_to_delete))  # the `if i in b` on the next line would benefit from b being a set for large lists
         b = [i for i in idx if i in b]  # you need this to restore the order

@@ -31,7 +31,7 @@ from scipy.cluster import hierarchy
 # hits = ['baby', 'bat', 'bad']
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')  ## For loading the following files.
 
-from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg, remove_samples
+from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg, randomly_remove_samples
 from matplotlib import pyplot as plt
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
@@ -39,7 +39,7 @@ from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_
     get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
     ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, get_tuned_cbt_childes_w2v_embeds, get_all_ph_concat_embeds, \
     get_glove_embeds, get_cbt_childes_50d_embeds, get_reduced_w2v_embeds, sep_by_prev_anim, prep_filtered_X, get_residual_pretrained_w2v, get_residual_tuned_w2v, \
-    plot_image, extended_2v2_mod, corr_score
+    plot_image, extended_2v2_mod, corr_score, get_trial_dist_vectors
 
 
 # from regression.rsa_helper import make_rdm, corr_between_rdms
@@ -110,7 +110,9 @@ def minimal_mouth_X(X):
     return [X_mod]
 
 
-def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False):
+def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', 
+                               residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, 
+                               no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False, ch_group=False, group_num=None):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -150,7 +152,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         print("Sampling iteration: ", i, flush=True)
         if averaging == "permutation":
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config,
-                                                      downsample_num=1000)
+                                                      downsample_num=1000, ch_group=ch_group, group_num=group_num)
 
             # X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel)  # This is a new statement.
 
@@ -161,12 +163,13 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         elif averaging == "average_trials_and_participants":
             flag = 0
 
-            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000, animacy=animacy)
+            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000, 
+                                                      animacy=animacy, ch_group=ch_group, group_num=group_num)
             # print("Y after prep_ml is: ", y)
             # print("Raveled after prep_ml is: ", np.ravel(y))
             # print("Length of raveled Y after prep_ml is: ", np.ravel(y).shape)
             # print("Good trial count: ", good_trial_count)
-            # X = remove_samples(X) # Use only for the 9 month olds.
+            X = randomly_remove_samples(X) # Use only for the 9 month olds.
             # X = minimal_mouth_X(X)
 
 
@@ -215,6 +218,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # else:
                 # if not animacy:
                 temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=animacy, iteration=i)
+                print("Temp results: ", temp_results)
                 # else:
                 #     try:
                 #         temp_results = cv_animacy(X_train, y_train, X_test, y_test, do_eeg_pca=do_eeg_pca, do_sliding_window=do_sliding_window)
@@ -530,7 +534,12 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 print('R2 train values: ', r2_train_values)
                 print('R2 test values: ', r2_test_values)
                 print("Results:", results)
+                np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/{age_group}_randomly_removed_eeg_to_w2v_8cpus.npz", results)
                 createGraph(results)#, t_mass_pos, adj_clusters_pos)
+                # Save the results for the group channel analysis.
+                # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/group_channel_results/ch_group_{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_ch_group_{group_num}.npz", results)
+                # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/trial_distribution/{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_trial_dist_from_eeg.npz", results)
+
                 
                 # # word_pair_graph(sampl_iter_word_pairs_2v2)
                 # print(animacy_results)
@@ -717,7 +726,7 @@ def createGraph(results):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='12m')
+    plt.plot(x_graph, y_graph, 'k-', label='9m')
 
     # , markersize=10)
     ylim = [0.3, 0.8]
@@ -731,14 +740,14 @@ def createGraph(results):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("0point3Hz high pass 12m w2v from eeg")
+    plt.title("Randomly_removed_eeg_to_w2v_9m")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("/home/rsaha/scratch/jwlab_outputs/July 15 2023 30 iters 12m w2v from eeg 0point3Hz high pass.png")
+    plt.savefig("Randomly removed 9m eeg_to_w2v.png")
     
 
 def shuffle_labels(y_train, y_test):
@@ -1360,7 +1369,8 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
     best_alphas = []
     all_word_pairs_2v2 = {}
-
+    all_trial_dist_vectors = np.load("/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/trial_distribution/trial_distribution_per_participant_all_words_9m.npz",
+                                 allow_pickle=True)['arr_0']
     for i in range(len(X_train)):
         temp_results = {}
         temp_preds = {}
@@ -1385,10 +1395,18 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
             else:
                 y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
                 y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+                
                 # y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
                 # y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
+                
                 # y_train_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
                 # y_test_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_test[i][j])
+                
+                # Predicting the trial distribution for sanity check.
+                # y_train_labels_w2v = get_trial_dist_vectors(y_train[i][j], all_dist_vectors=all_trial_dist_vectors)
+                # y_test_labels_w2v = get_trial_dist_vectors(y_test[i][j], all_dist_vectors=all_trial_dist_vectors)
+                
+                
             
             # print("y_train_labels_w2v: ", y_train_labels_w2v)
             # print("y_test_labels_w2v: ", y_test_labels_w2v)
@@ -1487,6 +1505,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
             # y_pred = clf.predict(X_test[i][j].values)
             y_pred = clf.predict(X_test_scaled)
             preds.append(y_pred)
+            # print("Preds: ", preds)
             # print("y_pred inside cross_validaton_nested: ", y_pred)
 
             

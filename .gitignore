@@ -138,7 +138,14 @@ regression/GoogleNews-vectors-negative300.bin.gz
 regression/test.ipynb
 regression/w2v_embeds/
 regression/data/
+regression/group_channel_results/
+data/
+
+*.npz
 
 *.out
 *.png
 EventTimings/
+*.xml
+*.iml
+launch.json
