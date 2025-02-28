@@ -50,7 +50,18 @@ start_wind = 0 #int(sys.argv[4])
 end_wind = 300 #int(sys.argv[5])
 
 # NOTE: If you set useRandomizedLabel = True and set type='simple', it will run the null_distribution. But you have to run it 100 times/jobs.
-result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 50], type='simple', animacy=False, no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False)
+result = cluster_analysis_procedure(9, False, 
+                                    "average_trials_and_participants",
+                                    [-200, 1000, [100], 10], 
+                                    [5, 4, 50], 
+                                    type_exp='simple', # 'permutation' or 'simple'
+                                    animacy=False, 
+                                    no_animacy_avg=False, 
+                                    do_eeg_pca=False, 
+                                    do_sliding_window=False,
+                                    model_name='gpt2-xl',
+                                    layer=1) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
+
 # result = cluster_analysis_procedure(age_group, False, "average_trials_and_participants", [start_wind, end_wind, [end_wind - start_wind], 10], [5, 4, 50], type='simple', animacy=False, no_animacy_avg=False, do_eeg_pca=False, 
 #                                     do_sliding_window=False, ch_group=True, group_num=group_num)
 # result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 70], type='simple', residual=True, child_residual=False)

@@ -73,8 +73,8 @@ elif os_name == 'Linux':
     residual_pretrained_w2v_path = os.getcwd() +  "/regression/w2v_embeds/pretrained_w2v_residuals.npz"
     residual_tuned_w2v_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_residuals.npz"
     TRANSFORMER_EMBEDS_FILE_MAPPING = {
-        'gpt2-large': '/regression/llm_embeds/',
-        'gpt2-xl': '/regression/llm_embeds/'
+        'gpt2-large': '/regression/llm_embeds/gpt2-large_all_words_embeddings_layer_wise.pkl',
+        'gpt2-xl': '/regression/llm_embeds/gpt2-xl_all_words_embeddings_layer_wise.pkl'
         
     }
 elif os_name == 'Darwin':
@@ -1055,16 +1055,22 @@ def get_glove_embeds(labels):
     glove_label_embeds = np.array(glove_label_embeds)
     return glove_label_embeds
 
-def get_transformer_embeddings_from_dict(labels, model_name='gpt2-xl'):
+def load_llm_embeds(model_name):
     file_path = TRANSFORMER_EMBEDS_FILE_MAPPING[model_name]
     embeds_dict = pickle.load(file_path)
-    
+    return embeds_dict
+
+
+def get_transformer_embeddings_from_dict(labels, embeds_dict=None, layer=1):
+    assert embeds_dict is not None, "Please pass the model embeddings by calling load_llm_embeds(model_name)"
     llm_labels = []
     for label in labels:
-        llm_labels.append(embeds_dict[int(label)])
+        # Since the labels contains integers, we need to get the word for that label and then
+        # access the embedding from the dictionary.
+        llm_labels.append(embeds_dict[labels_mapping[int(label)]][layer]) # the layer parameter returns the embedding for that layer.
     llm_labels = np.array(llm_labels)
     return llm_labels
-    
+
 
 def get_w2v_embeds_from_dict(labels):
     embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)

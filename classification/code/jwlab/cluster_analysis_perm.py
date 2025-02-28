@@ -39,7 +39,8 @@ from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_
     get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
     ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, get_tuned_cbt_childes_w2v_embeds, get_all_ph_concat_embeds, \
     get_glove_embeds, get_cbt_childes_50d_embeds, get_reduced_w2v_embeds, sep_by_prev_anim, prep_filtered_X, get_residual_pretrained_w2v, get_residual_tuned_w2v, \
-    plot_image, extended_2v2_mod, corr_score, get_trial_dist_vectors
+    plot_image, extended_2v2_mod, corr_score, get_trial_dist_vectors, \
+    get_transformer_embeddings_from_dict
 
 
 # from regression.rsa_helper import make_rdm, corr_between_rdms
@@ -110,9 +111,10 @@ def minimal_mouth_X(X):
     return [X_mod]
 
 
-def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type='simple', 
+def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type_exp='simple', 
                                residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, 
-                               no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False, ch_group=False, group_num=None):
+                               no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False, ch_group=False, group_num=None,
+                               randomly_remove_from_9m=False, model_name=None, layer=1):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -169,7 +171,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # print("Raveled after prep_ml is: ", np.ravel(y))
             # print("Length of raveled Y after prep_ml is: ", np.ravel(y).shape)
             # print("Good trial count: ", good_trial_count)
-            X = randomly_remove_samples(X) # Use only for the 9 month olds.
+            if randomly_remove_from_9m:
+                X = randomly_remove_samples(X) # Use only for the 9 month olds.
             # X = minimal_mouth_X(X)
 
 
@@ -180,11 +183,13 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # filtered_X = sep_by_prev_anim(X,y, current_type='inanimate', prev_type='animate')
             # X_train, X_test, y_train, y_test = prep_filtered_X(filtered_X)
 
-            if type == 'permutation':
+            if type_exp == 'permutation':
                 # The split of the dataset into train and test set happens more than once here for each permuted label assignment.
                 temp_results_list = []
                 print('Permutation')
+                # NOTE: type == 'permutation' is not used.
                 for i in range(50):
+                    
                     X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.2)
                     cv_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test)
 
@@ -217,7 +222,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, w2v_residuals)
                 # else:
                 # if not animacy:
-                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=animacy, iteration=i)
+                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, 
+                                                                                                                             animacy=animacy, iteration=i, model_name=model_name, layer=layer)
                 print("Temp results: ", temp_results)
                 # else:
                 #     try:
@@ -1356,7 +1362,8 @@ def cv_animacy(X_train, y_train, X_test, y_test, do_eeg_pca=False, do_sliding_wi
         
 
 
-def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iteration=-1):
+def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iteration=-1,
+                           model_name=None, layer=1):
     print("Calling cross_validaton_nested")
     results = []
     preds = []
@@ -1364,6 +1371,9 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
     tgm_matrix_temp = np.zeros((120, 120))
     # scoring = 'accuracy'
     scoring = 'neg_mean_squared_error'
+    embeds_dict == None
+    if model_name is not None:
+        embeds_dict = load_llm_embeds(model_name)
 
     ## Define the hyperparameters.
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
@@ -1393,8 +1403,14 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
 
                 # print("Y train labels w2v: ", y_train_labels_w2v)
             else:
-                y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
-                y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+                if model_name == None:
+                    # Get regular w2v embeds instead of llm embeds.
+                    y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+                    y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+                else:
+                    y_train_labels_w2v = get_transformer_embeddings_from_dict(y_train[i][j], embeds_dict=embeds_dict, layer=layer)
+                    y_test_labels_w2v = get_transformer_embeddings_from_dict(y_test[i][j], embeds_dict=embeds_dict, layer=layer)
+                    
                 
                 # y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
                 # y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
