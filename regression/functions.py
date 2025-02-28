@@ -7,9 +7,8 @@ from scipy.signal import stft
 from scipy.stats import pearsonr
 from copy import deepcopy
 import pandas as pd
-# import pickle
+import pickle
 import random
-# import gensim
 from numpy import load, savez_compressed
 from sklearn.linear_model import Ridge
 from sklearn.linear_model import LinearRegression
@@ -19,6 +18,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import os
 import platform
+
 
 os_name = platform.system()
 print(os.getcwd())
@@ -72,6 +72,11 @@ elif os_name == 'Linux':
     pre_w2v_pca_16_comps_path = os.getcwd() + "/regression/w2v_embeds/pre_w2v_pca_16_components.npz"
     residual_pretrained_w2v_path = os.getcwd() +  "/regression/w2v_embeds/pretrained_w2v_residuals.npz"
     residual_tuned_w2v_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_residuals.npz"
+    TRANSFORMER_EMBEDS_FILE_MAPPING = {
+        'gpt2-large': '/regression/llm_embeds/',
+        'gpt2-xl': '/regression/llm_embeds/'
+        
+    }
 elif os_name == 'Darwin':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"
     avg_w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds_avg_trial.npz"
@@ -1050,6 +1055,16 @@ def get_glove_embeds(labels):
     glove_label_embeds = np.array(glove_label_embeds)
     return glove_label_embeds
 
+def get_transformer_embeddings_from_dict(labels, model_name='gpt2-xl'):
+    file_path = TRANSFORMER_EMBEDS_FILE_MAPPING[model_name]
+    embeds_dict = pickle.load(file_path)
+    
+    llm_labels = []
+    for label in labels:
+        llm_labels.append(embeds_dict[int(label)])
+    llm_labels = np.array(llm_labels)
+    return llm_labels
+    
 
 def get_w2v_embeds_from_dict(labels):
     embeds_with_labels_dict_loaded = load(embeds_with_label_path, allow_pickle=True)

@@ -140,6 +140,8 @@ regression/w2v_embeds/
 regression/data/
 regression/group_channel_results/
 data/
+regression/w2v_models/
+q
 
 *.npz
 
