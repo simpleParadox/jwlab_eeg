@@ -114,7 +114,7 @@ def minimal_mouth_X(X):
 def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type_exp='simple', 
                                residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, 
                                no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False, ch_group=False, group_num=None,
-                               randomly_remove_from_9m=False, model_name=None, layer=1):
+                               randomly_remove_from_9m=False, model_name=None, layer=1, graph_file_name='test'):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -525,14 +525,13 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         if useRandomizedLabel:
             # final_tgm = np.mean(results, axis=0)
             prefix = 'vectors' if not animacy else 'animacy'
-            file_name = f'{prefix}_{age_group}m'
+            file_name = f'{age_group}m'
             timestr = time.strftime("%Y%m%d-%H%M%S")
-            folder_path = f"{prefix}_{age_group}m"
             if averaging == 'across':
                 folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
             
             # Check if the folder exists.
-            root_dir = f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{folder_path}"
+            root_dir = f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{prefix}/"
             if os.path.exists(root_dir):
                 os.makedirs(root_dir)
             np.savez_compressed(f"{root_dir}/{timestr}_{file_name}_all_data.npz", results)
@@ -546,8 +545,17 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 print('R2 train values: ', r2_train_values)
                 print('R2 test values: ', r2_test_values)
                 print("Results:", results)
-                np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/{age_group}_randomly_removed_eeg_to_w2v_8cpus.npz", results)
-                createGraph(results)#, t_mass_pos, adj_clusters_pos)
+                prefix = 'vectors' if not animacy else 'animacy'
+                file_name = f'{age_group}m'
+                timestr = time.strftime("%Y%m%d-%H%M%S")
+                
+                # Check if the folder exists.
+                root_dir = f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/observed/{prefix}/"
+                if os.path.exists(root_dir):
+                    os.makedirs(root_dir)
+ 
+                np.savez_compressed(f"{root_dir}{timestr}_{file_name}_all_data.npz", results)
+                createGraph(results, age_group, graph_file_name)#, t_mass_pos, adj_clusters_pos)
                 # Save the results for the group channel analysis.
                 # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/group_channel_results/ch_group_{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_ch_group_{group_num}.npz", results)
                 # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/trial_distribution/{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_trial_dist_from_eeg.npz", results)
@@ -698,13 +706,13 @@ def dendrogram(ytdist):
 
     
 
-def createGraph(results):
+def createGraph(results, age_group=9, file_name=None):
     scoreMean = []
     stdev = []
     for i in range(len(results)):
         for j in range(len(results[i])):
             scoreMean.append(round(np.mean(results[i][j]), 4))
-            stdev.append(round(stats.sem(results[i][j]), 4))
+            stdev.append(round(stats.sem(results[i][j]), 4)) # This is actually std error of the mean (and not std dev).
 
     length_per_window_plt = 10  # 1200 / len(scoreMean)
 
@@ -738,7 +746,7 @@ def createGraph(results):
     plt.clf()
     # plt.rcParams["figure.figsize"] = (20, 15)
 
-    plt.plot(x_graph, y_graph, 'k-', label='9m')
+    plt.plot(x_graph, y_graph, 'k-', label=f'{age_group}m')
 
     # , markersize=10)
     ylim = [0.3, 0.8]
@@ -752,14 +760,14 @@ def createGraph(results):
     plt.axvline(0, linestyle='--', color='#696969')
     plt.fill_between(x_graph, y_graph - error, y_graph + error, color='#58c0fc')
     # plt.scatter(x_dots, y_dots, marker='.')
-    plt.title("Randomly_removed_eeg_to_w2v_9m")
+    plt.title(f"{file_name}")
     plt.xlabel("Time (ms)")
     plt.ylabel("2v2 Accuracy")
     plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
     plt.legend(loc=1)
     acc_at_zero = y_graph[np.where(x_graph == 0)[0][0]]
     plt.text(700, 0.35, str(f"Acc At 0ms: {acc_at_zero}"))
-    plt.savefig("Randomly removed 9m eeg_to_w2v.png")
+    plt.savefig(f"{file_name}.png")
     
 
 def shuffle_labels(y_train, y_test):
@@ -1409,7 +1417,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
 
                 # print("Y train labels w2v: ", y_train_labels_w2v)
             else:
-                if model_name == None:
+                if embeds_dict is None:
                     # Get regular w2v embeds instead of llm embeds.
                     y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
                     y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
