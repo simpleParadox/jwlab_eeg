@@ -19,6 +19,7 @@ from sklearn.model_selection import LeaveOneOut
 from sklearn.preprocessing import StandardScaler
 # import xgboost as xgb
 import sys
+import os
 import time
 from tqdm import tqdm
 # import seaborn as sns
@@ -551,8 +552,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 timestr = time.strftime("%Y%m%d-%H%M%S")
                 
                 # Check if the folder exists.
-                root_dir = f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/observed/{prefix}/"
-                if os.path.exists(root_dir):
+                root_dir = os.getcwd() + f"/same_time_results/observed/{prefix}/"
+                if not os.path.exists(root_dir):
                     os.makedirs(root_dir)
  
                 np.savez_compressed(f"{root_dir}{timestr}_{file_name}_all_data.npz", results)
@@ -1389,9 +1390,11 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
     embeds_dict = None
     if model_name is not None:
         embeds_dict = load_llm_embeds(model_name)
+    else:
+        print("Model name is None", flush=True)
 
     ## Define the hyperparameters.
-    ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
+    ridge_params = {'alpha': [100000, 1000000, 10000000]}
     best_alphas = []
     all_word_pairs_2v2 = {}
     # all_trial_dist_vectors = np.load("/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/trial_distribution/trial_distribution_per_participant_all_words_9m.npz",
@@ -1532,7 +1535,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
             # clf.fit(X_train[i][j].values, y_train_labels_w2v)
             clf.fit(X_train_scaled, y_train_labels_w2v)
-            print('Best params: ', clf.best_params_)
+            print('Best params: ', clf.best_params_, flush=True)
             # best_alphas.append(clf.best_params_)
             # y_pred = clf.predict(X_test[i][j].values)
             y_pred = clf.predict(X_test_scaled)

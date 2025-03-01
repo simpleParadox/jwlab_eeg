@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='Run the decoding analysis.')
 
 parser.add_argument('--seed', type=int, default=0, help='Random seed for the analysis')
 parser.add_argument('--graph_file_name', type=str, default='gpt2-xl', help='Graph file name')
-parser.add_argument('--model_name', type=str, default='gpt2-xl', help='Model name')
+parser.add_argument('--model_name', type=str, default=None, help='Model name')
 parser.add_argument('--layer', type=int, default=1, help='Layer number')
 parser.add_argument('--use_randomized_label', default=False, action='store_true', help='Use randomized labels')
 parser.add_argument('--age_group', type=int, default=9, help='Age group')
