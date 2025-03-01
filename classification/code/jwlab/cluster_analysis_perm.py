@@ -17,7 +17,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import LeaveOneOut
 from sklearn.preprocessing import StandardScaler
-import xgboost as xgb
+# import xgboost as xgb
 import sys
 import time
 from tqdm import tqdm
@@ -1386,7 +1386,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
     tgm_matrix_temp = np.zeros((120, 120))
     # scoring = 'accuracy'
     scoring = 'neg_mean_squared_error'
-    embeds_dict == None
+    embeds_dict = None
     if model_name is not None:
         embeds_dict = load_llm_embeds(model_name)
 
