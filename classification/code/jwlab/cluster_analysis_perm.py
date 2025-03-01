@@ -41,7 +41,7 @@ from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_
     ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, get_tuned_cbt_childes_w2v_embeds, get_all_ph_concat_embeds, \
     get_glove_embeds, get_cbt_childes_50d_embeds, get_reduced_w2v_embeds, sep_by_prev_anim, prep_filtered_X, get_residual_pretrained_w2v, get_residual_tuned_w2v, \
     plot_image, extended_2v2_mod, corr_score, get_trial_dist_vectors, \
-    get_transformer_embeddings_from_dict
+    get_transformer_embeddings_from_dict, load_llm_embeds
 
 
 # from regression.rsa_helper import make_rdm, corr_between_rdms

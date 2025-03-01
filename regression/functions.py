@@ -73,8 +73,8 @@ elif os_name == 'Linux':
     residual_pretrained_w2v_path = os.getcwd() +  "/regression/w2v_embeds/pretrained_w2v_residuals.npz"
     residual_tuned_w2v_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_residuals.npz"
     TRANSFORMER_EMBEDS_FILE_MAPPING = {
-        'gpt2-large': '/regression/llm_embeds/gpt2-large_all_words_embeddings_layer_wise.pkl',
-        'gpt2-xl': '/regression/llm_embeds/gpt2-xl_all_words_embeddings_layer_wise.pkl'
+        'gpt2-large': os.getcwd() + '/regression/llm_embeds/gpt2-large_all_words_embeddings_layer_wise.pkl',
+        'gpt2-xl': os.getcwd() + '/regression/llm_embeds/gpt2-xl_all_words_embeddings_layer_wise.pkl'
         
     }
 elif os_name == 'Darwin':
@@ -1057,7 +1057,8 @@ def get_glove_embeds(labels):
 
 def load_llm_embeds(model_name):
     file_path = TRANSFORMER_EMBEDS_FILE_MAPPING[model_name]
-    embeds_dict = pickle.load(file_path)
+    with open(file_path, 'rb') as file_path:
+        embeds_dict = pickle.load(file_path)
     return embeds_dict
 
 
