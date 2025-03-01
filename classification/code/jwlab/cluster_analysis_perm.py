@@ -1400,7 +1400,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
         temp_results = {}
         temp_preds = {}
         temp_animacy_results = {}
-        for j in range(len(X_train[i])):
+        for j in tqdm(range(len(X_train[i]))):
 
             # this is for predicting the second phoneme only (sim_agg.csv).
             # First remove the data for which the second phoneme is not present.
@@ -1532,10 +1532,11 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
             # clf.fit(X_train[i][j].values, y_train_labels_w2v)
             clf.fit(X_train_scaled, y_train_labels_w2v)
+            print('Best params: ', clf.best_params_)
             # best_alphas.append(clf.best_params_)
             # y_pred = clf.predict(X_test[i][j].values)
             y_pred = clf.predict(X_test_scaled)
-            preds.append(y_pred)
+            # preds.append(y_pred)
             # print("Preds: ", preds)
             # print("y_pred inside cross_validaton_nested: ", y_pred)
 

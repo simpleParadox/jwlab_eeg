@@ -19,6 +19,7 @@ parser.add_argument('--model_name', type=str, default='gpt2-xl', help='Model nam
 parser.add_argument('--layer', type=int, default=1, help='Layer number')
 parser.add_argument('--use_randomized_label', default=False, action='store_true', help='Use randomized labels')
 parser.add_argument('--age_group', type=int, default=9, help='Age group')
+parser.add_argument('--iterations', type=int, default=50, help='Number of sampling iterations to run')
 parsed_args = parser.parse_args()
 print("Running job with args: ", parsed_args)
 seed = parsed_args.seed
@@ -27,6 +28,7 @@ model_name = parsed_args.model_name
 layer = parsed_args.layer
 use_randomized_label = parsed_args.use_randomized_label
 age_group = parsed_args.age_group
+iterations = parsed_args.iterations
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
@@ -71,7 +73,7 @@ end_wind = 300 #int(sys.argv[5])
 result = cluster_analysis_procedure(age_group, use_randomized_label, 
                                     "average_trials_and_participants",
                                     [-200, 1000, [100], 10], 
-                                    [5, 4, 50], 
+                                    [5, 4, iterations], 
                                     type_exp='simple', # 'permutation' or 'simple'
                                     animacy=False, 
                                     no_animacy_avg=False, 
