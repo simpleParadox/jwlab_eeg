@@ -20,6 +20,7 @@ from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 import sys
 import time
+from tqdm import tqdm
 # import seaborn as sns
 import matplotlib as mpl
 from sklearn.metrics import accuracy_score
@@ -150,8 +151,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         w2v_residuals, r2 = cv_all_ph_concat_padded_residual_mod(child=child_residual)
 
 
-    for i in range(sampling_iterations):
-        print("Sampling iteration: ", i, flush=True)
+    for i in tqdm(range(sampling_iterations)):
+        # print("Sampling iteration: ", i, flush=True)
         if averaging == "permutation":
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config,
                                                       downsample_num=1000, ch_group=ch_group, group_num=group_num)
@@ -1393,8 +1394,8 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
     ridge_params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
     best_alphas = []
     all_word_pairs_2v2 = {}
-    all_trial_dist_vectors = np.load("/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/trial_distribution/trial_distribution_per_participant_all_words_9m.npz",
-                                 allow_pickle=True)['arr_0']
+    # all_trial_dist_vectors = np.load("/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/trial_distribution/trial_distribution_per_participant_all_words_9m.npz",
+    #                              allow_pickle=True)['arr_0']
     for i in range(len(X_train)):
         temp_results = {}
         temp_preds = {}
