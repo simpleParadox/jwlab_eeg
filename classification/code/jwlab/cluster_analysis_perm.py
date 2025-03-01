@@ -524,12 +524,18 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     if averaging == 'average_trials_and_participants' or (averaging=='across' and type!='tgm'):
         if useRandomizedLabel:
             # final_tgm = np.mean(results, axis=0)
-            file_name = f'animacy_{age_group}m'
+            prefix = 'vectors' if not animacy else 'animacy'
+            file_name = f'{prefix}_{age_group}m'
             timestr = time.strftime("%Y%m%d-%H%M%S")
-            folder_path = f"animacy_{age_group}m"
+            folder_path = f"{prefix}_{age_group}m"
             if averaging == 'across':
                 folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
-            np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{folder_path}/{timestr}_{file_name}_all_data.npz", results)
+            
+            # Check if the folder exists.
+            root_dir = f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{folder_path}"
+            if os.path.exists(root_dir):
+                os.makedirs(root_dir)
+            np.savez_compressed(f"{root_dir}/{timestr}_{file_name}_all_data.npz", results)
         else:
             # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
