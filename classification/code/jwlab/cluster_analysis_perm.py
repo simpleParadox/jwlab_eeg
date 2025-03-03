@@ -116,7 +116,7 @@ def minimal_mouth_X(X):
 def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type_exp='simple', 
                                residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, 
                                no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False, ch_group=False, group_num=None,
-                               randomly_remove_from_9m=False, model_name=None, layer=1, graph_file_name='test'):
+                               randomly_remove_from_9m=False, model_name=None, layer=1, graph_file_name='test', fixed_seed=False):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -210,8 +210,11 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                     if animacy:
                         X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, False, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg)
                     else:
-                        # X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg, current_seed=i)
-                        X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg, current_seed=i)
+                        if fixed_seed:
+                            print("Fixed seed is :", fixed_seed) 
+                            X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg, current_seed=i)
+                        else:
+                            X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg)
                     successful_iterations += 1
                     # print(f"Shape of X_test and y_test {X_test[0][0].shape} {y_test[0][0].shape}")
                 except Exception as e:
@@ -226,7 +229,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # if not animacy:
                 temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, 
                                                                                                                              animacy=animacy, iteration=i, model_name=model_name, layer=layer)
-                print("Temp results: ", temp_results)
+                # print("Temp results: ", temp_results)
                 # else:
                 #     try:
                 #         temp_results = cv_animacy(X_train, y_train, X_test, y_test, do_eeg_pca=do_eeg_pca, do_sliding_window=do_sliding_window)
@@ -527,7 +530,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         if useRandomizedLabel:
             # final_tgm = np.mean(results, axis=0)
             prefix = 'vectors' if not animacy else 'animacy'
-            file_name = f'{age_group}m'
+            file_name = f'{graph_file_name}_{age_group}m'
             timestr = time.strftime("%Y%m%d-%H%M%S")
             if averaging == 'across':
                 folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
@@ -1535,7 +1538,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
             clf = GridSearchCV(model, ridge_params, scoring=scoring, n_jobs=-1, cv=5)
             # clf.fit(X_train[i][j].values, y_train_labels_w2v)
             clf.fit(X_train_scaled, y_train_labels_w2v)
-            print('Best params: ', clf.best_params_, flush=True)
+            # print('Best params: ', clf.best_params_, flush=True)
             # best_alphas.append(clf.best_params_)
             # y_pred = clf.predict(X_test[i][j].values)
             y_pred = clf.predict(X_test_scaled)

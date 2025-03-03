@@ -4,6 +4,7 @@
 # In[1]:
 
 
+from pydoc import HTMLRepr
 import pandas as pd
 import numpy as np
 import setup_jwlab
@@ -20,15 +21,20 @@ parser.add_argument('--layer', type=int, default=1, help='Layer number')
 parser.add_argument('--use_randomized_label', default=False, action='store_true', help='Use randomized labels')
 parser.add_argument('--age_group', type=int, default=9, help='Age group')
 parser.add_argument('--iterations', type=int, default=50, help='Number of sampling iterations to run')
+parser.add_argument('--fixed_seed', default=False, action='store_true', help='Whether to fix seeds for replicability.')
 parsed_args = parser.parse_args()
 print("Running job with args: ", parsed_args)
 seed = parsed_args.seed
 graph_file_name = parsed_args.graph_file_name
 model_name = parsed_args.model_name
 layer = parsed_args.layer
+# Append the graph_file_name with the layer value.
+graph_file_name = graph_file_name + f'_{layer}'
+print("Graph file name: ", graph_file_name)
 use_randomized_label = parsed_args.use_randomized_label
 age_group = parsed_args.age_group
 iterations = parsed_args.iterations
+fixed_seed = parsed_args.fixed_seed
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
@@ -61,13 +67,6 @@ from matplotlib import pyplot as plt
 # In[ ]:
 
 
-group_num = 0 #int(sys.argv[2])
-age_group = 9 #int(sys.argv[3])
-
-start_wind = 0 #int(sys.argv[4])
-end_wind = 300 #int(sys.argv[5])
-
-
 
 # NOTE: If you set useRandomizedLabel = True and set type='simple', it will run the null_distribution / permutation test. But you have to run it 100 times/jobs.
 result = cluster_analysis_procedure(age_group, use_randomized_label, 
@@ -81,7 +80,14 @@ result = cluster_analysis_procedure(age_group, use_randomized_label,
                                     do_sliding_window=False,
                                     model_name=model_name,
                                     layer=layer,
-                                    graph_file_name=graph_file_name) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
+                                    graph_file_name=graph_file_name,
+                                    fixed_seed=fixed_seed) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
+# group_num = 0 #int(sys.argv[2])
+
+# start_wind = 0 #int(sys.argv[4])
+# end_wind = 300 #int(sys.argv[5])
+
+
 
 # result = cluster_analysis_procedure(age_group, False, "average_trials_and_participants", [start_wind, end_wind, [end_wind - start_wind], 10], [5, 4, 50], type='simple', animacy=False, no_animacy_avg=False, do_eeg_pca=False, 
 #                                     do_sliding_window=False, ch_group=True, group_num=group_num)
