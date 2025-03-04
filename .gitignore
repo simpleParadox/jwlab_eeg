@@ -145,6 +145,7 @@ q
 graphs/
 images_overleaf/
 regression/predictions/
+Results/
 
 *.npz
 

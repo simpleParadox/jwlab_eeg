@@ -1432,7 +1432,7 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
                         y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
                         y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
                     else:
-                        print("Getting phoneme vectors")
+                        # print("Getting phoneme vectors")
                         y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
                         y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
 
