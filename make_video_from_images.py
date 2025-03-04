@@ -4,7 +4,7 @@ import glob
 import re
 
 # NOTE: Must load module opencv. using 'module load gcc opencv/4.11.0'
-image_path = '9m_gpt2-xl_decoding_images'
+image_path = '12m_gpt2-large_decoding_images'
 
 # Set the path to the folder containing images
 image_folder = f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/{image_path}"

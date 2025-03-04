@@ -22,6 +22,7 @@ parser.add_argument('--use_randomized_label', default=False, action='store_true'
 parser.add_argument('--age_group', type=int, default=9, help='Age group')
 parser.add_argument('--iterations', type=int, default=50, help='Number of sampling iterations to run')
 parser.add_argument('--fixed_seed', default=False, action='store_true', help='Whether to fix seeds for replicability.')
+parser.add_argument('--embedding_type', default='w2v', type=str, help='Embedding type w2v or ph when --model_name is None. In case --model_name is provided, this will be ignored and --model_name will take precedence.')
 parsed_args = parser.parse_args()
 print("Running job with args: ", parsed_args)
 seed = parsed_args.seed
@@ -35,6 +36,7 @@ use_randomized_label = parsed_args.use_randomized_label
 age_group = parsed_args.age_group
 iterations = parsed_args.iterations
 fixed_seed = parsed_args.fixed_seed
+embedding_type = parsed_args.embedding_type
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
@@ -81,7 +83,8 @@ result = cluster_analysis_procedure(age_group, use_randomized_label,
                                     model_name=model_name,
                                     layer=layer,
                                     graph_file_name=graph_file_name,
-                                    fixed_seed=fixed_seed) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
+                                    fixed_seed=fixed_seed,
+                                    embedding_type=embedding_type) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
 # group_num = 0 #int(sys.argv[2])
 
 # start_wind = 0 #int(sys.argv[4])

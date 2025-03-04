@@ -116,7 +116,8 @@ def minimal_mouth_X(X):
 def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding_window_config, cross_val_config, type_exp='simple', 
                                residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, 
                                no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False, ch_group=False, group_num=None,
-                               randomly_remove_from_9m=False, model_name=None, layer=1, graph_file_name='test', fixed_seed=False):
+                               randomly_remove_from_9m=False, model_name=None, layer=1, graph_file_name='test', fixed_seed=False,
+                               embedding_type='w2v'):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
 
@@ -228,7 +229,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # else:
                 # if not animacy:
                 temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, 
-                                                                                                                             animacy=animacy, iteration=i, model_name=model_name, layer=layer)
+                                                                                                                             animacy=animacy, iteration=i, model_name=model_name, layer=layer,
+                                                                                                                             embedding_type=embedding_type)
                 # print("Temp results: ", temp_results)
                 # else:
                 #     try:
@@ -1382,7 +1384,7 @@ def cv_animacy(X_train, y_train, X_test, y_test, do_eeg_pca=False, do_sliding_wi
 
 
 def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iteration=-1,
-                           model_name=None, layer=1):
+                           model_name=None, layer=1, embedding_type='w2v'):
     print("Calling cross_validaton_nested")
     results = []
     preds = []
@@ -1426,15 +1428,18 @@ def cross_validaton_nested(X_train, y_train, X_test, y_test, animacy=False, iter
             else:
                 if embeds_dict is None:
                     # Get regular w2v embeds instead of llm embeds.
-                    y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
-                    y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+                    if embedding_type == 'w2v':
+                        y_train_labels_w2v = get_w2v_embeds_from_dict(y_train[i][j])
+                        y_test_labels_w2v = get_w2v_embeds_from_dict(y_test[i][j])
+                    else:
+                        y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
+                        y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
+
+
                 else:
                     y_train_labels_w2v = get_transformer_embeddings_from_dict(y_train[i][j], embeds_dict=embeds_dict, layer=layer)
                     y_test_labels_w2v = get_transformer_embeddings_from_dict(y_test[i][j], embeds_dict=embeds_dict, layer=layer)
                     
-                
-                # y_train_labels_w2v = get_all_ph_concat_embeds(y_train[i][j])
-                # y_test_labels_w2v = get_all_ph_concat_embeds(y_test[i][j])
                 
                 # y_train_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_train[i][j])
                 # y_test_labels_w2v = get_tuned_cbt_childes_w2v_embeds(y_test[i][j])
