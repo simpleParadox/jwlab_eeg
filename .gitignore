@@ -142,6 +142,9 @@ regression/group_channel_results/
 data/
 regression/w2v_models/
 q
+graphs/
+images_overleaf/
+regression/predictions/
 
 *.npz
 
@@ -153,3 +156,5 @@ EventTimings/
 launch.json
 .idea/
 *.mp4
+*.pdf
+
