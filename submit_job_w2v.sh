@@ -4,10 +4,10 @@
 # SBATCH --mail-type=END
 #SBATCH --mail-type=FAIL
 #SBATCH --account=def-afyshe-ab
-#SBATCH --time=03:00:00
+#SBATCH --time=02:30:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=5000
-#SBATCH --job-name=2025_Mar_1_12m_ph-12m-eeg_to_ph_updated_ridge_params_fixed_seed
+#SBATCH --job-name=2025_Mar_1_12m_ph-12m-eeg_to_ph_updated_ridge_params_fixed_seed_checking_ridge_params_20_iters
 #SBATCH --output=out_files/%x-%j.out
 
 module load StdEnv/2023
