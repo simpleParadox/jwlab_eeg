@@ -553,7 +553,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 print('R2 test values: ', r2_test_values)
                 print("Results:", results)
                 prefix = 'vectors' if not animacy else 'animacy'
-                file_name = f'{age_group}m'
+                file_name = f'{graph_file_name}_{age_group}m'
                 timestr = time.strftime("%Y%m%d-%H%M%S")
                 
                 # Check if the folder exists.

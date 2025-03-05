@@ -146,6 +146,8 @@ graphs/
 images_overleaf/
 regression/predictions/
 Results/
+permuation_test_results/
+fixed_seed_results/
 
 *.npz
 

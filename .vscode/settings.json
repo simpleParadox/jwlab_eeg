@@ -2,5 +2,10 @@
     "python.pythonPath": "C:\\Users\\Rohan\\Anaconda3\\python.exe",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "remote.extensionKind": {
+        "GitHub.copilot": [
+            "ui"
+        ]
+    }
 }
