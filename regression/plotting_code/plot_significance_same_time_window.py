@@ -209,24 +209,62 @@ def scores_and_error(results):
 
 
 # The fixed seed path should contain the results stored using the store_fixed_seed_results.py script inside regression/fixed_seed_results.
+# null_h_ph_kde_path_9m = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuted_npz_processed/kde/eeg_to_ph/9m_eeg_to_ph_null.npz" 
+# non_permuted_results_9m_ph_fixed_seed_path = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/fixed_seed_results/ph_9m_fixed_seed.npz'
+# results_9m_ph_fixed_seed = np.load(non_permuted_results_9m_ph_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+# x_graph, y_graph, error = scores_and_error(results_9m_ph_fixed_seed)
+# print(y_graph)
+# significance_dots = get_significance_dots_from_kde(y_graph, null_h_ph_kde_path_9m)
+# significance_dots += 100 # Increase by 100 to match the shift.
+# print("Significance dots with shift:")
+# print(significance_dots.tolist())
+# plot_image_same_time_window(x_graph, y_graph, error, significance_dots, file_name='eeg_to_ph_9m_dots_statsmodels.png')
+
+
+# ===========================================
+# Getting significance dots using the raw permuted results.
+
+
+# Phoneme 9m.
 non_permuted_results_9m_ph_fixed_seed_path = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/fixed_seed_results/ph_9m_fixed_seed.npz'
-null_h_ph_kde_path_9m = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuted_npz_processed/kde/eeg_to_ph/9m_eeg_to_ph_null.npz" 
 results_9m_ph_fixed_seed = np.load(non_permuted_results_9m_ph_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
 x_graph, y_graph, error = scores_and_error(results_9m_ph_fixed_seed)
 print(y_graph)
-significance_dots = get_significance_dots_from_kde(y_graph, null_h_ph_kde_path_9m)
-significance_dots += 100 # Increase by 100 to match the shift.
-print("Significance dots with shift:")
-print(significance_dots.tolist())
 
-plot_image_same_time_window(x_graph, y_graph, error, significance_dots, file_name='eeg_to_ph_9m_dots_statsmodels.png')
-
-
-
-# Getting significance dots using the raw permuted results.
 all_acc_waves = []
 all_acc_waves_no_mean = {}
 path = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/eeg_to_ph/9m"
+for file_index, f in enumerate(tqdm(glob.glob(path + "/*.npz"))):
+    perm_accs = np.load(f, allow_pickle=True)['arr_0'].tolist()[0] # Get the first element because the dictionary only contains one element.
+    for window, acc in perm_accs.items():
+        all_acc_waves_no_mean[window] = acc if window not in all_acc_waves_no_mean else all_acc_waves_no_mean[window] + acc
+        all_acc_waves.append(np.mean(acc))
+reject_fdr, threshold_fdr, p_values_fdr, p_values  = get_significance_dots_from_raw(y_graph, all_acc_waves, all_acc_waves_no_mean, p_val_thresh=0.01, kde_per_window=False, do_kde=True)
+print("Significance dots without shift:")
+print(reject_fdr)
+print("Length of reject_fdr: ", len(reject_fdr))
+# Get the x_dots.
+x_dots = x_graph[reject_fdr]
+print("Significance dots with shift:")
+print(x_dots.tolist())
+plot_image_same_time_window(x_graph, y_graph, error, x_dots, file_name='eeg_to_ph_9m_dots_from_raw_using_fdr_kde_all_over.png')
+
+
+
+
+
+
+
+# ===========================================
+# Phoneme for 12m.
+non_permuted_results_12m_ph_fixed_seed_path = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/fixed_seed_results/ph_12m_fixed_seed.npz'
+results_12m_ph_fixed_seed = np.load(non_permuted_results_12m_ph_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+x_graph, y_graph, error = scores_and_error(results_12m_ph_fixed_seed)
+print(y_graph)
+
+all_acc_waves = []
+all_acc_waves_no_mean = {}
+path = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/eeg_to_ph/12m"
 for file_index, f in enumerate(tqdm(glob.glob(path + "/*.npz"))):
     perm_accs = np.load(f, allow_pickle=True)['arr_0'].tolist()[0] # Get the first element because the dictionary only contains one element.
     for window, acc in perm_accs.items():
@@ -241,5 +279,71 @@ print("Length of reject_fdr: ", len(reject_fdr))
 x_dots = x_graph[reject_fdr]
 print("Significance dots with shift:")
 print(x_dots.tolist())
+plot_image_same_time_window(x_graph, y_graph, error, x_dots, file_name='eeg_to_ph_12m_dots_from_raw_using_fdr_kde_all_over.png')
 
-plot_image_same_time_window(x_graph, y_graph, error, x_dots, file_name='eeg_to_ph_9m_dots_from_raw_using_fdr_kde_all_over.png')
+
+
+
+
+
+
+# ===========================================
+# w2v for 9m.
+non_permuted_results_9m_w2v_fixed_seed_path = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/fixed_seed_results/w2v_9m_fixed_seed.npz'
+results_9m_w2v_fixed_seed = np.load(non_permuted_results_9m_w2v_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+x_graph, y_graph, error = scores_and_error(results_9m_w2v_fixed_seed)
+print(y_graph)
+
+all_acc_waves = []
+all_acc_waves_no_mean = {}
+path = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/same_time_results/permutation/9m_mod_2v2"
+for file_index, f in enumerate(tqdm(glob.glob(path + "/*.npz"))):
+    perm_accs = np.load(f, allow_pickle=True)['arr_0'].tolist()[0] # Get the first element because the dictionary only contains one element.
+    for window, acc in perm_accs.items():
+        all_acc_waves_no_mean[window] = acc if window not in all_acc_waves_no_mean else all_acc_waves_no_mean[window] + acc
+        all_acc_waves.append(np.mean(acc))
+# import pdb; pdb.set_trace()
+reject_fdr, threshold_fdr, p_values_fdr, p_values  = get_significance_dots_from_raw(y_graph, all_acc_waves, all_acc_waves_no_mean, p_val_thresh=0.01, kde_per_window=False, do_kde=True)
+print("Significance dots without shift:")
+print(reject_fdr)
+print("Length of reject_fdr: ", len(reject_fdr))
+# Get the x_dots.
+x_dots = x_graph[reject_fdr]
+print("Significance dots with shift:")
+print(x_dots.tolist())
+plot_image_same_time_window(x_graph, y_graph, error, x_dots, file_name='eeg_to_w2v_9m_dots_from_raw_using_fdr_kde_all_over.png')
+
+
+
+
+
+# ===========================================
+# w2v for 12m.
+non_permuted_results_12m_w2v_fixed_seed_path = '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/fixed_seed_results/w2v_12m_fixed_seed.npz'
+results_12m_w2v_fixed_seed = np.load(non_permuted_results_12m_w2v_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+x_graph, y_graph, error = scores_and_error(results_12m_w2v_fixed_seed)
+print(y_graph)
+
+all_acc_waves = []
+all_acc_waves_no_mean = {}
+path = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/same_time_results/permutation/12m_mod_2v2"
+# Only select the first 100 files in this case because we have around 527 perm tests.
+count = 0
+for file_index, f in enumerate(tqdm(glob.glob(path + "/*.npz"))):
+    perm_accs = np.load(f, allow_pickle=True)['arr_0'].tolist()[0] # Get the first element because the dictionary only contains one element.
+    for window, acc in perm_accs.items():
+        all_acc_waves_no_mean[window] = acc if window not in all_acc_waves_no_mean else all_acc_waves_no_mean[window] + acc
+        all_acc_waves.append(np.mean(acc))
+    count += 1
+    if count == 99:
+        break
+# import pdb; pdb.set_trace()
+reject_fdr, threshold_fdr, p_values_fdr, p_values  = get_significance_dots_from_raw(y_graph, all_acc_waves, all_acc_waves_no_mean, p_val_thresh=0.01, kde_per_window=False, do_kde=True)
+print("Significance dots without shift:")
+print(reject_fdr)
+print("Length of reject_fdr: ", len(reject_fdr))
+# Get the x_dots.
+x_dots = x_graph[reject_fdr]
+print("Significance dots with shift:")
+print(x_dots.tolist())
+plot_image_same_time_window(x_graph, y_graph, error, x_dots, file_name='eeg_to_w2v_12m_dots_from_raw_using_fdr_kde_all_over.png')

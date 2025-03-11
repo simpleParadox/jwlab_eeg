@@ -148,6 +148,8 @@ regression/predictions/
 Results/
 permuation_test_results/
 fixed_seed_results/
+wandb/
+same_time_results/
 
 *.npz
 

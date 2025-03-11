@@ -74,8 +74,8 @@ elif os_name == 'Linux':
     residual_tuned_w2v_path = os.getcwd() + "/regression/w2v_embeds/tuned_w2v_residuals.npz"
     TRANSFORMER_EMBEDS_FILE_MAPPING = {
         'gpt2-large': os.getcwd() + '/regression/llm_embeds/gpt2-large_all_words_embeddings_layer_wise.pkl',
-        'gpt2-xl': os.getcwd() + '/regression/llm_embeds/gpt2-xl_all_words_embeddings_layer_wise.pkl'
-        
+        'gpt2-xl': os.getcwd() + '/regression/llm_embeds/gpt2-xl_all_words_embeddings_layer_wise.pkl',
+        'gpt2-large-svd-16': os.getcwd() + '/regression/llm_embeds/embeds_with_label_dict_reduced_svd_n_components_16.pkl'
     }
 elif os_name == 'Darwin':
     w2v_path = os.getcwd() + "/regression/w2v_embeds/all_w2v_embeds.npz"

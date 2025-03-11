@@ -11,6 +11,13 @@ import setup_jwlab
 
 import sys
 import argparse
+import wandb
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+os.environ['WANDB_API_KEY'] = os.getenv('WANDB_API_KEY')
+
 
 parser = argparse.ArgumentParser(description='Run the decoding analysis.')
 
@@ -23,20 +30,37 @@ parser.add_argument('--age_group', type=int, default=9, help='Age group')
 parser.add_argument('--iterations', type=int, default=50, help='Number of sampling iterations to run')
 parser.add_argument('--fixed_seed', default=False, action='store_true', help='Whether to fix seeds for replicability.')
 parser.add_argument('--embedding_type', default='w2v', type=str, help='Embedding type w2v or ph when --model_name is None. In case --model_name is provided, this will be ignored and --model_name will take precedence.')
+parser.add_argument('--svd_vectors', default=False, action='store_true', help='Whether to use SVD vectors for the embeddings')
+parser.add_argument('--wandb_mode', type=str, default='online', help='Wandb mode: online or offline')
+
+
 parsed_args = parser.parse_args()
+wandb.login()
+
+
 print("Running job with args: ", parsed_args)
 seed = parsed_args.seed
 graph_file_name = parsed_args.graph_file_name
 model_name = parsed_args.model_name
 layer = parsed_args.layer
+iterations = parsed_args.iterations
 # Append the graph_file_name with the layer value.
-graph_file_name = graph_file_name + f'_{layer}'
+graph_file_name = graph_file_name + f'_{layer}' + f'_iterations_{iterations}'
+if parsed_args.svd_vectors:
+    graph_file_name = graph_file_name + '_svd_vectors' # Denote the vectors as svd vectors.
 print("Graph file name: ", graph_file_name)
 use_randomized_label = parsed_args.use_randomized_label
 age_group = parsed_args.age_group
-iterations = parsed_args.iterations
 fixed_seed = parsed_args.fixed_seed
 embedding_type = parsed_args.embedding_type
+
+
+# Log all the arguments to wandb by first putting them in a dictionary.
+run = wandb.init(project='jwlab-eeg', entity='simpleparadox', mode=parsed_args.wandb_mode,
+                       config=parsed_args)
+#Update the graph_file_name to the wandb config.
+wandb.config.update({'graph_file_name': graph_file_name}, allow_val_change=True)
+
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
@@ -84,12 +108,15 @@ result = cluster_analysis_procedure(age_group, use_randomized_label,
                                     layer=layer,
                                     graph_file_name=graph_file_name,
                                     fixed_seed=fixed_seed,
-                                    embedding_type=embedding_type) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
+                                    embedding_type=embedding_type,
+                                    wandb_object=wandb) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
+
+
+run.finish()
 # group_num = 0 #int(sys.argv[2])
 
 # start_wind = 0 #int(sys.argv[4])
 # end_wind = 300 #int(sys.argv[5])
-
 
 
 # result = cluster_analysis_procedure(age_group, False, "average_trials_and_participants", [start_wind, end_wind, [end_wind - start_wind], 10], [5, 4, 50], type='simple', animacy=False, no_animacy_avg=False, do_eeg_pca=False, 
