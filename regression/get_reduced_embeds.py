@@ -16,6 +16,7 @@ labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
 
 PATH_MAPPING = {
     'gpt2-large': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/llm_embeds/gpt2-large_all_words_embeddings_layer_wise.pkl',
+    'gpt2-large-mean': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/llm_embeds/gpt2-large_all_words_embeddings_layer_wise_mean.pkl',
     'gpt2-xl': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/llm_embeds/gpt2-xl_all_words_embeddings_layer_wise.pkl',
     'w2v': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/w2v_embeds/embeds_with_label_dict.npz'
 }
@@ -23,16 +24,18 @@ PATH_MAPPING = {
 
 NUM_LAYER_MAPPING = {
     'gpt2-large': 37,
+    'gpt2-large-mean': 37,
     'gpt2-xl': 48,
 }
 
 STORE_PATH_MAPPING = {
     'gpt2-large': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/llm_embeds/',
+    'gpt2-large-mean': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/llm_embeds/',
     'gpt2-xl': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/llm_embeds/',
     'w2v': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/w2v_embeds/',
 }
 
-model_type = 'gpt2-large'
+model_type = 'gpt2-large-mean'
 n_components = 300
 
 # First ensure that the vectors is of shape (n_samples, n_features).
@@ -140,7 +143,7 @@ else:
 
     
     # Save the dictionary.
-    with open(os.path.join(STORE_PATH_MAPPING[model_type], f'embeds_with_label_dict_reduced_svd_n_components_{n_components}.pkl'), 'wb') as f:
+    with open(os.path.join(STORE_PATH_MAPPING[model_type], f'{model_type}_embeds_with_label_dict_reduced_svd_n_components_{n_components}.pkl'), 'wb') as f:
         pickle.dump(embeds_dict, f)
 
 

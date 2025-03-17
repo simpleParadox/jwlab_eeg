@@ -4,6 +4,7 @@
 # In[1]:
 
 
+from curses import meta
 from pydoc import HTMLRepr
 import pandas as pd
 import numpy as np
@@ -32,6 +33,7 @@ parser.add_argument('--fixed_seed', default=False, action='store_true', help='Wh
 parser.add_argument('--embedding_type', default='w2v', type=str, help='Embedding type w2v or ph when --model_name is None. In case --model_name is provided, this will be ignored and --model_name will take precedence.')
 parser.add_argument('--svd_vectors', default=False, action='store_true', help='Whether to use SVD vectors for the embeddings')
 parser.add_argument('--wandb_mode', type=str, default='online', help='Wandb mode: online or offline')
+parser.add_argument('--iteration_range', type=int, nargs=2, metavar=('start', 'end'), default=None, help='Range of iterations to run')
 
 
 parsed_args = parser.parse_args()
@@ -43,13 +45,20 @@ seed = parsed_args.seed
 graph_file_name = parsed_args.graph_file_name
 model_name = parsed_args.model_name
 layer = parsed_args.layer
-iterations = parsed_args.iterations
+if parsed_args.iteration_range:
+    iterations = range(parsed_args.iteration_range[0], parsed_args.iteration_range[1])
+else:
+    iterations = parsed_args.iterations
+print("Iterations: ", iterations)
 # Append the graph_file_name with the layer value.
 graph_file_name = graph_file_name + f'_{layer}' + f'_iterations_{iterations}'
 if parsed_args.svd_vectors:
     graph_file_name = graph_file_name + '_svd_vectors' # Denote the vectors as svd vectors.
 print("Graph file name: ", graph_file_name)
 use_randomized_label = parsed_args.use_randomized_label
+if use_randomized_label:
+    graph_file_name = graph_file_name + '_randomized_labels'
+print("Randomized labels: ", use_randomized_label)
 age_group = parsed_args.age_group
 fixed_seed = parsed_args.fixed_seed
 embedding_type = parsed_args.embedding_type

@@ -137,6 +137,7 @@ def prep_ml_internal(df, ys, participants, useRandomizedLabel, averaging, slidin
     # print("Y is",Y)
 
     if useRandomizedLabel:
+        print("Using randomized label")
         if current_seed >= 0:
             np.random.seed(current_seed)
         np.random.shuffle(Y)

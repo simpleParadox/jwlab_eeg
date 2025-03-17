@@ -1,5 +1,6 @@
 from fileinput import filename
 from select import select
+from tracemalloc import start
 import pandas as pd
 from sklearn.utils import assert_all_finite
 import numpy as np
@@ -121,6 +122,16 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                                embedding_type='w2v', wandb_object=None):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
+    
+    if type(sampling_iterations) == range:
+        start, end = sampling_iterations.start, sampling_iterations.stop
+    else:
+        start = 0
+        end = sampling_iterations
+    
+    print("Start iteration: ", start)
+    print("End iteration: ", end)
+    
 
 
     sampl_iter_word_pairs_2v2 = []
@@ -154,8 +165,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         w2v_residuals, r2 = cv_all_ph_concat_padded_residual_mod(child=child_residual)
 
 
-    for i in tqdm(range(sampling_iterations)):
-        # print("Sampling iteration: ", i, flush=True)
+    for i in tqdm(range(start, end)):
+        print("Sampling iteration: ", i, flush=True)
         if averaging == "permutation":
             X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, averaging, sliding_window_config,
                                                       downsample_num=1000, ch_group=ch_group, group_num=group_num)
@@ -208,6 +219,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             else:
                 # Non-permuted test.
                 print('Simple')
+                # NOTE: this is called even when --useRandomizedLabel is True. It essentially shuffles the data inside prep_matrices_avg.
                 try:
                     if animacy:
                         X_train, X_test, y_train, y_test = prep_matrices_avg(X, age_group, False, train_only=False, test_size=0.20, animacy=animacy, no_animacy_avg=no_animacy_avg)
@@ -229,6 +241,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg_mod(X_train, X_test, y_train, y_test, w2v_residuals)
                 # else:
                 # if not animacy:
+                print("Layer: ", layer)
                 temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train, y_train, X_test, y_test, 
                                                                                                                              animacy=animacy, iteration=i, model_name=model_name, layer=layer,
                                                                                                                              embedding_type=embedding_type)
@@ -312,7 +325,6 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
         elif averaging == 'across':
             print('Across')
-            # Other group was loaded before.
             age_group_1 = 9
             age_group_2 = 12
             try:
@@ -539,10 +551,28 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
             
             # Check if the folder exists.
-            root_dir = f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/same_time_results/permutation/{prefix}/"
+            root_dir = os.getcwd() + f"/same_time_results/permutation/{prefix}/"
             if os.path.exists(root_dir):
                 os.makedirs(root_dir)
-            np.savez_compressed(f"{root_dir}/{timestr}_{file_name}_all_data.npz", results)
+            file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
+            save_file_name = f"{root_dir}{timestr}_{file_name}_perm_all_data"
+            np.savez_compressed(f"{save_file_name}.npz", results)
+            try:
+                # Log the results dictionary.
+                wandb_object.log({"results": results})
+            
+            except Exception as e:
+                print("Error in logging the results dictionary to wandb")
+                print(e)
+
+            try:
+                # If the file name contains parentheses, replace them with '_'.
+                artifact = wandb_object.Artifact(save_file_name, type='results')
+                artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
+                artifact.save()
+            except Exception as e:
+                print("Error in logging results to wandb.")
+                print(e)
         else:
             # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
 
@@ -1886,7 +1916,7 @@ def cluster_permutation_test(results1, results2, threshold=0.05, n_permutations=
     """
     Non-parametric cluster-level paired t-test.
     """
-    from mne.stats import spatio_temporal_cluster_1samp_test
+    # from mne.stats import spatio_temporal_cluster_1samp_test
     from mne.stats import permutation_cluster_1samp_test
     from scipy.stats import ttest_ind
     # results1_temp = np.array(results1).reshape(-1, 1)
