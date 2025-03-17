@@ -554,6 +554,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             if averaging == 'across':
                 # Update file name to contain information for both age groups.
                 file_name = f'across_{graph_file_name}_{age_group_1}m_to_{age_group_2}m'
+                prefix += '_across'
             
             # Check if the folder exists.
             root_dir = os.getcwd() + f"/same_time_results/permutation/{prefix}/"
@@ -572,7 +573,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
             try:
                 # If the file name contains parentheses, replace them with '_'.
-                artifact = wandb_object.Artifact(save_file_name, type='results')
+                artifact = wandb_object.Artifact(file_name, type='results')
                 artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
                 artifact.save()
             except Exception as e:
@@ -596,15 +597,16 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 if averaging == 'across':
                     # Update file name to contain information for both age groups.
                     file_name = f'across_{graph_file_name}_{age_group_1}m_to_{age_group_2}m'
+                    prefix += '_across'
                 
                 # Check if the folder exists.
                 root_dir = os.getcwd() + f"/same_time_results/observed/{prefix}/"
                 if not os.path.exists(root_dir):
                     os.makedirs(root_dir)
- 
-                np.savez_compressed(f"{root_dir}{timestr}_{file_name}_all_data.npz", results)
-
-
+                
+                file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
+                save_file_name = f"{root_dir}{timestr}_{file_name}_all_data"
+                np.savez_compressed(f"{save_file_name}.npz", results)
                 createGraph(results, age_group, graph_file_name)#, t_mass_pos, adj_clusters_pos)
 
                 try:
@@ -616,8 +618,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                     print(e)
 
                 try:
-                    artifact = wandb_object.Artifact(f"{age_group}m_{graph_file_name}_all_data", type='results')
-                    artifact.add_file(f"{root_dir}{timestr}_{file_name}_all_data.npz", name=f"{timestr}_{file_name}_all_data.npz")
+                    artifact = wandb_object.Artifact(file_name, type='results')
+                    artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
                     artifact.save()
                 except Exception as e:
                     print("Error in logging results to wandb.")
