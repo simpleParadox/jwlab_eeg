@@ -107,14 +107,17 @@ from scipy import stats
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 
-if os.getenv('cluster') == 'narval':
+if os.getenv('cluster') == 'narval' or use_randomized_label == True:
     # This is because narval nodes do not have an internet connection.
-    print("Running script on narval, setting wandb_mode to 'disabled'.")
+    print("Running script on narval or running permutation tests, setting wandb_mode to 'disabled'.")
+    if use_randomized_label:
+        print("Running permutation tests.")
+        print("Setting wandb_mode to 'offline' to avoid wandb login error.")
     if parsed_args.wandb_mode != 'offline':
         print("Setting wandb_mode to 'offline' as it is not set to 'offline'.")
         parsed_args.wandb_mode = 'offline'
 else:
-    print("Running script on a local machine, setting wandb_mode to 'online'.")
+    print("Running script on a non-narval cluster, setting wandb_mode to 'online'.")
     parsed_args.wandb_mode = 'online'
     wandb.login()
 run = wandb.init(project='jwlab-eeg', entity='simpleparadox', mode=parsed_args.wandb_mode,
