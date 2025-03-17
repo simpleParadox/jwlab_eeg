@@ -295,7 +295,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             except Exception as e:
                 print(e)
 
-            if type == 'permutation':
+            if type_exp == 'permutation':
                 # The split of the dataset into train and test set happens more than once here for each permuted label assignment.
                 temp_results_list = []
                 print('Permutation')
@@ -325,8 +325,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
 
         elif averaging == 'across':
             print('Across')
-            age_group_1 = 9
-            age_group_2 = 12
+            age_group_1 = age_group[0]
+            age_group_2 = age_group[1]
             try:
                 print(f"Loading age group 1: age group 1 - {age_group_1}")
                 X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
@@ -344,8 +344,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 print("Error in loading or preparing data, moving to next iteration.")
                 continue
                 
-            if type == 'tgm':
-                print(type)
+            if type_exp == 'tgm':
+                print(type_exp)
                 tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=False, target_pca=target_pca)
                 tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
                 tgm_diff_results.append(tgm_diff_res)
@@ -354,7 +354,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 equal_count_results.append(equal_count_matrix)
                 roe_matrix_results.append(roe_matrix)
             else:
-                print(type)
+                print(type_exp)
                 temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2)
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg(X_train_1, X_test_2, y_train_1, y_test_2, child=False)
             
@@ -389,7 +389,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         #             animacy_results[i][j] = temp_animacy_results[i][j]
 
 
-        if averaging == 'average_trials_and_participants' or (averaging=='across' and type!='tgm'):
+        if averaging == 'average_trials_and_participants' or (averaging == 'across' and type_exp != 'tgm'):
             # print("Results", results)
             for i in range(len(temp_results)):
                 if i not in results.keys():
@@ -410,7 +410,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     #Averaging was of type 'tgm'.
     ## NOTE: The following are for TGMs only (non-permuted).
     ##Calculate average of all the matrices across 'n' sampling iterations. 
-    if averaging == 'tgm' or (averaging == 'across' and type=='tgm'):
+    if averaging == 'tgm' or (averaging == 'across' and type_exp =='tgm'):
         if corr:
             # Use correlation instead of 2vs2.
             corr_file_name = f"{age_group}m_corr"

@@ -34,10 +34,10 @@ parser.add_argument('--embedding_type', default='w2v', type=str, help='Embedding
 parser.add_argument('--svd_vectors', default=False, action='store_true', help='Whether to use SVD vectors for the embeddings')
 parser.add_argument('--wandb_mode', type=str, default='online', help='Wandb mode: online or offline')
 parser.add_argument('--iteration_range', type=int, nargs=2, metavar=('start', 'end'), default=None, help='Range of iterations to run')
-
-
+parser.add_argument('--age_group_range', type=int, nargs=2, metavar=('first', 'second'), default=None, help='Range of age groups to run')
+parser.add_argument('--decoding_type', type=str, default='average_trials_and_participants', help='Decoding type')
 parsed_args = parser.parse_args()
-wandb.login()
+
 
 
 print("Running job with args: ", parsed_args)
@@ -51,24 +51,47 @@ else:
     iterations = parsed_args.iterations
 print("Iterations: ", iterations)
 # Append the graph_file_name with the layer value.
-graph_file_name = graph_file_name + f'_{layer}' + f'_iterations_{iterations}'
+graph_file_name = graph_file_name + f'_{layer}' + f'_iterations_{parsed_args.iteration_range[0]}_{parsed_args.iteration_range[1]}'
+
+
+
 if parsed_args.svd_vectors:
     graph_file_name = graph_file_name + '_svd_vectors' # Denote the vectors as svd vectors.
 print("Graph file name: ", graph_file_name)
+
+decoding_type = parsed_args.decoding_type
+
+age_group = None
+age_group_range = parsed_args.age_group_range
+if decoding_type == 'average_trials_and_participants':
+    if isinstance(age_group_range, list):
+        print("Age group range is provided for average_trials_and_participants decoding type. Using the first age group from: ", age_group)
+        age_group = age_group_range[0]
+    else:
+        age_group = parsed_args.age_group
+elif decoding_type == 'across':
+    print("Ignoring age group and using age group range for across decoding type.")
+    if age_group_range:
+        age_group = [age_group_range[0], age_group_range[1]]
+    else:
+        print("Age group range is not provided for across decoding type. Using the default age group: ", parsed_args.age_group)
+        print("Using default values of age group as '9' and '12' for across decoding type.")
+        age_group = [9, 12]
+    print("Age group range is: ", age_group)
+    graph_file_name = graph_file_name + f'_age_group_range_{age_group_range[0]}_{age_group_range[1]}'
+    
 use_randomized_label = parsed_args.use_randomized_label
 if use_randomized_label:
     graph_file_name = graph_file_name + '_randomized_labels'
 print("Randomized labels: ", use_randomized_label)
-age_group = parsed_args.age_group
 fixed_seed = parsed_args.fixed_seed
 embedding_type = parsed_args.embedding_type
 
-
+if age_group is None:
+    print("Warning: Age group is None. Setting it to 9.")
+    age_group = 9
+    
 # Log all the arguments to wandb by first putting them in a dictionary.
-run = wandb.init(project='jwlab-eeg', entity='simpleparadox', mode=parsed_args.wandb_mode,
-                       config=parsed_args)
-#Update the graph_file_name to the wandb config.
-wandb.config.update({'graph_file_name': graph_file_name}, allow_val_change=True)
 
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
@@ -83,6 +106,21 @@ from sklearn.model_selection import cross_validate, RepeatedKFold
 from scipy import stats
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
+
+if os.getenv('cluster') == 'narval':
+    # This is because narval nodes do not have an internet connection.
+    print("Running script on narval, setting wandb_mode to 'disabled'.")
+    if parsed_args.wandb_mode != 'offline':
+        print("Setting wandb_mode to 'offline' as it is not set to 'offline'.")
+        parsed_args.wandb_mode = 'offline'
+else:
+    print("Running script on a local machine, setting wandb_mode to 'online'.")
+    parsed_args.wandb_mode = 'online'
+    wandb.login()
+run = wandb.init(project='jwlab-eeg', entity='simpleparadox', mode=parsed_args.wandb_mode,
+                       config=parsed_args)
+#Update the graph_file_name to the wandb config.
+wandb.config.update({'graph_file_name': graph_file_name}, allow_val_change=True)
 
 
 # In[3]:
@@ -105,7 +143,7 @@ from matplotlib import pyplot as plt
 
 # NOTE: If you set useRandomizedLabel = True and set type='simple', it will run the null_distribution / permutation test. But you have to run it 100 times/jobs.
 result = cluster_analysis_procedure(age_group, use_randomized_label, 
-                                    "average_trials_and_participants",
+                                    decoding_type,
                                     [-200, 1000, [100], 10], 
                                     [5, 4, iterations], 
                                     type_exp='simple', # 'permutation' or 'simple'
