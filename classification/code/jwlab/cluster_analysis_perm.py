@@ -187,6 +187,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # print("Length of raveled Y after prep_ml is: ", np.ravel(y).shape)
             # print("Good trial count: ", good_trial_count)
             if randomly_remove_from_9m:
+                print("Randomly removing samples")
                 X = randomly_remove_samples(X) # Use only for the 9 month olds.
             # X = minimal_mouth_X(X)
 
@@ -355,7 +356,10 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 roe_matrix_results.append(roe_matrix)
             else:
                 print(type_exp)
-                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2)
+                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2,
+                                                                                                                             animacy=animacy, iteration=i, model_name=model_name, layer=layer,
+                                                                                                                             embedding_type=embedding_type)
+
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg(X_train_1, X_test_2, y_train_1, y_test_2, child=False)
             
             
@@ -541,14 +545,15 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     
     # # dendrogram(np.mean(w2v_res_list, axis=0))
     # ## REMOVE FOR NULL FUNCTION
-    if averaging == 'average_trials_and_participants' or (averaging=='across' and type!='tgm'):
+    if averaging == 'average_trials_and_participants' or (averaging=='across' and type_exp!='tgm'):
         if useRandomizedLabel:
             # final_tgm = np.mean(results, axis=0)
             prefix = 'vectors' if not animacy else 'animacy'
             file_name = f'{graph_file_name}_{age_group}m'
             timestr = time.strftime("%Y%m%d-%H%M%S")
             if averaging == 'across':
-                folder_path = f"{age_group_1}_to_{age_group_2}_mod_2v2_cleaned2_90_test"
+                # Update file name to contain information for both age groups.
+                file_name = f'across_{graph_file_name}_{age_group_1}m_to_{age_group_2}m'
             
             # Check if the folder exists.
             root_dir = os.getcwd() + f"/same_time_results/permutation/{prefix}/"
@@ -587,6 +592,10 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 prefix = 'vectors' if not animacy else 'animacy'
                 file_name = f'{graph_file_name}_{age_group}m'
                 timestr = time.strftime("%Y%m%d-%H%M%S")
+                
+                if averaging == 'across':
+                    # Update file name to contain information for both age groups.
+                    file_name = f'across_{graph_file_name}_{age_group_1}m_to_{age_group_2}m'
                 
                 # Check if the folder exists.
                 root_dir = os.getcwd() + f"/same_time_results/observed/{prefix}/"
