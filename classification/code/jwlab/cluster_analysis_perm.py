@@ -558,7 +558,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             
             # Check if the folder exists.
             root_dir = os.getcwd() + f"/same_time_results/permutation/{prefix}/"
-            if os.path.exists(root_dir):
+            if not os.path.exists(root_dir):
                 os.makedirs(root_dir)
             file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
             save_file_name = f"{root_dir}{timestr}_{file_name}_perm_all_data"
