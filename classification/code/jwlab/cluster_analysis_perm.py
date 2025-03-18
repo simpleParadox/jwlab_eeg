@@ -1802,7 +1802,7 @@ def cross_validaton_nested_concat(X_train, y_train, X_test, y_test):
 
 
 def cross_validaton_tgm(X_train, y_train, X_test, y_test,
-                        child=False, res=False, target_pca=False
+                        child=False, res=False, target_pca=False,
                         model_name=None, layer=1, embedding_type='w2v'):
     # results = []
     print("Inside cross-validation tgm")
@@ -1856,7 +1856,7 @@ def cross_validaton_tgm(X_train, y_train, X_test, y_test,
             scaler = StandardScaler()
             X_train_scaled = scaler.fit_transform(X_train[i][j].values)
             # clf.fit(X_train[i][j].values, y_train_labels)
-            clf.fit(X_train_scaled, y_train_labels)
+            clf.fit(X_train_scaled, y_train_labels_w2v)
             equal_count_list = []
 
             for k in range(len(X_test[i])):
