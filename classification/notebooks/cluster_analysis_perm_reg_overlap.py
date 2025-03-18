@@ -72,14 +72,39 @@ if decoding_type == 'average_trials_and_participants':
         age_group = parsed_args.age_group
 elif decoding_type == 'across':
     print("Ignoring age group and using age group range for across decoding type.")
+    if parsed_args.type_exp == 'simple':
+        print("Within group tgm experiments.")
+        if age_group_range:
+            print("Age group range is provided for across decoding type. Using the first age group from: ", age_group_range)
+            age_group = age_group_range[0]
+        else:
+            print("Age group range is not provided for across decoding type. Using the default age group: ", parsed_args.age_group)
+            age_group = parsed_args.age_group
+        print("Age group range is: ", age_group)
+        graph_file_name = graph_file_name + f'_age_group_range_{age_group_range[0]}_{age_group_range[1]}'
+    elif parsed_args.type_exp == 'tgm':
+        print("Across group tgm experiments.")
+        if age_group_range:
+            print("Age group range is provided for across decoding type. Using the age group range: ", age_group_range)
+            age_group = [age_group_range[0], age_group_range[1]]
+        else:
+            print("Age group range is not provided for across decoding type. Using the default age group: ", parsed_args.age_group)
+            print("Using default values of age group as '9' and '12' for across decoding type.")
+            age_group = [9, 12]
+        print("Age group range is: ", age_group)
+        graph_file_name = graph_file_name + f'_age_group_range_{age_group_range[0]}_{age_group_range[1]}'
+
+elif decoding_type == 'tgm':
+    print("Ignoring age group and using age group range for tgm decoding type.")
+    assert parsed_args.type_exp == 'simple', "When decoding type == tgm, --type_exp must be 'simple'."
     if age_group_range:
-        age_group = [age_group_range[0], age_group_range[1]]
+        print("Age group range is provided for tgm decoding type. Using the first age group from: ", age_group_range)
+        age_group = age_group_range[0]
     else:
-        print("Age group range is not provided for across decoding type. Using the default age group: ", parsed_args.age_group)
-        print("Using default values of age group as '9' and '12' for across decoding type.")
-        age_group = [9, 12]
+        print("Age group range is not provided for tgm decoding type. Using the default age group: ", parsed_args.age_group)
+        age_group = parsed_args.age_group
     print("Age group range is: ", age_group)
-    graph_file_name = graph_file_name + f'_age_group_range_{age_group_range[0]}_{age_group_range[1]}'
+    graph_file_name = graph_file_name + f'_age_group_{age_group}'
     
 use_randomized_label = parsed_args.use_randomized_label
 if use_randomized_label:
@@ -96,7 +121,7 @@ if age_group is None:
     age_group = 9
     
 # Log all the arguments to wandb by first putting them in a dictionary.
-
+print("Graph file name: ", graph_file_name)
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath

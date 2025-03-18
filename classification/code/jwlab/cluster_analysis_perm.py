@@ -329,7 +329,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                     print(e)
                     continue
                 
-                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False, target_pca=target_pca)
+                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train, y_train, X_test, y_test, child=False, res=False, target_pca=target_pca,
+                                                                                                                                         model_name=model_name, layer=layer, embedding_type=embedding_type)
                 tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
                 tgm_diff_results.append(tgm_diff_res)
                 tgm_both_diff_results.append(tgm_both_diff_res)
@@ -360,7 +361,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 
             if type_exp == 'tgm':
                 print(type_exp)
-                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=False, target_pca=target_pca)
+                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=False, target_pca=target_pca,
+                                                                                                                                         model_name=model_name, layer=layer, embedding_type=embedding_type)
                 tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
                 tgm_diff_results.append(tgm_diff_res)
                 tgm_both_diff_results.append(tgm_both_diff_res)
@@ -455,8 +457,8 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 
                 plt.savefig(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/tgm_results_rohan_new/{corr_file_name}.png")
         else:
-            # file_name = f"{age_group}_detrending_low_pass_only_reref_with_baseline_filepath_mod"
             # Using the 2 vs 2 test.
+            # file_name = f"{age_group}_detrending_low_pass_only_reref_with_baseline_filepath_mod"
             # if averaging == 'across':
             #     file_name = f"{age_group_1}m_to_{age_group_2}m_cleaned2_test_90_percent_2_inside_scaling"
             if useRandomizedLabel:
@@ -511,13 +513,13 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
                 save_file_name = f"{root_dir}{timestr}_{file_name}"
                 df.to_csv(f"{save_file_name}_2v2.csv")
-                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax, vmax=0.65, vmin=0.35,
-                        draw_mask=True, draw_contour=True, colorbar=True,
-                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
-                plt.savefig(f"{save_file_name}_2v2.png")
                 try:
-                    wandb_object.log({"TGM 2v2": wandb.Image(f"{save_file_name}_2v2.png")})
+                    plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax, vmax=0.65, vmin=0.35,
+                            draw_mask=True, draw_contour=True, colorbar=True,
+                            draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                            cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                    plt.savefig(f"{save_file_name}_2v2.png")
+                    wandb_object.log({"TGM 2v2": wandb_object.Image(f"{save_file_name}_2v2.png")})
                 except Exception as e:
                     print(e)
 
@@ -535,44 +537,47 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 df3.to_csv(f"{save_file_name}_neg_diff.csv")
 
                 truth = df1.values
-                plt.clf()
-                fig, singax= plt.subplots()
-                thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
-                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
-                        draw_mask=True, draw_contour=True, colorbar=True,
-                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
-                
-                plt.savefig(f"{save_file_name}_diff.png")
+                try:
+                    plt.clf()
+                    fig, singax= plt.subplots()
+                    thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
+                    plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
+                            draw_mask=True, draw_contour=True, colorbar=True,
+                            draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                            cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                    
+                    plt.savefig(f"{save_file_name}_diff.png")
 
 
-                truth = df2.values
-                plt.clf()
-                fig, singax= plt.subplots()
-                thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
-                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
-                        draw_mask=True, draw_contour=True, colorbar=True,
-                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
-                
-                plt.savefig(f"{save_file_name}_both_diff.png")
+                    truth = df2.values
+                    plt.clf()
+                    fig, singax= plt.subplots()
+                    thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
+                    plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
+                            draw_mask=True, draw_contour=True, colorbar=True,
+                            draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                            cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                    
+                    plt.savefig(f"{save_file_name}_both_diff.png")
 
 
-                truth = df3.values
-                plt.clf()
-                fig, singax= plt.subplots()
-                thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
-                plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
-                        draw_mask=True, draw_contour=True, colorbar=True,
-                        draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
-                        cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
-                
-                plt.savefig(f"{save_file_name}_neg_diff.png")
+                    truth = df3.values
+                    plt.clf()
+                    fig, singax= plt.subplots()
+                    thresh_fdr = np.max(truth) # For 9m_tgm_pre_w2v
+                    plax, im = plot_image(truth, [-100, 1000], mask=truth > thresh_fdr, ax=singax,
+                            draw_mask=True, draw_contour=True, colorbar=True,
+                            draw_diag=True, draw_zerolines=True, xlabel='Test time (ms)', ylabel='Train time (ms)',
+                            cbar_unit="2 vs. 2 accuracy", cmap="RdBu_r", mask_alpha=1, mask_cmap="RdBu_r")
+                    
+                    plt.savefig(f"{save_file_name}_neg_diff.png")
+                except Exception as e:
+                    print(e)
 
 
-    # NOTE: This following code section is only for TGMs permutated labels.
-    # perm_results = np.array(tgm_results)
-    # timestr = time.strftime("%Y%m%d-%H%M%S")
+        # NOTE: This following code section is only for TGMs permutated labels.
+        # perm_results = np.array(tgm_results)
+        # timestr = time.strftime("%Y%m%d-%H%M%S")
     # np.savez_compressed(f'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/tgms/Across/12_to_9m_pre_w2v_xval/{timestr}.npz', perm_results)
 
     # For predicting animacy from predictions.

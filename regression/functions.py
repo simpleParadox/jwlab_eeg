@@ -1428,10 +1428,10 @@ def plot_image(data, times, mask=None, ax=None, vmax=None, vmin=None,
                    corner_mask=False, antialiased=False, levels=[.5])
     ax.set_xlim(xlim)
     ax.set_ylim(xlim)
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(12)
-    for tick in ax.yaxis.get_major_ticks():
-        tick.label.set_fontsize(12)
+    # for tick in ax.xaxis.get_major_ticks():
+    #     tick.label.set_fontsize(12)
+    # for tick in ax.yaxis.get_major_ticks():
+    #     tick.label.set_fontsize(12)
 
     if draw_diag:
         ax.plot((tmin, tmax), (tmin, tmax), color="k", linestyle=":")
