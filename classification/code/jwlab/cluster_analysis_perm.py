@@ -346,34 +346,49 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                 print(f"Loading age group 1: age group 1 - {age_group_1}")
                 X_1, y_1, good_trial_count_1, num_win_1 = prep_ml(age_group_1, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
                 num_win = num_win_1
-
-                print("Preparing age group 1")
-                X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel, train_only = True, test_size=0)
-                print(f"Loading age group 2: age group 2 - {age_group_2}")
-                X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
-                # Now the other group
-                print("Preparing age group 2")
-                X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, train_only = False, test_size=0.9, current_seed=i)
+                
+                if fixed_seed:
+                    print("Fixed seed is :", fixed_seed)
+                    print("Preparing age group 1")
+                    X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel, train_only = True, test_size=0, current_seed=i)
+                    print(f"Loading age group 2: age group 2 - {age_group_2}")
+                    X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
+                    # Now the other group
+                    print("Preparing age group 2")
+                    X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, train_only = False, test_size=0.9, current_seed=i)
+                else:
+                    print("Preparing age group 1")
+                    X_train_1, X_test_1, y_train_1, y_test_1 = prep_matrices_avg(X_1, age_group_1, useRandomizedLabel, train_only = True, test_size=0)
+                    print(f"Loading age group 2: age group 2 - {age_group_2}")
+                    X_2, y_2, good_trial_count_2, num_win_2 = prep_ml(age_group_2, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000)
+                    # Now the other group
+                    print("Preparing age group 2")
+                    X_train_2, X_test_2, y_train_2, y_test_2 = prep_matrices_avg(X_2, age_group_2, useRandomizedLabel, train_only = False, test_size=0.9)
             except Exception as e:
                 print(e)
                 print("Error in loading or preparing data, moving to next iteration.")
                 continue
-                
-            if type_exp == 'tgm':
-                print(type_exp)
-                tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=False, target_pca=target_pca,
-                                                                                                                                         model_name=model_name, layer=layer, embedding_type=embedding_type)
-                tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
-                tgm_diff_results.append(tgm_diff_res)
-                tgm_both_diff_results.append(tgm_both_diff_res)
-                tgm_neg_diff_results.append(tgm_neg_diff_res)
-                equal_count_results.append(equal_count_matrix)
-                roe_matrix_results.append(roe_matrix)
-            else:
-                print(type_exp)
-                temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2,
+            try:    
+                if type_exp == 'tgm':
+                    print(type_exp)
+                    tgm_results_res, tgm_diff_res, tgm_both_diff_res, tgm_neg_diff_res, equal_count_matrix, roe_matrix = cross_validaton_tgm(X_train_1, y_train_1, X_test_2, y_test_2, child=False, res=False, target_pca=target_pca,
+                                                                                                                                            model_name=model_name, layer=layer, embedding_type=embedding_type)
+                    tgm_results.append(tgm_results_res)  # The temp_results is expected to be a square matrix.
+                    tgm_diff_results.append(tgm_diff_res)
+                    tgm_both_diff_results.append(tgm_both_diff_res)
+                    tgm_neg_diff_results.append(tgm_neg_diff_res)
+                    equal_count_results.append(equal_count_matrix)
+                    roe_matrix_results.append(roe_matrix)
+                else:
+                    print(type_exp)
+                    temp_results, temp_animacy_results, temp_preds, temp_diag_tgm, word_pairs_2v2_sampl = cross_validaton_nested(X_train_1, y_train_1, X_test_2, y_test_2,
                                                                                                                              animacy=animacy, iteration=i, model_name=model_name, layer=layer,
                                                                                                                              embedding_type=embedding_type)
+                
+                successful_iterations += 1
+            except Exception as e:
+                print("Error while fitting model.")
+                print(e)
 
                 # temp_results, temp_diag_tgm, word_pairs_2v2_sampl = cv_residual_w2v_ph_eeg(X_train_1, X_test_2, y_train_1, y_test_2, child=False)
             
