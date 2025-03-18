@@ -36,6 +36,7 @@ parser.add_argument('--wandb_mode', type=str, default='online', help='Wandb mode
 parser.add_argument('--iteration_range', type=int, nargs=2, metavar=('start', 'end'), default=None, help='Range of iterations to run')
 parser.add_argument('--age_group_range', type=int, nargs=2, metavar=('first', 'second'), default=None, help='Range of age groups to run')
 parser.add_argument('--decoding_type', type=str, default='average_trials_and_participants', help='Decoding type')
+parser.add_argument('--type_exp', type=str, default='simple', help='Type of experiment')
 parsed_args = parser.parse_args()
 
 
@@ -83,6 +84,9 @@ elif decoding_type == 'across':
 use_randomized_label = parsed_args.use_randomized_label
 if use_randomized_label:
     graph_file_name = graph_file_name + '_randomized_labels'
+    
+# Add the type_exp to the graph_file_name.
+graph_file_name = graph_file_name + f'_{parsed_args.type_exp}'
 print("Randomized labels: ", use_randomized_label)
 fixed_seed = parsed_args.fixed_seed
 embedding_type = parsed_args.embedding_type
@@ -149,7 +153,7 @@ result = cluster_analysis_procedure(age_group, use_randomized_label,
                                     decoding_type,
                                     [-200, 1000, [100], 10], 
                                     [5, 4, iterations], 
-                                    type_exp='simple', # 'permutation' or 'simple'
+                                    type_exp=parsed_args.type_exp,
                                     animacy=False, 
                                     no_animacy_avg=False, 
                                     do_eeg_pca=False, 
