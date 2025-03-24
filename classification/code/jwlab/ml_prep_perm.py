@@ -68,12 +68,14 @@ def load_ml_data(participants, ch_group=False, group_num=None):
         except:
             print("Could not load channel neighbours file.")
             print("Trying from alternate directory.")
-        try:
-            ch_group_data = np.load(f"/home/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_{part_suffix}m.npz", allow_pickle=True)
-            print("Successfully loaded channel neighbours file from alternate directory.")
-        except Exception as e:
-            print("Could not load channel neighbours file.")
-            raise ValueError("Could not load channel neighbours file.")
+            
+            # Yes, the identation is correct. The second try block is inside the first except block.
+            try:
+                ch_group_data = np.load(f"/home/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_{part_suffix}m.npz", allow_pickle=True)
+                print("Successfully loaded channel neighbours file from alternate directory.")
+            except Exception as e:
+                print("Could not load channel neighbours file.")
+                raise ValueError("Could not load channel neighbours file.")
         
         ch_data = [ch_group_data[k] for k in ch_group_data] # All the group channels. Immediate neighbours of all channels.
         ch_data = ch_data[0]  # The object contains two items. Selecting the first item which is the channel and its neighbours.

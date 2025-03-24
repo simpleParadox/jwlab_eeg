@@ -22,7 +22,7 @@ python classification/notebooks/cluster_analysis_perm_reg_overlap.py --seed=-1 \
        --layer=1 --age_group=9 --graph_file_name='2025_mar_23_w2v-9m-fixed_seed_group_channel' \
        --embedding_type='w2v' --iteration_range 50 100 --fixed_seed \
        --ch_group --group_num=$SLURM_ARRAY_TASK_ID --window_range 440 660 \
-       --window_length=220 --wandb_mode='offline' --store_dir='/home/rsaha/scratch/jwlab_eeg'
+       --window_length=220 --wandb_mode='disabled' --store_dir='/home/rsaha/scratch/jwlab_eeg'
 
 # Use the following command for testing.
 # python classification/notebooks/cluster_analysis_perm_reg_overlap.py --seed=-1 \
