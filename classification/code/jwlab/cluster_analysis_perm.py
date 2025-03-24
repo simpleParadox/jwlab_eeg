@@ -119,7 +119,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                                residual=False, child_residual=False, seed=-1, corr=False, target_pca=False, animacy=False, 
                                no_animacy_avg=False, do_eeg_pca=False, do_sliding_window=False, ch_group=False, group_num=None,
                                randomly_remove_from_9m=False, model_name=None, layer=1, graph_file_name='test', fixed_seed=False,
-                               embedding_type='w2v', wandb_object=None):
+                               embedding_type='w2v', wandb_object=None, store_dir=None):
     print("Cluster analysis procedure")
     num_folds, cross_val_iterations, sampling_iterations = cross_val_config[0], cross_val_config[1], cross_val_config[2]
     
@@ -609,69 +609,29 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
     # # dendrogram(np.mean(w2v_res_list, axis=0))
     # ## REMOVE FOR NULL FUNCTION
     if averaging == 'average_trials_and_participants' or (averaging=='across' and type_exp!='tgm'):
-        if useRandomizedLabel:
-            # final_tgm = np.mean(results, axis=0)
-            prefix = 'vectors' if not animacy else 'animacy'
-            file_name = f'{graph_file_name}_{age_group}m'
-            timestr = time.strftime("%Y%m%d-%H%M%S")
-            if averaging == 'across':
-                # Update file name to contain information for both age groups.
-                file_name = f'across_{graph_file_name}_{age_group_1}m_to_{age_group_2}m'
-                prefix += '_across'
-            
-            # Check if the folder exists.
-            root_dir = os.getcwd() + f"/same_time_results/permutation/{prefix}/"
-            if not os.path.exists(root_dir):
-                os.makedirs(root_dir)
-            file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
-            save_file_name = f"{root_dir}{timestr}_{file_name}_perm_all_data"
-            np.savez_compressed(f"{save_file_name}.npz", results)
-            try:
-                # Log the results dictionary.
-                wandb_object.log({"results": results})
-            
-            except Exception as e:
-                print("Error in logging the results dictionary to wandb")
-                print(e)
-
-            try:
-                # If the file name contains parentheses, replace them with '_'.
-                artifact = wandb_object.Artifact(file_name, type='results')
-                artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
-                artifact.save()
-            except Exception as e:
-                print("Error in logging results to wandb.")
-                print(e)
-        else:
-            # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
-
-            # adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
-
-            # max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
-            if len(sliding_window_config[2]) == 1:
-                print('R2 train values: ', r2_train_values)
-                print('R2 test values: ', r2_test_values)
-                print("Results:", results)
-                
+        if not ch_group:
+            if useRandomizedLabel:
+                # final_tgm = np.mean(results, axis=0)
                 prefix = 'vectors' if not animacy else 'animacy'
                 file_name = f'{graph_file_name}_{age_group}m'
                 timestr = time.strftime("%Y%m%d-%H%M%S")
-                
                 if averaging == 'across':
                     # Update file name to contain information for both age groups.
                     file_name = f'across_{graph_file_name}_{age_group_1}m_to_{age_group_2}m'
                     prefix += '_across'
                 
                 # Check if the folder exists.
-                root_dir = os.getcwd() + f"/same_time_results/observed/{prefix}/"
+                if store_dir:
+                    root_dir = store_dir + f"/same_time_results/permutation/{prefix}/"
+                else:
+                    root_dir = os.getcwd() + f"/same_time_results/permutation/{prefix}" # Directory for each channel group.
+
+
                 if not os.path.exists(root_dir):
                     os.makedirs(root_dir)
-                
                 file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
-                save_file_name = f"{root_dir}{timestr}_{file_name}_all_data"
+                save_file_name = f"{root_dir}{timestr}_{file_name}_perm_all_data"
                 np.savez_compressed(f"{save_file_name}.npz", results)
-                createGraph(results, age_group, graph_file_name)#, t_mass_pos, adj_clusters_pos)
-
                 try:
                     # Log the results dictionary.
                     wandb_object.log({"results": results})
@@ -681,21 +641,141 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
                     print(e)
 
                 try:
+                    # If the file name contains parentheses, replace them with '_'.
                     artifact = wandb_object.Artifact(file_name, type='results')
                     artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
                     artifact.save()
                 except Exception as e:
                     print("Error in logging results to wandb.")
                     print(e)
-                # Save the results for the group channel analysis.
-                # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/group_channel_results/ch_group_{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_ch_group_{group_num}.npz", results)
-                # np.savez_compressed(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/trial_distribution/{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_trial_dist_from_eeg.npz", results)
-                # # word_pair_graph(sampl_iter_word_pairs_2v2)
-                # print(animacy_results)
-                # createGraph(animacy_results, tvalues_pos, adj_clusters_pos)
-                
             else:
-                print("Graph function is not supported for multiple window sizes")
+                # pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg = t_test(results, num_win, num_folds)
+
+                # adj_clusters_pos, adj_clusters_neg, clusters_pos, clusters_neg = find_clusters(pvalues_pos, pvalues_neg, tvalues_pos, tvalues_neg)
+
+                # max_abs_tmass, t_mass_pos, t_mass_neg = get_max_t_mass(clusters_pos, clusters_neg, tvalues_pos, tvalues_neg)
+                if len(sliding_window_config[2]) == 1:
+                    print('R2 train values: ', r2_train_values)
+                    print('R2 test values: ', r2_test_values)
+                    print("Results:", results)
+                    
+                    prefix = 'vectors' if not animacy else 'animacy'
+                    file_name = f'{graph_file_name}_{age_group}m'
+                    timestr = time.strftime("%Y%m%d-%H%M%S")
+                    
+                    if averaging == 'across':
+                        # Update file name to contain information for both age groups.
+                        file_name = f'across_{graph_file_name}_{age_group_1}m_to_{age_group_2}m'
+                        prefix += '_across'
+                    
+                    # Check if the folder exists.
+                    if store_dir:
+                        root_dir = store_dir + f"/same_time_results/observed/{prefix}/"
+                    else:
+                        root_dir = os.getcwd() + f"/same_time_results/observed/{prefix}" # Directory for each channel group.
+
+                        
+                    if not os.path.exists(root_dir):
+                        os.makedirs(root_dir)
+                    
+                    file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
+                    save_file_name = f"{root_dir}{timestr}_{file_name}_all_data"
+                    np.savez_compressed(f"{save_file_name}.npz", results)
+                    createGraph(results, age_group, graph_file_name)#, t_mass_pos, adj_clusters_pos)
+
+                    try:
+                        # Log the results dictionary.
+                        wandb_object.log({"results": results})
+                    
+                    except Exception as e:
+                        print("Error in logging the results dictionary to wandb")
+                        print(e)
+
+                    try:
+                        artifact = wandb_object.Artifact(file_name, type='results')
+                        artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
+                        artifact.save()
+                    except Exception as e:
+                        print("Error in logging results to wandb.")
+                        print(e)
+                    # # word_pair_graph(sampl_iter_word_pairs_2v2)
+                    # print(animacy_results)
+                    # createGraph(animacy_results, tvalues_pos, adj_clusters_pos)
+                    
+                else:
+                    print("Graph function is not supported for multiple window sizes")
+                    
+        else:
+            print("Saving files for group channel analysis.")
+            
+            # Save the results for the group channel analysis.
+            if useRandomizedLabel:
+                prefix = 'vectors_group_ch' if not animacy else 'animacy_group_ch'
+                file_name = f"ch_group_{graph_file_name}_{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_ch_group_{group_num}.npz"
+                timestr = time.strftime("%Y%m%d-%H%M%S")
+                
+                if store_dir:
+                    root_dir = store_dir + f"/same_time_results/group_channel_results/permutation/{prefix}/age_{age_group}m/group_{group_num}/"
+                else:
+                    root_dir = os.getcwd() + f"/same_time_results/group_channel_results/permutation/{prefix}/age_{age_group}m/group_{group_num}/" # Directory for each channel group.
+
+                
+                if not os.path.exists(root_dir):
+                    os.makedirs(root_dir)
+                
+                file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
+                
+                save_file_name = f"{root_dir}{timestr}_{file_name}_perm_all_data"
+                np.savez_compressed(f"{save_file_name}.npz", results)
+                
+                try:
+                    wandb_object.log({"results": results})
+                except Exception as e:
+                    print("Error in logging the results dictionary to wandb")
+                    print(e)
+                
+                # Save the artifact.
+                try:
+                    artifact = wandb_object.Artifact(file_name, type='results')
+                    artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
+                    artifact.save()
+                except Exception as e:
+                    print("Error in logging results to wandb.")
+                    print(e)
+            else:
+                # Store the observed results.
+                prefix = 'vectors_group_ch' if not animacy else 'animacy_group_ch'
+                file_name = f"ch_group_{graph_file_name}_{age_group}m_window_{sliding_window_config[0]}_to_{sliding_window_config[1]}_ch_group_{group_num}.npz"
+                timestr = time.strftime("%Y%m%d-%H%M%S")
+                if store_dir:
+                    root_dir = store_dir + f"/same_time_results/group_channel_results/observed/{prefix}/age_{age_group}m/group_{group_num}/"
+                else:
+                    root_dir = os.getcwd() + f"/same_time_results/group_channel_results/observed/{prefix}/age_{age_group}m/group_{group_num}/" # Directory for each channel group.
+                
+                if not os.path.exists(root_dir):
+                    os.makedirs(root_dir)
+                    
+                file_name = file_name.replace('(', '_').replace(')', '_').replace(',', '_')
+                
+                save_file_name = f"{root_dir}{timestr}_{file_name}_all_data"
+                np.savez_compressed(f"{save_file_name}.npz", results)
+                
+                try:
+                    wandb_object.log({"results": results})
+                except Exception as e:
+                    print("Error in logging the results dictionary to wandb")
+                    print(e)
+                
+                # Save the artifact.
+                try:
+                    artifact = wandb_object.Artifact(file_name, type='results')
+                    artifact.add_file(f"{save_file_name}.npz", name=f"{save_file_name}.npz")
+                    artifact.save()
+                except Exception as e:  
+                    print("Error in logging results to wandb.")
+                    print(e)
+                
+                
 
         # rsa(np.mean(w2v_res_list, axis=0), np.mean(cbt_res_list, axis=0))
 

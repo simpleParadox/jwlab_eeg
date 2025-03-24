@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from utils import get_significance
 from path_mappings import w2v_path_mapping_multiple_seeds, perm_w2v_path_mapping, ph_path_mapping_multiple_seeds, perm_ph_path_mapping
+from plot_significance_same_time_window import plot_image_same_time_with_cluster
 
 def plot_image_same_time_with_cluster(results_1_dict,
                                       results_2_dict,
@@ -39,8 +40,6 @@ def plot_image_same_time_with_cluster(results_1_dict,
                                       color_2='purple',
                                       sig_1_options={'color': 'green', 'alpha': 0.3, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor': 'green', 'markeredgewidth': 1},
                                       sig_2_options={'color': 'purple', 'alpha': 0.3, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor': 'purple', 'markeredgewidth': 1},
-                                      seed_range_1=None,
-                                      seed_range_2=None,
                                       **kwargs):
     """
     Plot two result curves with significance dots and shaded areas for significant clusters.
@@ -76,7 +75,6 @@ def plot_image_same_time_with_cluster(results_1_dict,
     fig, ax = plt.subplots(figsize=kwargs.get('figsize', (10, 6)))
     
     # Set default time window if not provided
-    print("Time window: ", time_window)
     if time_window is None:
         time_window = np.arange(len(results_1))
     
@@ -105,33 +103,18 @@ def plot_image_same_time_with_cluster(results_1_dict,
         raise ValueError("No sample data found in results")
     
     n_subjects = 50 #len(results1[0][windows[0]])
-    print("Number of acc_values: ", n_subjects)
+    print("Number of subjects: ", n_subjects)
     
     # Initialize arrays - now only for post-onset data
     data1 = np.zeros((n_subjects, n_times))
     data2 = np.zeros((n_subjects, n_times))
     print("Shape of data1: ", data1.shape)
     print("Shape of data2: ", data2.shape)
-    if seed_range_1 is not None:
-        print("Using seed ranges: ", seed_range_1, seed_range_2)
-        for i, t in enumerate(post_onset_windows):
-            data1[:, i] = np.array(results_1_dict[0][t][seed_range_1[0]:seed_range_1[1]])
-    else:
-        # Fill arrays with data - only using post-onset windows
-        print("Using default seed ranges.")
-        for i, t in enumerate(post_onset_windows):
-            data1[:, i] = np.array(results_1_dict[0][t][:n_subjects]) # First n_subjects values.
-
-    if seed_range_2 is not None:
-        for i, t in enumerate(post_onset_windows):
-            data2[:, i] = np.array(results_2_dict[0][t][seed_range_2[0]:seed_range_2[1]])
-    else:
-        print("Using default seed ranges.")
-        for i, t in enumerate(post_onset_windows):
-            data2[:, i] = np.array(results_2_dict[0][t][:n_subjects])
-            
-    print("Data1: ", data1)
     
+    # Fill arrays with data - only using post-onset windows
+    for i, t in enumerate(post_onset_windows):
+        data1[:, i] = np.array(results_1_dict[0][t][:n_subjects]) # First n_subjects values.
+        data2[:, i] = np.array(results_2_dict[0][t][:n_subjects])
     
     # Perform cluster permutation test - only on post-onset data
     T_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
@@ -177,17 +160,15 @@ def plot_image_same_time_with_cluster(results_1_dict,
                             color='pink', alpha=0.3)
         
         # Add a label for the largest cluster
-        ax.text(times[largest_cluster[0]], 0.65, f"{labels_after_onset[largest_cluster_idx]}", fontsize=12, ha='left')
-    else:
-        print("No post onset clusters found.")
+        ax.text(times[largest_cluster[0]], 0.70, f"{labels_after_onset[largest_cluster_idx]}", fontsize=12, ha='left')
     
     
                    
     # Plot user-provided significance dots if provided
-    ax.plot(results_1_dots, [0.40] * len(results_1_dots), sig_1_options['marker_shape'], 
+    ax.plot(results_1_dots, [0.35] * len(results_1_dots), sig_1_options['marker_shape'], 
             color=sig_1_options['color'], alpha=sig_1_options['alpha'], markerfacecolor=sig_1_options['markerfacecolor'],
             markeredgecolor=sig_1_options['markeredgecolor'], markeredgewidth=sig_1_options['markeredgewidth'])
-    ax.plot(results_2_dots, [0.42] * len(results_2_dots), sig_2_options['marker_shape'], 
+    ax.plot(results_2_dots, [0.37] * len(results_2_dots), sig_2_options['marker_shape'], 
             color=sig_2_options['color'], alpha=sig_2_options['alpha'], markerfacecolor=sig_2_options['markerfacecolor'],
             markeredgecolor=sig_2_options['markeredgecolor'], markeredgewidth=sig_2_options['markeredgewidth'])
     
@@ -211,7 +192,7 @@ def plot_image_same_time_with_cluster(results_1_dict,
     ax.set_title(kwargs.get('title', '2 vs 2 Accuracy Over Time'), fontsize=18)
     ax.yaxis.set_tick_params(labelsize=14)
     ax.xaxis.set_tick_params(labelsize=14)
-    ax.set_ylim(0.35, 0.70)
+    ax.set_ylim(0.3, 0.8)
     
     # Add borders to the ax.
     for spine in ax.spines.values():
@@ -272,15 +253,13 @@ def plot_image_same_time_window(x_graph, y_graph, error, x_dots, file_name, line
     return fig
     
 
-def scores_and_error(results, seed_range=[0, 50]):
+def scores_and_error(results):
     scoreMean = []
     stdev = []
-    print("Using seed range: for scores_and_error.", seed_range)
     for i in range(len(results)):
         for j in range(len(results[i])):
-            res = results[i][j][seed_range[0]:seed_range[1]]
-            scoreMean.append(float(round(np.mean(res), 4)))
-            stdev.append(round(stats.sem(res), 4)) # This is actually std error of the mean (and not std dev).
+            scoreMean.append(float(round(np.mean(results[i][j]), 4)))
+            stdev.append(round(stats.sem(results[i][j]), 4)) # This is actually std error of the mean (and not std dev).
 
     length_per_window_plt = 10  # 1200 / len(scoreMean)
 
@@ -455,204 +434,201 @@ Plotting both 9m and 12m with clusters in the same graph.
 # NOTE: I doubled checked the graphs by copy pasting the results array from the .out file and they seem to give the same graph.
 # Load the non-permuted results.
 
+
+age_group_1 = '9m'
+age_group_2 = '12m'
+# ALL_SEED_RANGES = ['0_50', '50_100', '100_150', '150_200']
+ALL_SEED_RANGES = ['50_100']
+for seed_range in ALL_SEED_RANGES:
+    
+    non_permuted_mapping_key_group_1 = f'{age_group_1}_{seed_range}'
+    non_permuted_mapping_key_group_2 = f'{age_group_2}_{seed_range}'
+    w2v_perm_mapping_key_group_1 = f'w2v_perm_{age_group_1}'
+    w2v_perm_mapping_key_group_2 = f'w2v_perm_{age_group_2}'
+    ph_perm_mapping_key_group_1 = f'ph_perm_{age_group_1}'
+    ph_perm_mapping_key_group_2 = f'ph_perm_{age_group_2}'
+
+
+    # Plotting the ph decoding results for both 9m and 12m.
+    # First get the paths.
+    non_permuted_results_group_1_ph_fixed_seed_path = ph_path_mapping_multiple_seeds[non_permuted_mapping_key_group_1]
+    non_permuted_results_group_2_ph_fixed_seed_path = ph_path_mapping_multiple_seeds[non_permuted_mapping_key_group_2]
+    path_ph_perm_group_1 = perm_ph_path_mapping[ph_perm_mapping_key_group_1]
+    path_ph_perm_group_2 = perm_ph_path_mapping[ph_perm_mapping_key_group_2]
+
+    # Now get the paths for the w2v decoding results.
+    non_permuted_results_group_1_w2v_fixed_seed_path = w2v_path_mapping_multiple_seeds[non_permuted_mapping_key_group_1]
+    non_permuted_results_group_2_w2v_fixed_seed_path = w2v_path_mapping_multiple_seeds[non_permuted_mapping_key_group_2]
+    path_w2v_perm_group_1 = perm_w2v_path_mapping[w2v_perm_mapping_key_group_1]
+    path_w2v_perm_group_2 = perm_w2v_path_mapping[w2v_perm_mapping_key_group_2]
+
+
+
+    # Load the non-permuted results for phoneme.
+    results_group_1_ph_fixed_seed = np.load(non_permuted_results_group_1_ph_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+    results_group_2_ph_fixed_seed = np.load(non_permuted_results_group_2_ph_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+
+    # Load the non-permuted results for w2v.
+    results_group_1_w2v_fixed_seed = np.load(non_permuted_results_group_1_w2v_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+    results_group_2_w2v_fixed_seed = np.load(non_permuted_results_group_2_w2v_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
+
+    # Get the scores and errors for phoneme.
+    x_graph_9m_ph, y_graph_9m_ph, error_9m_ph = scores_and_error(results_group_1_ph_fixed_seed)
+    x_graph_12m_ph, y_graph_12m_ph, error_12m_ph = scores_and_error(results_group_2_ph_fixed_seed)
+    time_window_ph = x_graph_9m_ph
+
+    # Get the scores and errors for w2v.
+    x_graph_9m_w2v, y_graph_9m_w2v, error_9m_w2v = scores_and_error(results_group_1_w2v_fixed_seed)
+    x_graph_12m_w2v, y_graph_12m_w2v, error_12m_w2v = scores_and_error(results_group_2_w2v_fixed_seed)
+    time_window_w2v = x_graph_9m_w2v
+
+
+    # There will be three cases.
+    # 1. 9m vs 12m for phoneme.
+    # 2. 9m phoneme vs 9m w2v.
+    # 3. 12m phoneme vs 12m w2v.
+
+
+    # Get significance dots for case 1.
+    # Get significance dots for phoneme.
+    x_dots_9m_ph, reject_fdr_9m_ph, threshold_fdr_9m_ph, p_values_fdr_9m_ph, p_values_9m_ph = get_significance(path_ph_perm_group_1, y_graph_9m_ph, x_graph_9m_ph, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
+    x_dots_12m_ph, reject_fdr_12m_ph, threshold_fdr_12m_ph, p_values_fdr_12m_ph, p_values_12m_ph = get_significance(path_ph_perm_group_2, y_graph_12m_ph, x_graph_12m_ph, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
+
+    # Get significance dots for case 2.
+    # Get significance dots for w2v.
+    x_dots_9m_w2v, reject_fdr_9m_w2v, threshold_fdr_9m_w2v, p_values_fdr_9m_w2v, p_values_9m_w2v = get_significance(path_w2v_perm_group_1, y_graph_9m_w2v, x_graph_9m_w2v, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
+
+
+    # Get significance dots for case 3.
+    # Get significance dots for w2v.
+    x_dots_12m_w2v, reject_fdr_12m_w2v, threshold_fdr_12m_w2v, p_values_fdr_12m_w2v, p_values_12m_w2v = get_significance(path_w2v_perm_group_2, y_graph_12m_w2v, x_graph_12m_w2v, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
+
+    # Plot case 1.
+
+    fig_title = f'9m vs 12m ph fixed seed {seed_range}'
+    fig, ax = plot_image_same_time_with_cluster(results_group_1_ph_fixed_seed,
+                                                results_group_2_ph_fixed_seed,
+                                                y_graph_9m_ph,
+                                                y_graph_12m_ph,
+                                                x_dots_9m_ph,
+                                                x_dots_12m_ph,
+                                                error_9m_ph,
+                                                error_12m_ph,
+                                                time_window_ph,
+                                                alpha=0.05,
+                                                n_permutations=10000,
+                                                color_1='green',
+                                                color_2='purple',
+                                                linestyle_1='dashed',
+                                                linestyle_2='dashed',
+                                                sig_1_options={'color': 'green', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'green', 'markeredgewidth':1},
+                                                sig_2_options={'color': 'purple', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'purple', 'markeredgewidth':1},
+                                                figsize=(10, 10),
+                                                label_1=f'9m ph fixed seed {seed_range}',
+                                                label_2=f'12m ph fixed seed {seed_range}',
+                                                xlabel='Time (s)',
+                                                ylabel='2 vs 2 Accuracy',
+                                                title=f'{fig_title}',
+                                                seed=42)
+    file_name = f'from_npz_9m_and_12m_ph_only_fixed_seed_range_{seed_range}_with_clusters_ph_dots_from_raw_using_fdr_kde_all_over'
+    plt.savefig(f'{file_name}.png', bbox_inches='tight')
+    # plt.savefig(f'{file_name}.svg', format='svg', bbox_inches='tight')
+
+    # # Plot case 2.
+    fig_title = f'9m ph vs 9m w2v fixed seed {seed_range}'
+    fig, ax = plot_image_same_time_with_cluster(results_group_1_ph_fixed_seed,
+                                                results_group_1_w2v_fixed_seed,
+                                                y_graph_9m_ph,
+                                                y_graph_9m_w2v,
+                                                x_dots_9m_ph,
+                                                x_dots_9m_w2v,
+                                                error_9m_ph,
+                                                error_9m_w2v,
+                                                time_window_ph,
+                                                alpha=0.05,
+                                                n_permutations=10000,
+                                                color_1='green',
+                                                color_2='green',
+                                                linestyle_1='dashed',
+                                                linestyle_2='solid',
+                                                sig_1_options={'color': 'green', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'green', 'markeredgewidth':1},
+                                                sig_2_options={'color': 'green', 'alpha': 1, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'green', 'markeredgewidth':None},
+                                                figsize=(10, 10),
+                                                label_1=f'9m ph fixed seed {seed_range}',
+                                                label_2=f'9m w2v fixed seed {seed_range}',
+                                                xlabel='Time (s)',
+                                                ylabel='2 vs 2 Accuracy',
+                                                title=f'{fig_title}',
+                                                seed=42)
+    file_name = f'from_npz_9m_ph_vs_w2v_fixed_seed_range_{seed_range}_with_clusters_ph_w2v_dots_from_raw_using_fdr_kde_all_over'
+    plt.savefig(f'{file_name}.png', bbox_inches='tight')
+    # # plt.savefig(f'{file_name}.svg', format='svg', bbox_inches='tight')
+
+    # # Plot case 3.
+    fig_title = f'12m ph vs 12m w2v fixed seed {seed_range}'
+    fig, ax = plot_image_same_time_with_cluster(results_group_2_ph_fixed_seed,
+                                                results_group_2_w2v_fixed_seed,
+                                                y_graph_12m_ph,
+                                                y_graph_12m_w2v,
+                                                x_dots_12m_ph,
+                                                x_dots_12m_w2v,
+                                                error_12m_ph,
+                                                error_12m_w2v,
+                                                time_window_ph,
+                                                alpha=0.05,
+                                                n_permutations=10000,
+                                                color_1='purple',
+                                                color_2='purple',
+                                                linestyle_1='dashed',
+                                                linestyle_2='solid',
+                                                sig_1_options={'color': 'purple', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'purple', 'markeredgewidth':1},
+                                                sig_2_options={'color': 'purple', 'alpha': 1, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'purple', 'markeredgewidth':None},
+                                                figsize=(10, 10),
+                                                label_1=f'12m ph fixed seed {seed_range}',
+                                                label_2=f'12m w2v fixed seed {seed_range}',
+                                                xlabel='Time (s)',
+                                                ylabel='2 vs 2 Accuracy',
+                                                title=f'{fig_title}',
+                                                seed=42)
+    file_name = f'from_npz_12m_ph_vs_w2v_fixed_seed_range_{seed_range}_with_clusters_ph_w2v_dots_from_raw_using_fdr_kde_all_over'
+    plt.savefig(f'{file_name}.png', bbox_inches='tight')
+    # # plt.savefig(f'{file_name}.svg', format='svg', bbox_inches='tight')
+    
+    
+    
+    
+    # Finally also plot the graph for 9m and 12m w2v.
+    fig_title = f'9m vs 12m w2v fixed seed {seed_range}'
+    fig, ax = plot_image_same_time_with_cluster(results_group_1_w2v_fixed_seed,
+                                                results_group_2_w2v_fixed_seed,
+                                                y_graph_9m_w2v,
+                                                y_graph_12m_w2v,
+                                                x_dots_9m_w2v,
+                                                x_dots_12m_w2v,
+                                                error_9m_w2v,
+                                                error_12m_w2v,
+                                                time_window_w2v,
+                                                alpha=0.05,
+                                                n_permutations=10000,
+                                                color_1='green',
+                                                color_2='purple',
+                                                linestyle_1='solid',
+                                                linestyle_2='solid',
+                                                sig_1_options={'color': 'green', 'alpha': 0.8, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'green', 'markeredgewidth':1},
+                                                sig_2_options={'color': 'purple', 'alpha': 0.8, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'purple', 'markeredgewidth':1},
+                                                figsize=(10, 10),
+                                                label_1=f'9m w2v fixed seed {seed_range}',
+                                                label_2=f'12m w2v fixed seed {seed_range}',
+                                                xlabel='Time (s)',
+                                                ylabel='2 vs 2 Accuracy',
+                                                title=f'{fig_title}',
+                                                seed=42)
+    
+    file_name = f'from_npz_9m_and_12m_w2v_only_fixed_seed_range_{seed_range}_with_clusters_w2v_dots_from_raw_using_fdr_kde_all_over'
+    plt.savefig(f'{file_name}.png', bbox_inches='tight')
+
+
 if __name__ == '__main__':
-    age_group_1 = '9m'
-    age_group_2 = '12m'
-    # ALL_SEED_RANGES = ['0_50', '50_100', '100_150', '150_200']
-    ALL_SEED_RANGES = ['50_100']
-    for seed_range in ALL_SEED_RANGES:
-        
-        non_permuted_mapping_key_group_1 = f'{age_group_1}_{seed_range}'
-        non_permuted_mapping_key_group_2 = f'{age_group_2}_{seed_range}'
-        w2v_perm_mapping_key_group_1 = f'w2v_perm_{age_group_1}'
-        w2v_perm_mapping_key_group_2 = f'w2v_perm_{age_group_2}'
-        ph_perm_mapping_key_group_1 = f'ph_perm_{age_group_1}'
-        ph_perm_mapping_key_group_2 = f'ph_perm_{age_group_2}'
-
-
-        # Plotting the ph decoding results for both 9m and 12m.
-        # First get the paths.
-        non_permuted_results_group_1_ph_fixed_seed_path = ph_path_mapping_multiple_seeds[non_permuted_mapping_key_group_1]
-        non_permuted_results_group_2_ph_fixed_seed_path = ph_path_mapping_multiple_seeds[non_permuted_mapping_key_group_2]
-        path_ph_perm_group_1 = perm_ph_path_mapping[ph_perm_mapping_key_group_1]
-        path_ph_perm_group_2 = perm_ph_path_mapping[ph_perm_mapping_key_group_2]
-
-        # Now get the paths for the w2v decoding results.
-        non_permuted_results_group_1_w2v_fixed_seed_path = w2v_path_mapping_multiple_seeds[non_permuted_mapping_key_group_1]
-        non_permuted_results_group_2_w2v_fixed_seed_path = w2v_path_mapping_multiple_seeds[non_permuted_mapping_key_group_2]
-        path_w2v_perm_group_1 = perm_w2v_path_mapping[w2v_perm_mapping_key_group_1]
-        path_w2v_perm_group_2 = perm_w2v_path_mapping[w2v_perm_mapping_key_group_2]
-
-
-
-        # Load the non-permuted results for phoneme.
-        results_group_1_ph_fixed_seed = np.load(non_permuted_results_group_1_ph_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
-        results_group_2_ph_fixed_seed = np.load(non_permuted_results_group_2_ph_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
-
-        # Load the non-permuted results for w2v.
-        results_group_1_w2v_fixed_seed = np.load(non_permuted_results_group_1_w2v_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
-        results_group_2_w2v_fixed_seed = np.load(non_permuted_results_group_2_w2v_fixed_seed_path, allow_pickle=True)['arr_0'].tolist()
-
-        # Get the scores and errors for phoneme.
-        x_graph_9m_ph, y_graph_9m_ph, error_9m_ph = scores_and_error(results_group_1_ph_fixed_seed)
-        x_graph_12m_ph, y_graph_12m_ph, error_12m_ph = scores_and_error(results_group_2_ph_fixed_seed)
-        time_window_ph = x_graph_9m_ph
-
-        # Get the scores and errors for w2v.
-        x_graph_9m_w2v, y_graph_9m_w2v, error_9m_w2v = scores_and_error(results_group_1_w2v_fixed_seed)
-        x_graph_12m_w2v, y_graph_12m_w2v, error_12m_w2v = scores_and_error(results_group_2_w2v_fixed_seed)
-        time_window_w2v = x_graph_9m_w2v
-
-
-        # There will be three cases.
-        # 1. 9m vs 12m for phoneme.
-        # 2. 9m phoneme vs 9m w2v.
-        # 3. 12m phoneme vs 12m w2v.
-        # 4. 9m w2v vs 12m w2v.
-
-
-        # Get significance dots for case 1.
-        # Get significance dots for phoneme.
-        x_dots_9m_ph, reject_fdr_9m_ph, threshold_fdr_9m_ph, p_values_fdr_9m_ph, p_values_9m_ph = get_significance(path_ph_perm_group_1, y_graph_9m_ph, x_graph_9m_ph, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
-        x_dots_12m_ph, reject_fdr_12m_ph, threshold_fdr_12m_ph, p_values_fdr_12m_ph, p_values_12m_ph = get_significance(path_ph_perm_group_2, y_graph_12m_ph, x_graph_12m_ph, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
-
-        # Get significance dots for case 2.
-        # Get significance dots for w2v.
-        x_dots_9m_w2v, reject_fdr_9m_w2v, threshold_fdr_9m_w2v, p_values_fdr_9m_w2v, p_values_9m_w2v = get_significance(path_w2v_perm_group_1, y_graph_9m_w2v, x_graph_9m_w2v, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
-
-
-        # Get significance dots for case 3.
-        # Get significance dots for w2v.
-        x_dots_12m_w2v, reject_fdr_12m_w2v, threshold_fdr_12m_w2v, p_values_fdr_12m_w2v, p_values_12m_w2v = get_significance(path_w2v_perm_group_2, y_graph_12m_w2v, x_graph_12m_w2v, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=100)
-
-        # Plot case 1.
-
-        # fig_title = f'9m vs 12m ph fixed seed {seed_range}'
-        # fig, ax = plot_image_same_time_with_cluster(results_group_1_ph_fixed_seed,
-        #                                             results_group_2_ph_fixed_seed,
-        #                                             y_graph_9m_ph,
-        #                                             y_graph_12m_ph,
-        #                                             x_dots_9m_ph,
-        #                                             x_dots_12m_ph,
-        #                                             error_9m_ph,
-        #                                             error_12m_ph,
-        #                                             time_window_ph,
-        #                                             alpha=0.05,
-        #                                             n_permutations=10000,
-        #                                             color_1='green',
-        #                                             color_2='purple',
-        #                                             linestyle_1='dashed',
-        #                                             linestyle_2='dashed',
-        #                                             sig_1_options={'color': 'green', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'green', 'markeredgewidth':1},
-        #                                             sig_2_options={'color': 'purple', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'purple', 'markeredgewidth':1},
-        #                                             figsize=(10, 10),
-        #                                             label_1=f'9m ph', # fixed seed {seed_range}',
-        #                                             label_2=f'12m ph', # fixed seed {seed_range}',
-        #                                             xlabel='Time (s)',
-        #                                             ylabel='2 vs 2 Accuracy',
-        #                                             title=f'{fig_title}',
-        #                                             seed=42)
-        # file_name = f'with_100_perms_from_npz_9m_and_12m_ph_only_fixed_seed_range_{seed_range}_with_clusters_ph_dots_from_raw_using_fdr_kde_all_over'
-        # plt.savefig(f'{file_name}.png', bbox_inches='tight')
-        # # plt.savefig(f'{file_name}.svg', format='svg', bbox_inches='tight')
-
-        # # # Plot case 2.
-        # fig_title = f'9m ph vs 9m w2v fixed seed {seed_range}'
-        # fig, ax = plot_image_same_time_with_cluster(results_group_1_ph_fixed_seed,
-        #                                             results_group_1_w2v_fixed_seed,
-        #                                             y_graph_9m_ph,
-        #                                             y_graph_9m_w2v,
-        #                                             x_dots_9m_ph,
-        #                                             x_dots_9m_w2v,
-        #                                             error_9m_ph,
-        #                                             error_9m_w2v,
-        #                                             time_window_ph,
-        #                                             alpha=0.05,
-        #                                             n_permutations=10000,
-        #                                             color_1='green',
-        #                                             color_2='green',
-        #                                             linestyle_1='dashed',
-        #                                             linestyle_2='solid',
-        #                                             sig_1_options={'color': 'green', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'green', 'markeredgewidth':1},
-        #                                             sig_2_options={'color': 'green', 'alpha': 1, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'green', 'markeredgewidth':None},
-        #                                             figsize=(10, 10),
-        #                                             label_1=f'9m ph', # fixed seed {seed_range}',
-        #                                             label_2=f'9m w2v', # fixed seed {seed_range}',
-        #                                             xlabel='Time (s)',
-        #                                             ylabel='2 vs 2 Accuracy',
-        #                                             title=f'{fig_title}',
-        #                                             seed=42)
-        # file_name = f'with_100_perms_from_npz_9m_ph_vs_w2v_fixed_seed_range_{seed_range}_with_clusters_ph_w2v_dots_from_raw_using_fdr_kde_all_over'
-        # plt.savefig(f'{file_name}.png', bbox_inches='tight')
-        # # # plt.savefig(f'{file_name}.svg', format='svg', bbox_inches='tight')
-
-        # # Plot case 3.
-        # significant difference window is 440ms to 660ms.
-        fig_title = f'12m ph vs 12m w2v fixed seed {seed_range}'
-        fig, ax = plot_image_same_time_with_cluster(results_group_2_ph_fixed_seed,
-                                                    results_group_2_w2v_fixed_seed,
-                                                    y_graph_12m_ph,
-                                                    y_graph_12m_w2v,
-                                                    x_dots_12m_ph,
-                                                    x_dots_12m_w2v,
-                                                    error_12m_ph,
-                                                    error_12m_w2v,
-                                                    time_window_ph,
-                                                    alpha=0.05,
-                                                    n_permutations=10000,
-                                                    color_1='purple',
-                                                    color_2='purple',
-                                                    linestyle_1='dashed',
-                                                    linestyle_2='solid',
-                                                    sig_1_options={'color': 'purple', 'alpha': 0.8, 'markerfacecolor':'None', 'marker_shape':'d', 'markeredgecolor':'purple', 'markeredgewidth':1},
-                                                    sig_2_options={'color': 'purple', 'alpha': 1, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'purple', 'markeredgewidth':None},
-                                                    figsize=(10, 10),
-                                                    label_1=f'12m ph', # fixed seed {seed_range}',
-                                                    label_2=f'12m w2v', # fixed seed {seed_range}',
-                                                    xlabel='Time (s)',
-                                                    ylabel='2 vs 2 Accuracy',
-                                                    title=f'{fig_title}',
-                                                    seed=42)
-        import pdb; pdb.set_trace()
-        file_name = f'with_100_perms_from_npz_12m_ph_vs_w2v_fixed_seed_range_{seed_range}_with_clusters_ph_w2v_dots_from_raw_using_fdr_kde_all_over'
-        plt.savefig(f'{file_name}.png', bbox_inches='tight')
-        # # plt.savefig(f'{file_name}.svg', format='svg', bbox_inches='tight')
-        
-        
-        
-        
-        # Finally also plot the graph for 9m and 12m w2v.
-        fig_title = f'9m vs 12m w2v fixed seed {seed_range}'
-        fig, ax = plot_image_same_time_with_cluster(results_group_1_w2v_fixed_seed,
-                                                    results_group_2_w2v_fixed_seed,
-                                                    y_graph_9m_w2v,
-                                                    y_graph_12m_w2v,
-                                                    x_dots_9m_w2v,
-                                                    x_dots_12m_w2v,
-                                                    error_9m_w2v,
-                                                    error_12m_w2v,
-                                                    time_window_w2v,
-                                                    alpha=0.05,
-                                                    n_permutations=10000,
-                                                    color_1='green',
-                                                    color_2='purple',
-                                                    linestyle_1='solid',
-                                                    linestyle_2='solid',
-                                                    sig_1_options={'color': 'green', 'alpha': 0.8, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'green', 'markeredgewidth':1},
-                                                    sig_2_options={'color': 'purple', 'alpha': 0.8, 'markerfacecolor':None, 'marker_shape':'o', 'markeredgecolor':'purple', 'markeredgewidth':1},
-                                                    figsize=(10, 10),
-                                                    label_1=f'9m w2v', # fixed seed {seed_range}',
-                                                    label_2=f'12m w2v', # fixed seed {seed_range}',
-                                                    xlabel='Time (s)',
-                                                    ylabel='2 vs 2 Accuracy',
-                                                    title=f'{fig_title}',
-                                                    seed=42)
-        
-        file_name = f'with_100_perms_from_npz_9m_and_12m_w2v_only_fixed_seed_range_{seed_range}_with_clusters_w2v_dots_from_raw_using_fdr_kde_all_over'
-        plt.savefig(f'{file_name}.png', bbox_inches='tight')
-
-
-
 
 
     # """

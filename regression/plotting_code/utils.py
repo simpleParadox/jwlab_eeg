@@ -159,11 +159,16 @@ def get_significance_dots_from_raw(scoreMean, all_acc_waves, all_acc_waves_no_me
 
         return reject_fdr, threshold_fdr, pvalues_fdr, pvalues
 
-def get_significance(path, y_graph, x_graph, p_val_thresh=0.01, kde_per_window=False, do_kde=True):
+def get_significance(path, y_graph, x_graph, p_val_thresh=0.01, kde_per_window=False, do_kde=True, n_permutations_files=None):
     # Get significance dots for 9m.
     all_acc_waves = []
     all_acc_waves_no_mean = {}
-    for file_index, f in enumerate(tqdm(glob.glob(path + "/*.npz"))):
+    file_paths = glob.glob(path + "/*.npz")
+    file_paths = sorted(file_paths)
+    print("Number of n_permutations_files: ", n_permutations_files)
+    file_paths = file_paths[:n_permutations_files] if n_permutations_files is not None else file_paths
+    print("Perm file paths: ", file_paths)
+    for file_index, f in enumerate(tqdm(file_paths)):
         perm_accs = np.load(f, allow_pickle=True)['arr_0'].tolist()[0] # Get the first element because the dictionary only contains one element.
         for window, acc in perm_accs.items():
             all_acc_waves_no_mean[window] = acc if window not in all_acc_waves_no_mean else all_acc_waves_no_mean[window] + acc
@@ -171,5 +176,6 @@ def get_significance(path, y_graph, x_graph, p_val_thresh=0.01, kde_per_window=F
     reject_fdr, threshold_fdr, p_values_fdr, p_values  = get_significance_dots_from_raw(y_graph, all_acc_waves, all_acc_waves_no_mean, p_val_thresh=p_val_thresh, kde_per_window=kde_per_window, do_kde=do_kde)
     print("Reject fdr: ", reject_fdr)
     print(reject_fdr)
+    # import pdb; pdb.set_trace()
     x_dots = x_graph[reject_fdr]
     return x_dots, reject_fdr, threshold_fdr, p_values_fdr, p_values

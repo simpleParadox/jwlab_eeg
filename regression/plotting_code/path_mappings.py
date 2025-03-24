@@ -33,3 +33,14 @@ perm_ph_path_mapping = {
     'ph_perm_9m' : '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/eeg_to_ph/9m',
     'ph_perm_12m' : '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/regression/permuation_test_results/eeg_to_ph/12m' 
 }
+
+
+gpt_path_mapping_multiple_seeds = {
+    '9m_50_100_gpt2-large-mean_svd-16_layer_0': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/same_time_results/observed/vectors/20250316-213413_2025_9m-gpt2-large-mean_to_vectors_fixed_seed_svd_-16_layer_0_iterations_range(0, 200)_svd_vectors_9m_all_data.npz',
+    '12m_50_100_gpt2-large-mean_svd-16_layer_0': '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/same_time_results/observed/vectors/20250316-165640_2025_12m-gpt2-large-mean_to_vectors_fixed_seed_svd_-16_layer_0_iterations_range(0, 200)_svd_vectors_12m_all_data.npz' 
+}
+
+perm_gpt_path_mapping = {
+    'gpt2-large-mean_svd-16-perm_9m_layer_0' : '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/same_time_results/permutation/vectors/gpt2_large_svd_16_layer_0_9m',
+    'gpt2-large-mean_svd-16-perm_12m_layer_0' :'/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/same_time_results/permutation/vectors/gpt2_large_svd_16_layer_0_12m' 
+}

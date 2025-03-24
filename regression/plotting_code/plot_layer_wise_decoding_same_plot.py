@@ -5,6 +5,8 @@ import os
 import re
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
+from path_mappings import w2v_path_mapping_multiple_seeds
+from plot_significance_same_time_window import scores_and_error
 
 def extract_layer_number(filename):
     """Extract layer number from filename."""
@@ -13,7 +15,7 @@ def extract_layer_number(filename):
         return int(match.group(1))
     return None
 
-def plot_layer_wise_decoding(model_name, age_group, start_idx=0, end_idx=49, save_fig=True):
+def plot_layer_wise_decoding(model_name, age_group, start_idx=50, end_idx=100, save_fig=True, plot_w2v_results=False):
     """
     Plot the mean accuracy for each window across different layers.
     
@@ -31,7 +33,6 @@ def plot_layer_wise_decoding(model_name, age_group, start_idx=0, end_idx=49, sav
     pattern = f"*{age_group}m-{model_name}*svd_vectors_*{age_group}m_all_data.npz"
     file_paths = glob.glob(os.path.join(directory, pattern))
     
-    import pdb; pdb.set_trace()
     
     if not file_paths:
         print(f"No files found matching pattern: {pattern}")
@@ -61,7 +62,7 @@ def plot_layer_wise_decoding(model_name, age_group, start_idx=0, end_idx=49, sav
                 window_data = data[0][window_idx]
                 if window_data and len(window_data) > end_idx:
                     # Calculate mean for specified range
-                    mean_acc = np.mean(window_data[start_idx:end_idx+1])
+                    mean_acc = np.mean(window_data[start_idx:end_idx])
                     window_means.append(mean_acc)
                 else:
                     window_means.append(np.nan)
@@ -81,7 +82,8 @@ def plot_layer_wise_decoding(model_name, age_group, start_idx=0, end_idx=49, sav
     x_graph = np.arange(-200, 910, 10)  # Assuming 10ms step size for 111 windows
     
     # Create figure
-    plt.figure(figsize=(12, 6))
+    sns.set_theme(style='whitegrid', context='paper')
+    plt.figure(figsize=(12, 10))
     
     # Create a custom color map for different layers
     num_layers = len(sorted_layers)
@@ -93,21 +95,32 @@ def plot_layer_wise_decoding(model_name, age_group, start_idx=0, end_idx=49, sav
         plt.plot(x_graph, layer_accuracies[layer], label=f"Layer {layer}", 
                  color=colors[i], linewidth=1.5)
     
+    if plot_w2v_results:
+        # Load the w2v results for the same age group.
+        w2v_path_mapping = f'{age_group}m_{start_idx}_{end_idx}'
+        non_permuted_w2v = np.load(w2v_path_mapping_multiple_seeds[w2v_path_mapping], allow_pickle=True)['arr_0'].tolist()
+        x_graph_w2v, y_graph_w2v, error_w2v = scores_and_error(non_permuted_w2v) # Uses default seed_range because w2v results are stored separately for each seed range.
+        color = 'green' if age_group == 9 else 'purple'
+        plt.plot(x_graph_w2v, y_graph_w2v, label=f'{age_group}m w2v', color=color, linewidth=1.5, linestyle='solid')
+        plt.fill_between(x_graph_w2v, y_graph_w2v - error_w2v, y_graph_w2v + error_w2v, color=color, alpha=0.2)
+        
+    
     # Add horizontal line at chance level (0.5)
-    plt.axhline(y=0.5, color='grey', linestyle='--', alpha=0.7)
+    plt.axhline(y=0.5, color='black', linestyle='--', alpha=0.8)
     
     # Add vertical line at time 0
-    plt.axvline(x=0, color='grey', linestyle='--', alpha=0.7)
+    plt.axvline(x=0, color='black', linestyle='--', alpha=0.8)
     
     # Customize plot
-    plt.title(f"{model_name} ({age_group}m) Layer-wise Decoding Accuracy SVD")
-    plt.xlabel("Time (ms)")
-    plt.ylabel("2v2 Accuracy")
-    plt.ylim(0.3, 0.7)  # Typical range for 2v2 accuracy
-    plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'])
+    plt.title(f"{model_name} ({age_group}m) Layer-wise Decoding Accuracy SVD", fontsize=16)
+    plt.xlabel("Time (ms)", fontsize=16)
+    plt.ylabel("2 vs 2 Accuracy", fontsize=16)
+    plt.ylim(0.35, 0.65)  # Typical range for 2v2 accuracy
+    plt.xticks(np.arange(-200, 1001, 200), ['-200', '0', '200', '400', '600', '800', '1000'], fontsize=16)
+    plt.yticks(fontsize=16)
     
     # Add legend, adjusted to not overlap with plot
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., fontsize=12)
     
     plt.tight_layout()
     
@@ -115,7 +128,11 @@ def plot_layer_wise_decoding(model_name, age_group, start_idx=0, end_idx=49, sav
     if save_fig:
         output_dir = os.path.join(os.getcwd(), 'layer_wise_plots')
         os.makedirs(output_dir, exist_ok=True)
-        plt.savefig(os.path.join(output_dir, f"{model_name}_{age_group}m_layer_wise_decoding.png"), dpi=300, bbox_inches='tight')
+        if not plot_w2v_results:
+            plt.savefig(os.path.join(output_dir, f"{model_name}_{age_group}m_layer_wise_decoding_{start_idx}_{end_idx}.png"), dpi=300, bbox_inches='tight')
+        else:
+            # Add the w2v results to the filename.
+            plt.savefig(os.path.join(output_dir, f"{model_name}_and_w2v_{age_group}m_layer_wise_decoding_{start_idx}_{end_idx}.png"), dpi=300, bbox_inches='tight')
     
     plt.show()
     
@@ -124,20 +141,19 @@ def plot_layer_wise_decoding(model_name, age_group, start_idx=0, end_idx=49, sav
 # Example usage:
 if __name__ == "__main__":
     # Plot for gpt2-large at 9 months
-    plot_layer_wise_decoding("gpt2-large", 9)
+    plot_layer_wise_decoding("gpt2-large", 9, start_idx=50, end_idx=100)
     
-    # Plot for gpt2-large at 12 months
-    plot_layer_wise_decoding("gpt2-large", 12)
+    # # Plot for gpt2-large at 12 months
+    plot_layer_wise_decoding("gpt2-large", 12, start_idx=50, end_idx=100)
     
-    # Plot for gpt2-xl at 9 months
-    # plot_layer_wise_decoding("gpt2-xl", 9)
+    # # Also for gpt2-large-mean for both groups.
+    # plot_layer_wise_decoding('gpt2-large-mean', 9, start_idx=50, end_idx=100)
+
+    # plot_layer_wise_decoding('gpt2-large-mean', 12, start_idx=50, end_idx=100)
     
-    # # Plot for gpt2-xl at 12 months
-    # plot_layer_wise_decoding("gpt2-xl", 12)
-
-
-
-
-
-
+    
+    
+    # plot_layer_wise_decoding('gpt2-large-mean', 9, start_idx=50, end_idx=100, plot_w2v_results=True)
+    
+    # plot_layer_wise_decoding('gpt2-large-mean', 12, start_idx=50, end_idx=100, plot_w2v_results=True)
 

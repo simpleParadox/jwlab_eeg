@@ -52,20 +52,26 @@ def load_ml_data(participants, ch_group=False, group_num=None):
         print("Could not drop E65")
     
     if ch_group:
-        assert group_num is not None
+        print("Using channel group for topomap decoding.")
+        assert group_num is not None, "Please provide the group number if using ch_group=True for topomap decoding."
         # Do the group channel analysis where you select the channels groups.
         if participants[0][0] == '1':
             part_suffix = '12'
         else:
             part_suffix = '9'
+            
+        # I've precomputed the channel neighbours for each group. Load them here.
         ch_group_data = np.load(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_{part_suffix}m.npz", allow_pickle=True)
         
         ch_data = [ch_group_data[k] for k in ch_group_data] # All the group channels. Immediate neighbours of all channels.
-        ch_data = ch_data[0]  # The object contains two items. Selecting the first item.
+        ch_data = ch_data[0]  # The object contains two items. Selecting the first item which is the channel and its neighbours.
         column_subset = ['Time']
-        column_subset.extend(ch_data[group_num])
+        column_subset.extend(ch_data[group_num]) # Essentially, this is group of channels to retrieve.
+        # E.g., ['E1', 'E2', 'E5', 'E55', 'E58', 'E59']) for the first group.
+        
+        
 
-        df = df[column_subset]
+        df = df[column_subset] # Selecting the columns of the group of channels.
 
 
         

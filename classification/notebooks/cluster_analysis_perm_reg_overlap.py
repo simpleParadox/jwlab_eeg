@@ -37,9 +37,21 @@ parser.add_argument('--iteration_range', type=int, nargs=2, metavar=('start', 'e
 parser.add_argument('--age_group_range', type=int, nargs=2, metavar=('first', 'second'), default=None, help='Range of age groups to run')
 parser.add_argument('--decoding_type', type=str, default='average_trials_and_participants', help='Decoding type')
 parser.add_argument('--type_exp', type=str, default='simple', help='Type of experiment')
+
+# For group channel analysis.
+parser.add_argument('--ch_group', default=False, action='store_true', help='Whether to run group channel analysis')
+parser.add_argument('--group_num', type=int, default=0, help='Group number for group channel analysis. This is essentially the electrode number and its neighbors.')
+parser.add_argument('--window_range', type=int, nargs=2, metavar=('start', 'end'), default=[-200, 1000], help='Range of window to run the analysis on')
+parser.add_argument('--window_length', type=int, default=100, help='Window length for the analysis')
+parser.add_argument('--step_length', type=int, default=10, help='Step length for the analysis')
+
+parser.add_argument('--store_dir', type=str, default=None, help='Directory to store the results')
 parsed_args = parser.parse_args()
 
-
+if parsed_args.store_dir:
+    print("Setting store_dir to: ", parsed_args.store_dir)
+else:
+    print("Store directory not provided. Setting it to None - storing in the project directory.")
 
 print("Running job with args: ", parsed_args)
 seed = parsed_args.seed
@@ -70,6 +82,9 @@ if decoding_type == 'average_trials_and_participants':
         age_group = age_group_range[0]
     else:
         age_group = parsed_args.age_group
+    
+    print("Group channel is True") if parsed_args.ch_group else print("Group channel is False")
+    
 elif decoding_type == 'across':
     print("Ignoring age group and using age group range for across decoding type.")
     if parsed_args.type_exp == 'simple':
@@ -146,11 +161,12 @@ if os.getenv('cluster') == 'narval' or use_randomized_label == True:
         print("Setting wandb_mode to 'offline' as it is not set to 'offline'.")
         parsed_args.wandb_mode = 'offline'
 else:
-    print("Running script on a non-narval cluster, setting wandb_mode to 'online'.")
-    parsed_args.wandb_mode = 'online'
-    wandb.login()
+    print("Running script on a non-narval cluster, setting wandb_mode to 'online' unless it's expicity set to offline.")
+    if parsed_args.wandb_mode != 'offline':
+        parsed_args.wandb_mode = 'online'
+        wandb.login()
 run = wandb.init(project='jwlab-eeg', entity='simpleparadox', mode=parsed_args.wandb_mode,
-                       config=parsed_args)
+                       config=parsed_args, dir=parsed_args.store_dir)
 #Update the graph_file_name to the wandb config.
 wandb.config.update({'graph_file_name': graph_file_name}, allow_val_change=True)
 
@@ -176,8 +192,8 @@ wandb.config.update({'graph_file_name': graph_file_name}, allow_val_change=True)
 # NOTE: If you set useRandomizedLabel = True and set type='simple', it will run the null_distribution / permutation test. But you have to run it 100 times/jobs.
 result = cluster_analysis_procedure(age_group, use_randomized_label, 
                                     decoding_type,
-                                    [-200, 1000, [100], 10], 
-                                    [5, 4, iterations], 
+                                    sliding_window_config=[parsed_args.window_range[0], parsed_args.window_range[1], [parsed_args.window_length], parsed_args.step_length],
+                                    cross_val_config=[5, 4, iterations], 
                                     type_exp=parsed_args.type_exp,
                                     animacy=False, 
                                     no_animacy_avg=False, 
@@ -188,7 +204,10 @@ result = cluster_analysis_procedure(age_group, use_randomized_label,
                                     graph_file_name=graph_file_name,
                                     fixed_seed=fixed_seed,
                                     embedding_type=embedding_type,
-                                    wandb_object=wandb) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
+                                    ch_group=parsed_args.ch_group,
+                                    group_num=parsed_args.group_num,
+                                    wandb_object=wandb,
+                                    store_dir=parsed_args.store_dir) # Max layer must be 36 for gpt2-large and 48 for gpt2-xl (the numbers are 'indices' of the layer).
 
 
 run.finish()
@@ -197,7 +216,7 @@ run.finish()
 # start_wind = 0 #int(sys.argv[4])
 # end_wind = 300 #int(sys.argv[5])
 
-
+# The following is for group channel analysis (for the topomaps).
 # result = cluster_analysis_procedure(age_group, False, "average_trials_and_participants", [start_wind, end_wind, [end_wind - start_wind], 10], [5, 4, 50], type='simple', animacy=False, no_animacy_avg=False, do_eeg_pca=False, 
 #                                     do_sliding_window=False, ch_group=True, group_num=group_num)
 # result = cluster_analysis_procedure(9, False, "average_trials_and_participants", [-200, 1000, [100], 10], [5, 4, 70], type='simple', residual=True, child_residual=False)
