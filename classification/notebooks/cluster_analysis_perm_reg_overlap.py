@@ -139,6 +139,9 @@ if age_group is None:
 print("Graph file name: ", graph_file_name)
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/classification/code')
+cluster = os.getenv('cluster')
+if cluster == 'semantics':
+    sys.path.insert(1, '/home/rsaha/projects/jwlab_eeg/classification/code')
 from jwlab.constants import cleaned_data_filepath
 from jwlab.cluster_analysis_perm import cluster_analysis_procedure
 from jwlab.ml_prep_perm import prep_ml, slide_df, init, load_ml_data, get_bad_trials, map_participants,average_trials_and_participants
@@ -157,12 +160,12 @@ if os.getenv('cluster') == 'narval' or use_randomized_label == True:
     if use_randomized_label:
         print("Running permutation tests.")
         print("Setting wandb_mode to 'offline' to avoid wandb login error.")
-    if parsed_args.wandb_mode != 'offline':
+    if parsed_args.wandb_mode != 'offline' and parsed_args.wandb_mode != 'disabled':
         print("Setting wandb_mode to 'offline' as it is not set to 'offline'.")
         parsed_args.wandb_mode = 'offline'
 else:
     print("Running script on a non-narval cluster, setting wandb_mode to 'online' unless it's expicity set to offline.")
-    if parsed_args.wandb_mode != 'offline':
+    if parsed_args.wandb_mode != 'offline' and parsed_args.wandb_mode != 'disabled':
         parsed_args.wandb_mode = 'online'
         wandb.login()
 run = wandb.init(project='jwlab-eeg', entity='simpleparadox', mode=parsed_args.wandb_mode,

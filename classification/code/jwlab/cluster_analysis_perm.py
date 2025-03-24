@@ -1,3 +1,4 @@
+from copy import deepcopy
 from fileinput import filename
 from select import select
 from tracemalloc import start
@@ -39,6 +40,7 @@ from jwlab.ml_prep_perm import prep_ml, prep_matrices_avg, randomly_remove_sampl
 from matplotlib import pyplot as plt
 
 sys.path.insert(1, '/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg')
+sys.path.insert(1, '/home/rsaha/projects/jwlab_eeg')
 from regression.functions import get_w2v_embeds_from_dict, two_vs_two, extended_2v2_phonemes, extended_2v2_perm, \
     get_phoneme_onehots, get_phoneme_classes, get_sim_agg_first_embeds, get_sim_agg_second_embeds, extended_2v2, w2v_across_animacy_2v2, w2v_within_animacy_2v2, \
     ph_within_animacy_2v2, ph_across_animacy_2v2, get_audio_amplitude, get_stft_of_amp, get_tuned_cbt_childes_w2v_embeds, get_all_ph_concat_embeds, \
@@ -165,6 +167,7 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
         w2v_residuals, r2 = cv_all_ph_concat_padded_residual_mod(child=child_residual)
 
 
+    flag = 0
     for i in tqdm(range(start, end)):
         print("Sampling iteration: ", i, flush=True)
         if averaging == "permutation":
@@ -178,19 +181,25 @@ def cluster_analysis_procedure(age_group, useRandomizedLabel, averaging, sliding
             # temp_results = cross_validaton_averaging(X_train, X_test, y_train, y_test, useRandomizedLabel)
 
         elif averaging == "average_trials_and_participants":
-            flag = 0
             
             # NOTE: the current_seed argument is only valid when used_randomized_label is True.
-
-            X, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000, 
-                                                      animacy=animacy, ch_group=ch_group, group_num=group_num)
+            if flag == 0:
+                X_loaded, y, good_trial_count, num_win = prep_ml(age_group, useRandomizedLabel, "no_average_labels", sliding_window_config, downsample_num=1000, 
+                                                        animacy=animacy, ch_group=ch_group, group_num=group_num)
+                flag = 1
+            else:
+                print("Flag is 1")
+                print("No need to load the data again.")
+            
+            X = deepcopy(X_loaded)
+                
             # print("Y after prep_ml is: ", y)
             # print("Raveled after prep_ml is: ", np.ravel(y))
             # print("Length of raveled Y after prep_ml is: ", np.ravel(y).shape)
             # print("Good trial count: ", good_trial_count)
             if randomly_remove_from_9m:
                 print("Randomly removing samples")
-                X = randomly_remove_samples(X) # Use only for the 9 month olds.
+                X = randomly_remove_samples(X_loaded) # Use only for the 9 month olds.
             # X = minimal_mouth_X(X)
 
 

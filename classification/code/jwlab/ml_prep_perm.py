@@ -9,9 +9,11 @@ from IPython.display import display
 from jwlab.data_graph import plot_good_trial_participant, plot_good_trial_word
 from jwlab.participants_map import map_participants
 from jwlab.bad_trials import get_bad_trials, get_left_trial_each_word
-from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, cleaned_data_filepath_e65, cleaned_data_filepath_bad_remove, \
-    no_detrending_low_pass_only_reref_with_baseline_filepath, no_detrending_low_pass_only_reref_no_baseline_filepath, detrending_low_pass_only_reref_with_baseline_filepath, \
-        cleaned2_causal_with_baseline, cleaned2_causal_no_baseline, cleaned2_causal_butter_with_baseline_1hz, cleaned2_causal_butter_with_baseline_01hz#, adam_40_order_filepath, adam_30_order_filepath
+from jwlab.constants import word_list, bad_trials_filepath, old_participants, cleaned_data_filepath, jenn_local_label_filepath
+
+# , cleaned_data_filepath_e65, cleaned_data_filepath_bad_remove, \
+#     no_detrending_low_pass_only_reref_with_baseline_filepath, no_detrending_low_pass_only_reref_no_baseline_filepath, detrending_low_pass_only_reref_with_baseline_filepath, \
+#         cleaned2_causal_with_baseline, cleaned2_causal_no_baseline, cleaned2_causal_butter_with_baseline_1hz, cleaned2_causal_butter_with_baseline_01hz#, adam_40_order_filepath, adam_30_order_filepath
 
 
 labels_mapping = {0: 'baby', 1: 'bear', 2: 'bird', 3: 'bunny',
@@ -61,7 +63,17 @@ def load_ml_data(participants, ch_group=False, group_num=None):
             part_suffix = '9'
             
         # I've precomputed the channel neighbours for each group. Load them here.
-        ch_group_data = np.load(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_{part_suffix}m.npz", allow_pickle=True)
+        try:
+            ch_group_data = np.load(f"/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_{part_suffix}m.npz", allow_pickle=True)
+        except:
+            print("Could not load channel neighbours file.")
+            print("Trying from alternate directory.")
+        try:
+            ch_group_data = np.load(f"/home/rsaha/projects/jwlab_eeg/Scratches/channel_neighbours_{part_suffix}m.npz", allow_pickle=True)
+            print("Successfully loaded channel neighbours file from alternate directory.")
+        except Exception as e:
+            print("Could not load channel neighbours file.")
+            raise ValueError("Could not load channel neighbours file.")
         
         ch_data = [ch_group_data[k] for k in ch_group_data] # All the group channels. Immediate neighbours of all channels.
         ch_data = ch_data[0]  # The object contains two items. Selecting the first item which is the channel and its neighbours.
@@ -88,7 +100,6 @@ def load_ml_data(participants, ch_group=False, group_num=None):
     # df = pd.concat([new_df, df['Time']], axis=1)
 
     
-    jenn_local_label_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/label_jennlocal/"
     print("Labels filepath: ", jenn_local_label_filepath)
 
     # NOTE: Use the different folder for labels and db only if you're using the bad_remove filepath.
@@ -387,7 +398,8 @@ def prep_matrices_avg(X, age_group, useRandomizedLabel, train_only=False, test_s
             ## will need each window
             try:
                 X[i][j] = X[i][j].reset_index()
-            except ValueError:
+            except Exception as e:
+                print(e)
                 print("reset_index already done", end=' ')
 
             # #create new df with these indices and removing from orig

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from math import isnan
 # <<<<<<< original
-from jwlab.constants import bad_trials_filepath, db_filepath, cleaned_data_filepath, bad_remove_db_filepath
+from jwlab.constants import bad_trials_filepath, db_filepath
 # =======
 # from jwlab.constants import bad_trials_filepath, db_filepath, cleaned_data_filepath, db_abs_200uv_filepath
 # db_filepath = db_abs_200uv_filepath  #NOTE: Comment this line if using the old db_filepath.

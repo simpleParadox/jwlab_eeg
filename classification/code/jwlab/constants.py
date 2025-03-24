@@ -41,12 +41,20 @@ elif (user == 'rohan'):
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 
+
+elif (user == 'rohan-semantics'):
+    cleaned_data_filepath = "/home/rsaha/projects/jwlab_eeg/data/cleaned2/"
+    bad_trials_filepath = "/home/rsaha/projects/jwlab_eeg/data/ML_badtrials-Table 2.csv"
+    db_filepath = "/home/rsaha/projects/jwlab_eeg/data/db2/"
+    jenn_local_label_filepath = "/home/rsaha/projects/jwlab_eeg/data/label_jennlocal/"
+
 elif (user == 'rohancc'):
     # print("user rohan compute canada")
     # ---- File path for Rohan on Compute Canada.
     cleaned_data_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/cleaned2/"
     bad_trials_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/ML_badtrials-Table 2.csv"
     db_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/db2/"
+    jenn_local_label_filepath = "/home/rsaha/projects/def-afyshe-ab/rsaha/projects/jwlab_eeg/data/label_jennlocal/"
     # df_filepath = "Z:\\Jenn\\ml_df_readys.pkl"
     # df_filepath_sktime = "Z:\\Jenn\\ml_df_sktime.pkl"
 
